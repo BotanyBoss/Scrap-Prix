@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#17282e">
+  <meta name="description" content="Scrap Prix DEV Fossil Art Review v0.7.23p: Event, Environment and Vehicle feedback tools plus campaign environment refinements.">
+  <title>Scrap Prix · Art Review Studio v0.7.23p</title>
+  <style>{{STYLE:src/game.css}}</style>
+</head>
+<body>
+  <a class="skip-link" href="#screen">Skip to game</a>
+  <div id="game" class="game-frame" data-screen="title">
+    <header id="topbar" class="topbar"></header>
+    <main id="screen" class="screen" tabindex="-1" aria-label="Scrap Prix"></main>
+    <footer class="statusbar"><span id="status" role="status" aria-live="polite">Loading game…</span><span id="save-status">ART REVIEW LABS / v0.7.23p</span></footer>
+  </div>
+  <dialog id="modal" class="game-dialog" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  <dialog id="confirm-modal" class="game-dialog confirm-dialog" aria-labelledby="confirm-title"><div id="confirm-content"></div></dialog>
+  <input id="save-file" type="file" accept=".json,application/json" hidden>
+  <noscript>Scrap Prix needs JavaScript enabled. This standalone game makes no network requests.</noscript>
+  <script>{{SCRIPT:src/00-legacy-catalogue.js}}</script>
+  <script>{{SCRIPT:src/01-legacy-engine.js}}</script>
+  <script>{{SCRIPT:src/02-catalogue.js}}</script>
+  <script>{{SCRIPT:src/03-engine.js}}</script>
+  <script>{{SCRIPT:src/04-cosmetic-surprises.js}}</script>
+  <script>{{SCRIPT:src/05-presentation.js}}</script>
+  <script>{{SCRIPT:src/06-weather-adapter.js}}</script>
+  <script>{{SCRIPT:src/07-raster.js}}</script>
+  <script>{{SCRIPT:src/08-gag-recipes.js}}</script>
+  <script>{{SCRIPT:src/09-vehicle-art.js}}</script>
+  <script>{{SCRIPT:src/10-environments.js}}</script>
+  <script>{{SCRIPT:src/11-event-effects.js}}</script>
+  <script>{{SCRIPT:src/12-event-director.js}}</script>
+  <script>{{SCRIPT:src/13-world-events.js}}</script>
+  <script>{{SCRIPT:src/14-spectacles.js}}</script>
+  <script>{{SCRIPT:src/15-energy-effects.js}}</script>
+  <script>{{SCRIPT:src/16-portals.js}}</script>
+  <script>{{SCRIPT:src/17-ghosts.js}}</script>
+  <script>{{SCRIPT:src/18-clones.js}}</script>
+  <script>{{SCRIPT:src/19-transform-cinematics.js}}</script>
+  <script>{{SCRIPT:src/20-scene.js}}</script>
+  <script>{{SCRIPT:src/21-art-review.js}}</script>
+  <script>{{SCRIPT:src/22-parts-lab.js}}</script>
+  <script>{{SCRIPT:src/23-environment-lab.js}}</script>
+  <script>{{SCRIPT:src/24-event-motion-lab.js}}</script>
+  <script>{{SCRIPT:src/25-app.js}}</script>
+</body>
+</html>
+<a href="FOSSIL-TEST-DRIVE.html" target="_blank" style="position:fixed;bottom:12px;right:12px;z-index:99999;background:#d7b56d;color:#14272e;padding:12px;font:bold 14px system-ui">FOSSIL TEST DRIVE</a>

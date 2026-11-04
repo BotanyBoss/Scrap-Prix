@@ -1,0 +1,32 @@
+{
+  "assets/vehicles/mechanical-fossil-garage.png": {
+    "mime": "image/png",
+    "sha256": "bd3f7009042cc2b148c1f681525d60390a831c741d47764c4956ba163e223346",
+    "bytes": 1355448
+  },
+  "assets/vehicles/mechanical-fossil-rear.png": {
+    "mime": "image/png",
+    "sha256": "2814eb79729c6ccc75d05555a0c65bb9bd4c2742f8cd4f99362ec8498955d658",
+    "bytes": 1449362
+  },
+  "assets/embedded/259c60f3162da5c5.png": {
+    "mime": "image/png",
+    "sha256": "259c60f3162da5c5ac70521137f6628d32355071846dd5bf253d62d8e2e022ae",
+    "bytes": 114690
+  },
+  "assets/embedded/3111847322aca9c0.png": {
+    "mime": "image/png",
+    "sha256": "3111847322aca9c04c313048ff4e8ab86c21b2967ac55390506d0cbff662d31e",
+    "bytes": 73644
+  },
+  "assets/embedded/f6d969de51fe300a.png": {
+    "mime": "image/png",
+    "sha256": "f6d969de51fe300a716e27298f234b74769b6a7e61dc836f3006d1180a8d3c46",
+    "bytes": 3770
+  },
+  "assets/embedded/ac3fad71725d4dc9.png": {
+    "mime": "image/png",
+    "sha256": "ac3fad71725d4dc99c936c0eb65b4e5f1eeda10e4ae10e4a62231fd48b273078",
+    "bytes": 22013
+  }
+}

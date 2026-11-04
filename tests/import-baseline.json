@@ -1,0 +1,33 @@
+{
+  "devSha256": "e921f994b8d39ed17a295d1fafa22fbf0c67bae3c43703b175ccf32483611458",
+  "scripts": {
+    "src/00-legacy-catalogue.js": "b2938627aec258f1a6b9edbed202aef1f25cc839a4cf10092beec4778eb2c588",
+    "src/01-legacy-engine.js": "6d50fba1554d5209c4d840216fba30ae4fa1429596cc77381758646dfbd17e63",
+    "src/02-catalogue.js": "ce8e180e979484c428f21666419b365fef790f53f1bb6cf8a9cd9a121025465b",
+    "src/03-engine.js": "081203b2dd5e7c869666383c6e2997da7fcc8d6a1a17677a639271ba1293a8fe",
+    "src/04-cosmetic-surprises.js": "6a00c099dbf6194fed11e17272f1c81277111f9a2a95d1aba76135e97e7c4a11",
+    "src/05-presentation.js": "42e7abbbf9bc42a62f1f9e2197bbe865f4a27ac242d20be4517ecf5ff27dbb6a",
+    "src/06-weather-adapter.js": "6d7685ecbcd35c092cba7a43564405f7f1ab85e8d069847a292e7d6c1c3a8ae4",
+    "src/07-raster.js": "92c4d054f033ecdd4925568280d2a0fc997f498522e3e8f6b2fa96df342aee14",
+    "src/08-gag-recipes.js": "f0e4347abf2244b3ff629f8e0af31c78b54b30368469f21a01b1496f04f54f67",
+    "src/09-vehicle-art.js": "54c0214730893b6f35184c7d1064914d9cde6d098b49b723940a61e34abca58c",
+    "src/10-environments.js": "8dde0542d7360abfc7abf9f51b04902b5ae44fda0f115dd9da2f804837d1d875",
+    "src/11-event-effects.js": "6690aeb1cca72c11833af48d0242749b548e3f7dc2b12501611310edc02070be",
+    "src/12-event-director.js": "522fc10ede4befb5cd9d1c9c2a8a0b2a482064a18fcc9b99ae2325c524d48991",
+    "src/13-world-events.js": "9d8d09bc13eabcfda5fad1630f5b69fe3fe85c5c764b62559c322d760dc8aa9e",
+    "src/14-spectacles.js": "0d1665b5953704318dbc4d018ef6e734efbe27d65a93e5bec4206bbd37630d6c",
+    "src/15-energy-effects.js": "255dcd08f8b7f8b0a90013e571627d85797c2b9a063f17f309f2409e33cc7aa6",
+    "src/16-portals.js": "30adf561a7ec16570b7c0af874634356cf099d34ec0b145fcb6b10e10d0af5d7",
+    "src/17-ghosts.js": "64be05b6ffe8ce6764769bc36b5b2fef3eb7a990d6d1bf869d32fac0eb4a9097",
+    "src/18-clones.js": "f0e4dc262ecccc098e6affefdf10d436d8d832b453dc05400394561bbdf01ba2",
+    "src/19-transform-cinematics.js": "50de1f97587376ae42be22adf7ad07658c6a7c488a4e6d9513b36919bb9b3027",
+    "src/20-scene.js": "3ed394ced59166a4c1eb7386bc0229e01dc738378b6ca01028c5a72eebca0727",
+    "src/21-art-review.js": "b1dfc05d1d8cbf4ac5d63e76319cdcd983ed95a1bf77e4e78868d9333085cbe5",
+    "src/22-parts-lab.js": "2a85ea145dce42310af84e64d55cec7e71fb01002b63b3b7860fc8c9da326aca",
+    "src/23-environment-lab.js": "4044ec204740d911ef6a75e7ab4242e7fd48b35ddab16cfae7abe113e7146268",
+    "src/24-event-motion-lab.js": "163b6ec776a01d23053e8c87014bb27cbd9d3e7577327994a823ff2562694ab4",
+    "src/25-app.js": "55625f92a44a3d138fe138f6fc27ad07ee6e5aa3a8d5ed3856c81ee22449c388"
+  },
+  "origin": "street-pass/Scrap-Prix-DEV-Street.html",
+  "date": "2026-11-04"
+}

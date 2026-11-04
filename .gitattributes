@@ -1,0 +1,4 @@
+# Preserve the imported source bytes across Windows/Linux builds.
+* -text
+*.png binary
+*.jpg binary
