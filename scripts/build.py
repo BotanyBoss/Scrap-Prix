@@ -15,8 +15,8 @@ def build():
     if re.search(r'\{\{(?:SCRIPT|STYLE|ASSET):',text):raise ValueError('Unresolved build token')
     anchor=text[text.index('<a href="FOSSIL-TEST-DRIVE.html"'):]
     play=text.replace(anchor,'').replace('window.SCRAP_PRIX_DEV_MODE=true;','window.SCRAP_PRIX_DEV_MODE=false;')
-    panel=read('previews/environment-panel.html').replace("const c=$('canvas')", "$('env').value='street';const c=$('canvas')")
-    outputs={'dev.html':text,'index.html':play,'STREET-PREVIEW.html':play+panel,'FOSSIL-TEST-DRIVE.html':play+read('previews/fossil-panel.html')}
+    panel=read('previews/environment-panel.html').replace('\r\n','\n').replace("const c=$('canvas')", "$('env').value='street';const c=$('canvas')")
+    outputs={'dev.html':text,'index.html':play,'STREET-PREVIEW.html':play+panel,'FOSSIL-TEST-DRIVE.html':play+read('previews/fossil-panel.html').replace('\r\n','\n')}
     dist=ROOT/'dist';dist.mkdir(exist_ok=True)
     for name,content in outputs.items():(dist/name).write_bytes(content.encode('utf-8'))
     return text
