@@ -1,20 +1,34 @@
-# Scrap Prix — focused environment asset roadmap
+# Scrap Prix — shared environment art asset roadmap
 
-Status: proposed production scope, not a gameplay change.
-Source: current nine campaign track IDs in `src/02-catalogue.js` and mappings in `src/10-environments.js`.
-Owner approval required before reducing the actual playable track rotation.
+**Scope: approved approach — retain the existing system; build one piece at a time.**
+Source of truth: `src/10-environments.js` has 36 environment recipes. `src/02-catalogue.js` defines 9 gameplay tracks; some share a visual recipe.
+**No tracks or environment recipes are being removed, disabled or deferred from gameplay.**
+Our previous "five playable tracks" proposal is superseded: the five groups below are **shared art families**, not five tracks or an implementation cap.
 
-## Production target: five distinct core tracks
+## Five visual art families (all 36 current environment recipes)
 
-| Track ID | Track | Gameplay reason | Core visual motif |
-| --- | --- | --- | --- |
-| `street` | Street Circuit | Cornering/acceleration | lively low-rise urban street |
-| `f1` | F1 Circuit | High-speed cornering | pit wall, grandstands, racing kerbs |
-| `drag` | Improvised Drag Strip | Straight acceleration | one start-light assembly, long markers |
-| `rally` | Rally Course | Gravel/mixed surfaces | layered hills, pines, stage markers |
-| `offroad` | Off-road Trail | Mud, terrain and impact | boulders, ruts, uneven rocky edges |
+| Family | Environments (DEV recipe IDs) | Reusable art techniques |
+| --- | --- | --- |
+| **Urban** | `city`, `street`, `factory`, `sewer`, `rooftops`, `utopia`, `cyber` | modular building fronts, industrial structures, windows, street furniture, perspective silhouettes |
+| **Motorsport** | `drag`, `f1`, `circuit`, `airstrip` | barriers, stands, paddocks, signage, gantries, road furniture |
+| **Nature** | `rally`, `forest`, `beach`, `mountains`, `jungle`, `prehistoric`, `swamp` | layered vegetation, hills, trees, shorelines, ground contact |
+| **Harsh terrain** | `desert`, `snow`, `ice`, `offroad`, `pileup`, `wasteland`, `raiders`, `junkyard`, `warzone`, `volcano` | rocks, debris, terrain ridges, surface damage, visibility and depth |
+| **Spectacle** | `space`, `moon`, `underwater`, `miniature`, `haunted`, `toyroom`, `alien`, `medieval` | themed silhouettes, landmark structures, scaled motifs, unusual lighting |
 
-**Deferred from production art work, NOT deleted from gameplay:** `airstrip`, `oval`, `endurance`, `rubble`. Oval and endurance currently share the `circuit` environment recipe. The 36 DEV-only environment concepts also stay available but do not receive release-level art passes during the initial focused run.
+Family grouping is **a production convenience**, not a new layer of gameplay architecture. Keep each environment's own character; share the art kit wherever it genuinely fits.
+
+The nine existing gameplay tracks and their mapping to these recipes remain intact. The broader DEV catalogue remains intact too. Asset work is prioritized **one item at a time**, starting with the Street tyre workshop, without sacrificing environment variety.
+
+## Asset-production workflow
+
+1. Select **one specific asset**, e.g. Street's tyre workshop.
+2. Draw/refine it in the **real game renderer**, not as a detached concept image.
+3. Inspect close, distant and moving frames at native `480×270` with rivals visible.
+4. Record owner feedback; polish that asset until approved.
+5. Add the approved piece to a reusable family kit where appropriate.
+6. Proceed to the next asset, then integrate the full environment for review.
+
+**Do not** redesign multiple environments at once, force all recipes into one generic look, delete unused assets or reduce the race rotation simply to meet an art-scope target.
 
 ## Shared kit (reusable across multiple tracks)
 
@@ -93,5 +107,5 @@ Target ~5–6 distinctive core building models plus a handful of reusable prop t
 
 - Work on separate art branches; do not merge into `main` without owner approval.
 - Keep track IDs, event probabilities, physics, deterministic race outcome, save formats, exact gag recipes and transformations unchanged.
-- Do not delete unused recipes or assets. Any later five-track rotation is a separate gameplay configuration request, not part of this artwork plan.
+- Do not delete unused recipes, assets or existing gameplay tracks. Five groups are reusable art families only, not a proposed five-track rotation. All 36 environment recipes and nine gameplay tracks stay available.
 - Build with `python scripts/build.py`, then run `node tests/check.cjs`. Independently inspect actual renderer frames; tests alone cannot certify aesthetic quality.
