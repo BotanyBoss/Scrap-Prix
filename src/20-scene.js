@@ -111,28 +111,44 @@
         return;
       }
       if(p==='suburb'){
-        // Distinct from downtown: low high-street buildings and colourful shopfronts.
-        const wall=['#c08c79','#94aeb0','#d0ae8d','#99a4b6','#b58e91'];
-        const awning=['#ba6256','#d2ae6b','#508d88','#b7816c','#7992a4'];
-        const names=['TYRES','CAFE','PARTS','BAKERY','TOOLS'];
-        for(let i=0;i<11;i++){
-          const x=i*48-15,y=89,w=43,h=20+(i%3)*7;
-          // Keep the race's vanishing point open; distant scenery frames the road.
-          if(x+w>157&&x<323)continue;
-          rect(x,y-h,w,h,wall[i%5]);
-          rect(x+w-7,y-h,7,h,depthTone(wall[i%5],-.19));
-          rect(x,y-3,w,3,depthTone(wall[i%5],-.32));
-          rect(x,y-h,w,1,depthTone(wall[i%5],.24));
-          rect(x,y-h,w,3,l.ink);
-          if(i%4===0)poly([[x-3,y-h],[x+w*.55,y-h-11],[x+w+3,y-h]],'#756961');
-          for(let k=0;k<3;k++)rect(x+5+k*13,y-h+7,8,9,'#6c8c91');
-          rect(x+2,y-15,w-4,13,'#5e7777');
-          rect(x+2,y-14,w-4,3,depthTone(wall[i%5],-.26));
-          rect(x+2,y-20,w-4,6,awning[i%5]);
-          for(let k=0;k<5;k++)rect(x+2+k*9,y-17,5,3,i%2?'#f2e0c3':'#eee4d6');
-          rect(x+4,y-11,12,9,'#a1c4c0');rect(x+w-17,y-11,13,9,'#a1c4c0');
-          rect(x+w/2-1,y-12,4,12,l.ink);
-          if(i%2===0){ctx.font='bold 5px monospace';ctx.fillStyle='#f1e4c9';ctx.fillText(names[i%5],x+3,y-16);}
+        // Distant, desaturated high street on either side of an OPEN vanishing
+        // corridor. Nearby shops are projected separately in world space.
+        const far=[
+          [-24,38,13],[21,28,23],[54,35,16],[94,22,24],
+          [122,20,18],[151,19,13],[174,13,9],
+          [291,16,9],[314,19,14],[337,24,23],[367,31,18],
+          [402,37,24],[443,42,17]
+        ];
+        ctx.save();ctx.globalAlpha*=.48;
+        for(let i=0;i<far.length;i++){
+          const [x,w,h]=far[i],col=['#84979d','#9ba2a4','#a3a7a0'][i%3];
+          rect(x,88-h,w,h,col);
+          rect(x+w*.78,88-h,Math.max(2,w*.22),h,depthTone(col,-.12));
+          if(i%3===0)rect(x+3,88-h-3,Math.max(7,w-6),3,depthTone(col,-.13));
+          for(let q=6;q<w-4;q+=9)rect(x+q,88-h+6,3,4,'#cfcdc0');
+        }
+        ctx.restore();
+        // A nearer roofline frames the road but stops outside the central
+        // sightline; there is deliberately no facade across the horizon.
+        const mid=[
+          [-35,57,30,'#b99485'],[24,46,35,'#93abb0'],
+          [76,41,29,'#c7a68a'],[119,36,28,'#a7a4a2'],
+          [324,37,27,'#afaaaa'],[367,44,32,'#8fa8a9'],
+          [418,73,38,'#b69b90']
+        ];
+        for(let i=0;i<mid.length;i++){
+          const [x,w,h,col]=mid[i],top=89-h;
+          rect(x,top,w,h,col);
+          rect(x+w-7,top,7,h,depthTone(col,-.18));
+          rect(x,top,w,3,depthTone(col,-.28));
+          if(i%3===0)poly([[x+3,top],[x+w*.50,top-8],[x+w-2,top]],'#676d71');
+          if(i%3===1)rect(x+6,top-4,Math.max(10,w-12),4,depthTone(col,-.20));
+          for(let q=8;q<w-5;q+=13){
+            rect(x+q,top+10,7,8,'#6d8d96');
+            rect(x+q,top+11,5,5,'#b0c9c7');
+          }
+          rect(x+3,81,w-6,4,['#b85f54','#61938e','#d4a668'][i%3]);
+          rect(x+5,85,w-10,4,'#597276');
         }
         return;
       }
@@ -830,43 +846,92 @@
       const distance=Math.max(0,time)*WORLD_UNITS_PER_MS;
       const paint=['#c08c79','#94aeb0','#d0ae8d','#99a4b6','#b58e91','#afad97'];
       const awning=['#c66e5e','#4f938b','#d2a35f','#8398b2'];
+      const glazing=['#a5c2c0','#d0c2aa','#a9bbca'];
+      function gapFurniture(lot,side,seed){
+        // Single roadside landmark per occasional group gap. All positions
+        // derive from lot distance, so scenery moves with the road, never HUD.
+        if(!lot.gap||seed%2!==0)return;
+        const z=lot.near+lot.gap*.55;
+        if(z<2.8||z>43)return;
+        const base=P.project(side*5.45-cameraLane,z),sc=Math.min(1.65,4.3/z);
+        if(base.x<3||base.x>477||base.y>272)return;
+        const x=base.x,y=base.y;
+        if(seed%6===0){
+          // A streetlamp with clear silhouette but minimal road intrusion.
+          const height=30*sc;
+          line(x,y,x,y-height,'#354e57',Math.max(1,2*sc));
+          rect(x-4*sc,y-height-2*sc,8*sc,3*sc,'#344952');
+          rect(x-3*sc,y-height,6*sc,2*sc,'#f4dfab');
+        }else if(seed%6===2){
+          // A tiny planter/tree, not a towering foreground prop.
+          rect(x-1.2*sc,y-10*sc,2.4*sc,10*sc,'#675b4a');
+          poly([[x-9*sc,y-11*sc],[x-7*sc,y-24*sc],
+            [x,y-29*sc],[x+8*sc,y-24*sc],[x+10*sc,y-11*sc]],
+            '#638969');
+          poly([[x,y-28*sc],[x+8*sc,y-24*sc],[x+10*sc,y-11*sc],
+            [x+2*sc,y-11*sc]],'#43755f');
+          rect(x-7*sc,y-3*sc,14*sc,3*sc,'#9c8779');
+        }else{
+          // Waste bin / pavement fixture with a grounded base.
+          rect(x-5*sc,y-11*sc,10*sc,10*sc,'#50766e');
+          rect(x-6*sc,y-11*sc,12*sc,2.5*sc,'#314f52');
+          rect(x-4*sc,y-1.5*sc,8*sc,1.5*sc,'#746f68');
+        }
+      }
       for(const side of [-1,1])for(const lot of streetLots(distance,side)){
         const {serial,near,buildingNear,far,gap,span}=lot;
         const seed=Math.abs(serial*17+(side<0?3:9));
         const n=Math.max(.55,buildingNear),f=far,lane=side*7.55;
         const h=2.85+(seed%6)*.25,col=paint[seed%paint.length],motif=Math.floor(seed/3)%4;
         const p=(z,y=0,outer=0)=>{const q=P.project(lane+side*outer-cameraLane,z);return[q.x,q.y-y*60/z];};
-        // Canvas clipping alone removes near buildings once their complete
-        // frontage leaves the view; size never caps or fades on approach.
+        // Same lot widths, world-space positions and natural clipping as before.
         const panel=(z0,z1,y0,y1,c)=>poly([p(z0,y0),p(z1,y0),p(z1,y1),p(z0,y1)],c);
         if(gap&&near+gap>.55){const a=Math.max(.55,near),b=near+gap;
-          poly([p(a,0),p(b,0),p(b,0,2.1),p(a,0,2.1)],'#6c7773');
+          poly([p(a,0),p(b,0),p(b,0,2.1),p(a,0,2.1)],'#778078');
         }
         panel(n,f,0,h,col);
-        panel(n,f,0,.12,depthTone(col,-.32));
-        panel(n,f,h-.10,h,depthTone(col,.26));
-        // Different roof profiles, all fixed to each world's lot serial.
-        if(motif===0)panel(n+.12,f-.12,h,h+.27,depthTone(col,-.28));
-        if(motif===1)poly([p(n,h),p(f,h),p((n+f)/2,h+.40)],'#756f70');
-        if(motif===2)panel(n,f,h-.23,h,depthTone(col,-.19));
-        // Narrow return face gives the party-wall seam a little painted shade.
-        if(buildingNear>.55)poly([p(n,0),p(n,h),p(n,h,gap?1.1:.22),p(n,0,gap?1.1:.22)],depthTone(col,-.22));
-        for(const z of [buildingNear+span*.25,buildingNear+span*.68]){
-          if(z-.32<n)continue;
-          panel(z-.24,z+.24,.35,1.12,'#435e64');
-          panel(z-.21,z+.21,.43,.98,'#9cb7b2');
-          panel(z-.32,z+.32,h-1.45,h-.43,'#526d72');
-          panel(z-.28,z+.28,h-1.35,h-.49,motif%2?'#c2bcb0':'#9dbec0');
-          panel(z-.02,z+.02,h-1.45,h-.43,depthTone(col,-.24));
+        // Chunky foundation and cornice shading give these blocks depth.
+        panel(n,f,0,.20,depthTone(col,-.32));
+        panel(n,f,h-.17,h,depthTone(col,.29));
+        if(motif===0)panel(n+.12,f-.12,h,h+.30,depthTone(col,-.29));
+        if(motif===1)poly([p(n,h),p(f,h),p((n+f)/2,h+.45)],'#746e70');
+        if(motif===2)panel(n,f,h-.24,h,depthTone(col,-.17));
+        if(motif===3)panel(n+.22,f-.22,h,h+.12,depthTone(col,-.27));
+        // Side return connects facade to a believable building volume.
+        if(buildingNear>.55){
+          poly([p(n,0),p(n,h),p(n,h,gap?1.10:.24),p(n,0,gap?1.10:.24)],depthTone(col,-.28));
+          if(gap)poly([p(n,h),p(n,h+.09),p(n,h+.09,1.1),p(n,h,1.1)],depthTone(col,-.16));
         }
-        // A shuttered workshop breaks up endless identical storefront windows.
+        const centers=motif===2?[.30,.72]:[.24,.68];
+        for(const ratio of centers){
+          const z=buildingNear+span*ratio;if(z-.34<n)continue;
+          const w=motif===2?.29:.23;
+          panel(z-w-.03,z+w+.03,h-1.50,h-.42,'#425c67');
+          panel(z-w,z+w,h-1.40,h-.52,glazing[seed%3]);
+          panel(z-.022,z+.022,h-1.40,h-.52,depthTone(col,-.27));
+          panel(z-w-.04,z+w+.04,h-1.52,h-1.47,depthTone(col,.23));
+          if(motif===1&&seed%4===1)panel(z-w-.04,z+w+.04,h-1.57,h-1.52,'#587c64');
+        }
         if(motif===2){
-          panel(n+.31,f-.31,.16,1.13,'#506b72');
-          for(let k=0;k<3;k++)panel(n+.34,f-.34,.39+k*.20,.43+k*.20,'#83999a');
-        }else panel(n,f,1.14,1.30,awning[seed%4]);
-        panel(n,f,1.06,1.14,depthTone(col,-.22));
-        const door=buildingNear+span*.49;
-        if(door-.13>.55)panel(door-.13,door+.13,.12,1.08,'#3f5b60');
+          // Workshop: broad shutter instead of a row of generic shop windows.
+          panel(n+.34,f-.34,.15,1.35,'#506973');
+          for(let k=0;k<4;k++)panel(n+.36,f-.36,.37+k*.20,.41+k*.20,'#8da3a1');
+          panel(n+.24,f-.24,1.36,1.47,'#d0b477');
+        }else{
+          // Shaded projecting canopy and colour band; deliberately bold at 480px.
+          const color=awning[seed%awning.length];
+          panel(n,f,1.14,1.32,color);
+          poly([p(n,1.33),p(f,1.33),p(f,1.22,-.54),p(n,1.22,-.54)],
+            depthTone(color,.19));
+          panel(n,f,1.06,1.14,depthTone(color,-.27));
+          const door=buildingNear+span*.51;
+          if(door-.13>.55)panel(door-.13,door+.13,.12,1.07,'#3b585e');
+          if(motif===3){
+            panel(n+.32,f-.32,.36,.97,'#47666e');
+            panel(n+.36,f-.36,.42,.91,glazing[(seed+1)%3]);
+          }
+        }
+        gapFurniture(lot,side,seed);
       }
     }
     function weatherFX(weather,time,motion) {
