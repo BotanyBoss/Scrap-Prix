@@ -112,11 +112,13 @@
       }
       if(p==='suburb'){
         // Distinct from downtown: low high-street buildings and colourful shopfronts.
-        const wall=['#b88f7b','#a88e83','#a5a69b','#a7aa9c','#c4a68a'];
+        const wall=['#c08c79','#94aeb0','#d0ae8d','#99a4b6','#b58e91'];
         const awning=['#ba6256','#d2ae6b','#508d88','#b7816c','#7992a4'];
         const names=['TYRES','CAFE','PARTS','BAKERY','TOOLS'];
         for(let i=0;i<11;i++){
-          const x=i*48-15,y=89,w=47,h=26+(i%3)*7;
+          const x=i*48-15,y=89,w=43,h=20+(i%3)*7;
+          // Keep the race's vanishing point open; distant scenery frames the road.
+          if(x+w>157&&x<323)continue;
           rect(x,y-h,w,h,wall[i%5]);
           rect(x+w-7,y-h,7,h,depthTone(wall[i%5],-.19));
           rect(x,y-3,w,3,depthTone(wall[i%5],-.32));
@@ -826,13 +828,13 @@
     }
     function drawStreetFrontage(time,cameraLane){
       const distance=Math.max(0,time)*WORLD_UNITS_PER_MS;
-      const paint=['#b38e79','#9baba4','#b7a18c','#8f9fa1','#ba9b85'];
-      const awning=['#b65f50','#568881','#c59d60','#777f91'];
+      const paint=['#c08c79','#94aeb0','#d0ae8d','#99a4b6','#b58e91','#afad97'];
+      const awning=['#c66e5e','#4f938b','#d2a35f','#8398b2'];
       for(const side of [-1,1])for(const lot of streetLots(distance,side)){
         const {serial,near,buildingNear,far,gap,span}=lot;
         const seed=Math.abs(serial*17+(side<0?3:9));
         const n=Math.max(.55,buildingNear),f=far,lane=side*7.55;
-        const h=3.0+(seed%4)*.38,col=paint[seed%paint.length];
+        const h=2.85+(seed%6)*.25,col=paint[seed%paint.length],motif=Math.floor(seed/3)%4;
         const p=(z,y=0,outer=0)=>{const q=P.project(lane+side*outer-cameraLane,z);return[q.x,q.y-y*60/z];};
         // Canvas clipping alone removes near buildings once their complete
         // frontage leaves the view; size never caps or fades on approach.
@@ -843,6 +845,10 @@
         panel(n,f,0,h,col);
         panel(n,f,0,.12,depthTone(col,-.32));
         panel(n,f,h-.10,h,depthTone(col,.26));
+        // Different roof profiles, all fixed to each world's lot serial.
+        if(motif===0)panel(n+.12,f-.12,h,h+.27,depthTone(col,-.28));
+        if(motif===1)poly([p(n,h),p(f,h),p((n+f)/2,h+.40)],'#756f70');
+        if(motif===2)panel(n,f,h-.23,h,depthTone(col,-.19));
         // Narrow return face gives the party-wall seam a little painted shade.
         if(buildingNear>.55)poly([p(n,0),p(n,h),p(n,h,gap?1.1:.22),p(n,0,gap?1.1:.22)],depthTone(col,-.22));
         for(const z of [buildingNear+span*.25,buildingNear+span*.68]){
@@ -850,10 +856,14 @@
           panel(z-.24,z+.24,.35,1.12,'#435e64');
           panel(z-.21,z+.21,.43,.98,'#9cb7b2');
           panel(z-.32,z+.32,h-1.45,h-.43,'#526d72');
-          panel(z-.28,z+.28,h-1.35,h-.49,'#9db6af');
+          panel(z-.28,z+.28,h-1.35,h-.49,motif%2?'#c2bcb0':'#9dbec0');
           panel(z-.02,z+.02,h-1.45,h-.43,depthTone(col,-.24));
         }
-        panel(n,f,1.14,1.30,awning[seed%4]);
+        // A shuttered workshop breaks up endless identical storefront windows.
+        if(motif===2){
+          panel(n+.31,f-.31,.16,1.13,'#506b72');
+          for(let k=0;k<3;k++)panel(n+.34,f-.34,.39+k*.20,.43+k*.20,'#83999a');
+        }else panel(n,f,1.14,1.30,awning[seed%4]);
         panel(n,f,1.06,1.14,depthTone(col,-.22));
         const door=buildingNear+span*.49;
         if(door-.13>.55)panel(door-.13,door+.13,.12,1.08,'#3f5b60');
