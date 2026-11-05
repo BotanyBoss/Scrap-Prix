@@ -850,8 +850,8 @@
       function gapFurniture(lot,side,seed){
         // Single roadside landmark per occasional group gap. All positions
         // derive from lot distance, so scenery moves with the road, never HUD.
-        if(!lot.gap||seed%2!==0)return;
-        const z=lot.near+lot.gap*.55;
+        if(!lot.gap&&seed%5!==0)return;
+        const z=lot.gap?lot.near+lot.gap*.55:lot.buildingNear+lot.span*.45;
         if(z<2.8||z>43)return;
         const base=P.project(side*5.45-cameraLane,z),sc=Math.min(1.65,4.3/z);
         if(base.x<3||base.x>477||base.y>272)return;
