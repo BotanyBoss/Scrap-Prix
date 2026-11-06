@@ -847,7 +847,10 @@
     }
     function drawStreetWorkshop(lot,side,cameraLane,height){
       if(!streetTyreWorkshop.complete||!streetTyreWorkshop.naturalWidth)return false;
-      const n=Math.max(.55,lot.buildingNear),f=lot.far;
+      // A workshop has a double-width unit, not the narrow footprint of a house.
+      // It overlays the next existing facade without moving street lots or
+      // changing their timing; when the workshop exits, normal lots remain.
+      const n=Math.max(.55,lot.buildingNear),f=lot.far+lot.span;
       if(n>=f)return true;
       const imageWidth=streetTyreWorkshop.naturalWidth,imageHeight=streetTyreWorkshop.naturalHeight;
       const steps=64;
