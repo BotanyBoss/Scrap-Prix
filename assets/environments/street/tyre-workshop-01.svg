@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 216" width="256" height="216">
+<title>Scrap Tyres: illustrated retro racing street workshop facade</title>
+<defs>
+  <linearGradient id="brick" x2="1" y2="0"><stop stop-color="#8f473d"/><stop offset=".22" stop-color="#bd6952"/><stop offset=".7" stop-color="#ca7859"/><stop offset="1" stop-color="#8b4c46"/></linearGradient>
+  <linearGradient id="metal" x2="0" y2="1"><stop stop-color="#a6c1bb"/><stop offset=".48" stop-color="#597b80"/><stop offset="1" stop-color="#314b59"/></linearGradient>
+  <linearGradient id="window" x2="0" y2="1"><stop stop-color="#e4d6b0"/><stop offset=".28" stop-color="#85b6b6"/><stop offset="1" stop-color="#2c596a"/></linearGradient>
+  <linearGradient id="roof" x2="0" y2="1"><stop stop-color="#7d8581"/><stop offset="1" stop-color="#3d4d51"/></linearGradient>
+</defs>
+<!-- Physical silhouette with real stepped parapet, deep recess, and side edge -->
+<path d="M8 43 18 39V24H65V14H184V24H233V40L246 45V203H8Z" fill="#32464d" stroke="#29363d" stroke-width="5" stroke-linejoin="round"/>
+<path d="M14 48 23 43V28H66V20H179V29H232V45L240 48V200H14Z" fill="url(#brick)"/>
+<path d="M14 48 240 48V64H14Z" fill="#e5b783"/><path d="M14 60H240V72H14Z" fill="#715149"/>
+<path d="M12 44 31 37 242 40 246 49H9Z" fill="url(#roof)" stroke="#2c414a" stroke-width="4"/>
+<path d="M15 49 241 49" stroke="#d6d6bd" stroke-width="3"/><path d="M21 31H64V20H181V31H229" fill="none" stroke="#e7c393" stroke-width="3"/>
+<!-- Main signage: expressive chunky graphics, not arbitrary rectangular walls -->
+<path d="M33 54H222L214 98H39Z" fill="#273e49" stroke="#e7c799" stroke-width="4"/>
+<path d="M41 62H215L208 89H48Z" fill="#315e66"/>
+<path d="M43 62 67 62 59 88H51Z" fill="#e48d61" opacity=".7"/>
+<text x="128" y="79" fill="#ffe0a5" stroke="#183943" stroke-width="1.1" paint-order="stroke" font-family="DejaVu Sans,Arial,sans-serif" font-size="21" font-weight="900" text-anchor="middle" letter-spacing="1.2">SCRAP TYRES</text>
+<path d="M43 91H210L204 98H47Z" fill="#b2614d"/>
+<!-- Steel canopy: clearly projected off the front face -->
+<path d="M28 102H226L238 116H20Z" fill="#e6c48e" stroke="#283f47" stroke-width="4" stroke-linejoin="round"/>
+<path d="M26 112H235L229 126H31Z" fill="#ad5546" stroke="#293e44" stroke-width="3"/>
+<path d="M45 113 58 113 51 123H38ZM80 113H94L89 123H74ZM117 113H131L129 123H115ZM155 113H169L174 123H161ZM194 113H208L219 123H206Z" fill="#f0d9a5"/>
+<!-- Garage recess, extruded rim, housing and shadow -->
+<path d="M38 124H181V206H36Z" fill="#354d55" stroke="#203741" stroke-width="6"/>
+<path d="M45 130H173V203H45Z" fill="url(#metal)" stroke="#d9b88b" stroke-width="3"/>
+<path d="M50 134H169V140H50ZM50 147H169V150H50ZM50 159H169V162H50ZM50 171H169V174H50ZM50 183H169V186H50ZM50 195H169V198H50Z" fill="#bdd0c4" opacity=".8"/>
+<path d="M50 141H169M50 153H169M50 165H169M50 177H169M50 189H169" stroke="#314b55" stroke-width="3"/>
+<path d="M54 139V199M164 139V199" stroke="#d2c9a9" stroke-width="2" opacity=".45"/>
+<path d="M34 124H44V203H34ZM174 124H184V203H174Z" fill="#d0ad7a"/>
+<path d="M34 151 44 142V155L34 164ZM174 151 184 142V155L174 164ZM34 184 44 175V187L34 196ZM174 184 184 175V187L174 196Z" fill="#39464a"/>
+<!-- Shop entrance with projecting sill and reflections -->
+<path d="M191 133H225V204H191Z" fill="#223e48" stroke="#e6ba7f" stroke-width="4"/>
+<path d="M195 138H221V183H195Z" fill="url(#window)"/>
+<path d="M196 170 219 141V156L199 182H196Z" fill="#d3e1d0" opacity=".48"/>
+<path d="M195 183H221V200H195Z" fill="#81554a"/>
+<circle cx="216" cy="177" r="2.6" fill="#f6d58e"/><path d="M188 204H230L233 209H184Z" fill="#8d7866"/>
+<!-- Workshop identity props: tyres, yellow safety stripes, wall vent -->
+<g stroke="#263941" stroke-width="3">
+  <ellipse cx="19" cy="187" rx="12" ry="16" fill="#27383f"/><ellipse cx="19" cy="187" rx="6" ry="9" fill="#7e9691"/>
+  <ellipse cx="26" cy="193" rx="13" ry="14" fill="#23383f"/><ellipse cx="26" cy="193" rx="6" ry="7" fill="#a2b0a1"/>
+  <path d="M197 105H218V110H197Z" fill="#dfab64"/>
+</g>
+<path d="M13 125H31V151H13Z" fill="#3f5a5a" stroke="#253d45" stroke-width="3"/>
+<path d="M17 130H27M17 136H27M17 142H27" stroke="#c3c7af" stroke-width="2"/>
+<!-- Restrained masonry joints, corner shadow, ground contact -->
+<g stroke="#8b5149" stroke-width="1.5" opacity=".58">
+  <path d="M18 81H33M18 98H35M18 169H30M18 180H27M227 83H238M228 141H238M228 160H238M228 182H238"/>
+</g>
+<path d="M234 53H240V201H233Z" fill="#6f4243" opacity=".8"/>
+<path d="M9 205H247L240 212H14Z" fill="#39464b" opacity=".45"/>
+<path d="M15 202H239" stroke="#e6bb8a" stroke-width="3"/>
+</svg>
