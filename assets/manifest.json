@@ -28,5 +28,8 @@
     "mime": "image/png",
     "sha256": "ac3fad71725d4dc99c936c0eb65b4e5f1eeda10e4ae10e4a62231fd48b273078",
     "bytes": 22013
+  },
+  "assets/environments/street/tyre-workshop-01.svg": {
+    "mime": "image/svg+xml"
   }
 }
