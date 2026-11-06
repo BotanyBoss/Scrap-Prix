@@ -8,6 +8,10 @@
   const C=['#17282e','#435b64','#839da5','#d4e1df'];
   const car=new Image(); car.src='{{ASSET:assets/embedded/f6d969de51fe300a.png}}';
   const title=new Image(); title.src='{{ASSET:assets/embedded/ac3fad71725d4dc9.png}}';
+  // Reversible Street-only visual test. The normal race view stays unchanged unless opted in.
+  const STREET_WORKSHOP_TEST = window.SCRAP_STREET_WORKSHOP_TEST===true ||
+    (typeof location!=='undefined' && (/(?:\?|&)workshopTest=1(?:&|$)/.test(location.search) || /STREET-PREVIEW\.html$/i.test(location.pathname)));
+  const streetWorkshop=new Image();streetWorkshop.src='{{ASSET:assets/embedded/street-tyre-workshop-test.png}}';
   // Shared visual world-space timeline. Road markings, terrain details and
   // roadside props advance at the same rate. No gameplay code reads this.
   const WORLD_UNITS_PER_MS=.0033;
@@ -111,6 +115,7 @@
         return;
       }
       if(p==='suburb'){
+        if(STREET_WORKSHOP_TEST)return; // sparse workshop test: clear static high-street silhouettes
         // Distinct from downtown: low high-street buildings and colourful shopfronts.
         const wall=['#b88f7b','#a88e83','#a5a69b','#a7aa9c','#c4a68a'];
         const awning=['#ba6256','#d2ae6b','#508d88','#b7816c','#7992a4'];
@@ -774,7 +779,10 @@
         line(a.x,a.y-1,b.x,b.y-16,r.edge,2);line(a.x,a.y+1,b.x,b.y-10,r.curb,2);
       }
       // Street is a connected frontage behind the pavement, not prop houses.
-      if(s.tag==='suburb')drawStreetFrontage(time,cameraLane);
+      if(s.tag==='suburb'){
+        if(STREET_WORKSHOP_TEST)drawStreetWorkshopRoadside(time,cameraLane);
+        else drawStreetFrontage(time,cameraLane);
+      }
       // Procedural, repeatable roadside progression. Prop serial and size
       // remain stable from distant to near frames, and left/right are no longer
       // a mirrored pair of identical objects every 4 world units.
@@ -858,6 +866,32 @@
         const door=buildingNear+span*.49;
         if(door-.13>.55)panel(door-.13,door+.13,.12,1.08,'#3f5b60');
       }
+    }
+    // Test-only Street landmark. Every workshop retains the same world position
+    // as camera distance advances. The sparse alternating intervals allow an
+    // actual motion/scale check without unrelated roadside props or houses.
+    function drawStreetWorkshopRoadside(time,cameraLane){
+      let visible=0;
+      if(streetWorkshop.complete&&streetWorkshop.naturalWidth){
+        const distance=Math.max(0,Number.isFinite(time)?time:0)*WORLD_UNITS_PER_MS;
+        const spacing=68;
+        // Stagger the two sides, avoiding mirrored pairs.
+        for(const side of [-1,1]){
+          const offset=side<0?12:46;
+          const cycle=Math.floor((distance-offset)/spacing);
+          for(let serial=cycle+2;serial>=cycle;serial--){
+            const z=serial*spacing+offset-distance;
+            if(z<.65||z>68)continue;
+            const ground=P.project(side*8.7-cameraLane,z);
+            const h=270/z,w=h*streetWorkshop.naturalWidth/streetWorkshop.naturalHeight;
+            if(ground.x+w/2<0||ground.x-w/2>480)continue;
+            ctx.drawImage(streetWorkshop,Math.round(ground.x-w/2),Math.round(ground.y-h),Math.round(w),Math.round(h));
+            visible++;
+          }
+        }
+      }
+      canvas.dataset.streetWorkshopVisible=String(visible);
+      canvas.dataset.streetWorkshopTest='1';
     }
     function weatherFX(weather,time,motion) {
       // Reusable weather particles; fallback retains old behaviour if module is absent.

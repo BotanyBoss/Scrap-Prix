@@ -28,5 +28,10 @@
     "mime": "image/png",
     "sha256": "ac3fad71725d4dc99c936c0eb65b4e5f1eeda10e4ae10e4a62231fd48b273078",
     "bytes": 22013
+  },
+  "assets/embedded/street-tyre-workshop-test.png": {
+    "mime": "image/png",
+    "sha256": "d7a8ff78b7f67cc3bb28990185887a091951d5d51ea07e1f3f11a33099994836",
+    "bytes": 9677
   }
 }
