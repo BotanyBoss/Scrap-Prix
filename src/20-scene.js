@@ -867,31 +867,78 @@
         if(door-.13>.55)panel(door-.13,door+.13,.12,1.08,'#3f5b60');
       }
     }
-    // Test-only Street landmark. Every workshop retains the same world position
-    // as camera distance advances. The sparse alternating intervals allow an
-    // actual motion/scale check without unrelated roadside props or houses.
+    // Test-only Street landmark, textured onto an oblique world-plane.
+    // The face has a real range of depths rather than growing as one billboard.
     function drawStreetWorkshopRoadside(time,cameraLane){
       let visible=0;
       if(streetWorkshop.complete&&streetWorkshop.naturalWidth){
         const distance=Math.max(0,Number.isFinite(time)?time:0)*WORLD_UNITS_PER_MS;
-        const spacing=68;
-        // Stagger the two sides, avoiding mirrored pairs.
+        const spacing=68,trimRoad=.932;
         for(const side of [-1,1]){
           const offset=side<0?12:46;
           const cycle=Math.floor((distance-offset)/spacing);
           for(let serial=cycle+2;serial>=cycle;serial--){
-            const z=serial*spacing+offset-distance;
-            if(z<.65||z>68)continue;
-            const ground=P.project(side*8.7-cameraLane,z);
-            const h=270/z,w=h*streetWorkshop.naturalWidth/streetWorkshop.naturalHeight;
-            if(ground.x+w/2<0||ground.x-w/2>480)continue;
-            ctx.drawImage(streetWorkshop,Math.round(ground.x-w/2),Math.round(ground.y-h),Math.round(w),Math.round(h));
-            visible++;
+            const center=serial*spacing+offset-distance;
+            const near=center-2.0,far=center+2.0;
+            if(far<1.0||near>70)continue;
+            const height=4.7;
+            // Entire facade sits beyond the pavement edge, at an angle to
+            // the road. Its projected strips move past at different depths.
+            const projectFace=(t,y=0)=>{
+              const z=near+(far-near)*t;
+              if(z<=.75)return null;
+              const lateral=side*(12.7+(7.8-12.7)*t)-cameraLane;
+              const p=P.project(lateral,z);
+              return{x:p.x,y:p.y-y*60/z,z};
+            };
+            const faceNear=projectFace(0),faceFar=projectFace(1);
+            if(faceFar&&faceNear){
+              const mid=projectFace(.5);
+              if(mid){
+                ctx.save();ctx.strokeStyle='rgba(35,38,38,.38)';
+                ctx.lineWidth=Math.max(1,Math.min(6,16/mid.z));
+                ctx.beginPath();ctx.moveTo(faceNear.x,faceNear.y+1);
+                ctx.lineTo(faceFar.x,faceFar.y+1);ctx.stroke();ctx.restore();
+              }
+            }
+            // A solid return wall adds actual volume at the near corner.
+            if(faceNear){
+              const zEnd=Math.max(1,near+1.55);
+              const backGround=P.project(side*14.7-cameraLane,zEnd);
+              const backTop={x:backGround.x,y:backGround.y-height*60/zEnd};
+              const top=projectFace(0,height);
+              if(top){
+                poly([[faceNear.x,faceNear.y],[backGround.x,backGround.y],
+                      [backTop.x,backTop.y],[top.x,top.y]],'#45535a');
+                line(faceNear.x,faceNear.y,backGround.x,backGround.y,'#ab6b40',1.5);
+                line(top.x,top.y,backTop.x,backTop.y,'#aa5b3f',1.5);
+              }
+            }
+            // Texture the oblique front in depth-sorted slices. Trim the
+            // asphalt painted into the source, but preserve tyres and paint.
+            const slices=128,sw=streetWorkshop.naturalWidth,sh=streetWorkshop.naturalHeight*trimRoad;
+            let wasVisible=false;
+            for(let i=0;i<slices;i++){
+              const i0=side<0?slices-1-i:i;
+              const u0=i0/slices,u1=(i0+1)/slices;
+              const p0=projectFace(side<0?u0:1-u0),p1=projectFace(side<0?u1:1-u1);
+              if(!p0||!p1)continue;
+              const x0=Math.min(p0.x,p1.x),x1=Math.max(p0.x,p1.x);
+              if(x1<0||x0>480)continue;
+              const w=Math.max(1.0,x1-x0+0.9);
+              const za=(p0.z+p1.z)/2;
+              const bottom=(p0.y+p1.y)/2;
+              const h=height*60/za;
+              ctx.drawImage(streetWorkshop,u0*sw,0,(u1-u0)*sw,sh,
+                            x0,bottom-h,w,h);
+              wasVisible=true;
+            }
+            if(wasVisible)visible++;
           }
         }
       }
       canvas.dataset.streetWorkshopVisible=String(visible);
-      canvas.dataset.streetWorkshopTest='1';
+      canvas.dataset.streetWorkshopTest='2';
     }
     function weatherFX(weather,time,motion) {
       // Reusable weather particles; fallback retains old behaviour if module is absent.
