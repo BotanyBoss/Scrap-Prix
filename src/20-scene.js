@@ -8,6 +8,9 @@
   const C=['#17282e','#435b64','#839da5','#d4e1df'];
   const car=new Image(); car.src='{{ASSET:assets/embedded/f6d969de51fe300a.png}}';
   const title=new Image(); title.src='{{ASSET:assets/embedded/ac3fad71725d4dc9.png}}';
+  // First actual illustrated Street asset; embedded with the standalone build.
+  const streetTyreWorkshop=new Image();
+  streetTyreWorkshop.src='{{ASSET:assets/environments/street/tyre-workshop-01.svg}}';
   // Shared visual world-space timeline. Road markings, terrain details and
   // roadside props advance at the same rate. No gameplay code reads this.
   const WORLD_UNITS_PER_MS=.0033;
@@ -842,6 +845,33 @@
       }
       return lots.sort((a,b)=>b.near-a.near);
     }
+    function drawStreetWorkshop(lot,side,cameraLane,height){
+      if(!streetTyreWorkshop.complete||!streetTyreWorkshop.naturalWidth)return false;
+      const n=Math.max(.55,lot.buildingNear),f=lot.far;
+      if(n>=f)return true;
+      const imageWidth=streetTyreWorkshop.naturalWidth,imageHeight=streetTyreWorkshop.naturalHeight;
+      const steps=64;
+      // Perspective-map the authored image onto the existing world-anchored
+      // facade. Columns preserve the road's true 1/z scaling at both edges,
+      // unlike a screen-space billboard or a fake diagonal JS rectangle.
+      ctx.save();ctx.imageSmoothingEnabled=false;
+      for(let i=0;i<steps;i++){
+        const x0=i/steps,x1=(i+1)/steps;
+        const z0=n+(f-n)*x0,z1=n+(f-n)*x1;
+        const a=P.project(side*7.55-cameraLane,z0),b=P.project(side*7.55-cameraLane,z1);
+        const t0=a.y-height*60/z0,t1=b.y-height*60/z1;
+        const sx=Math.floor(imageWidth*x0),sx1=Math.floor(imageWidth*x1);
+        if(sx1<=sx)continue;
+        // Narrow enough slices retain the vertical perspective tilt.
+        const dx=Math.min(a.x,b.x),dw=Math.abs(a.x-b.x)+.5;
+        if(dw<.15||dx>481||dx+dw<-.5)continue;
+        const top=Math.min(t0,t1),bottom=Math.max(a.y,b.y);
+        ctx.drawImage(streetTyreWorkshop,sx,0,sx1-sx,imageHeight,
+          dx,top,dw,bottom-top);
+      }
+      ctx.restore();
+      return true;
+    }
     function drawStreetFrontage(time,cameraLane){
       const distance=Math.max(0,time)*WORLD_UNITS_PER_MS;
       const paint=['#c08c79','#94aeb0','#d0ae8d','#99a4b6','#b58e91','#afad97'];
@@ -888,6 +918,12 @@
         const panel=(z0,z1,y0,y1,c)=>poly([p(z0,y0),p(z1,y0),p(z1,y1),p(z0,y1)],c);
         if(gap&&near+gap>.55){const a=Math.max(.55,near),b=near+gap;
           poly([p(a,0),p(b,0),p(b,0,2.1),p(a,0,2.1)],'#778078');
+        }
+        // Reuse ONE approved-asset candidate in Street; all other buildings
+        // retain their existing renderer until separately reviewed.
+        if(side<0&&serial%11===0&&drawStreetWorkshop(lot,side,cameraLane,h)){
+          gapFurniture(lot,side,seed);
+          continue;
         }
         panel(n,f,0,h,col);
         // Chunky foundation and cornice shading give these blocks depth.
