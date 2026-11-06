@@ -867,61 +867,56 @@
         if(door-.13>.55)panel(door-.13,door+.13,.12,1.08,'#3f5b60');
       }
     }
-    // Test-only Street landmark, textured onto an oblique world-plane.
-    // The face has a real range of depths rather than growing as one billboard.
+    // Street TEST ONLY: shopfront frontage is parallel to the road and
+    // uses exactly the same frontage line as the existing Street building lots.
     function drawStreetWorkshopRoadside(time,cameraLane){
       let visible=0;
-      if(streetWorkshop.complete&&streetWorkshop.naturalWidth){
+      if(streetWorkshop.complete && streetWorkshop.naturalWidth){
         const distance=Math.max(0,Number.isFinite(time)?time:0)*WORLD_UNITS_PER_MS;
-        const spacing=68,trimRoad=1;
+        const spacing=68, width=6.4, height=4.25, frontageX=7.55;
         for(const side of [-1,1]){
           const offset=side<0?12:46;
           const cycle=Math.floor((distance-offset)/spacing);
           for(let serial=cycle+2;serial>=cycle;serial--){
             const center=serial*spacing+offset-distance;
-            const near=center-3.2,far=center+3.2;
-            if(far<1.0||near>70)continue;
-            const height=4.25;
-            // Entire facade sits beyond the pavement edge, at an angle to
-            // the road. Its projected strips move past at different depths.
-            const projectFace=(t,y=0)=>{
-              const z=near+(far-near)*t;
-              if(z<=.75)return null;
-              const lateral=side*7.55-cameraLane;
-              const p=P.project(lateral,z);
-              return{x:p.x,y:p.y-y*60/z,z};
+            const near=center-width/2,far=center+width/2;
+            if(far<=.75 || near>=75)continue;
+            const frontPoint=(z,y=0)=>{
+              if(z<=.68)return null;
+              const p=P.project(side*frontageX-cameraLane,z);
+              return {x:p.x,y:p.y-y*60/z,z};
             };
-            const faceNear=projectFace(0),faceFar=projectFace(1);
-            if(faceFar&&faceNear){
-              const mid=projectFace(.5);
-              if(mid){
-                ctx.save();ctx.strokeStyle='rgba(35,38,38,.38)';
-                ctx.lineWidth=Math.max(1,Math.min(6,16/mid.z));
-                ctx.beginPath();ctx.moveTo(faceNear.x,faceNear.y+1);
-                ctx.lineTo(faceFar.x,faceFar.y+1);ctx.stroke();ctx.restore();
-              }
+            const near0=frontPoint(near),far0=frontPoint(far);
+            if(near0 && far0){
+              const shadowNear=P.project(side*(frontageX+.42)-cameraLane,near);
+              const shadowFar=P.project(side*(frontageX+.42)-cameraLane,far);
+              poly([[near0.x,near0.y],[far0.x,far0.y],
+                    [shadowFar.x,shadowFar.y],[shadowNear.x,shadowNear.y]],'rgba(43,36,32,.32)');
             }
-            // This shop is a unit in a continuous Street row, so no exposed side-wall slab.
-            // Texture the oblique front in depth-sorted slices. Trim the
-            // asphalt painted into the source, but preserve tyres and paint.
-            const slices=128,sw=streetWorkshop.naturalWidth,sh=streetWorkshop.naturalHeight*trimRoad;
-            let wasVisible=false;
-            for(let i=0;i<slices;i++){
-              const i0=side<0?slices-1-i:i;
-              const u0=i0/slices,u1=(i0+1)/slices;
-              const p0=projectFace(side<0?u0:1-u0),p1=projectFace(side<0?u1:1-u1);
-              if(!p0||!p1)continue;
-              const x0=Math.min(p0.x,p1.x),x1=Math.max(p0.x,p1.x);
-              if(x1<0||x0>480)continue;
-              const w=Math.max(1.0,x1-x0+0.9);
-              const za=(p0.z+p1.z)/2;
-              const bottom=(p0.y+p1.y)/2;
-              const h=height*60/za;
-              ctx.drawImage(streetWorkshop,u0*sw,0,(u1-u0)*sw,sh,
-                            x0,bottom-h,w,h);
-              wasVisible=true;
+            // A shop in a continuous row has no exposed end-wall slab.
+            const closest=Math.max(.8,near);
+            const screenNear=frontPoint(closest),screenFar=frontPoint(far);
+            if(!screenNear||!screenFar)continue;
+            const screenSpan=Math.abs(screenNear.x-screenFar.x);
+            const slices=Math.max(14,Math.min(128,Math.ceil(screenSpan*1.5)));
+            const sw=streetWorkshop.naturalWidth,sh=streetWorkshop.naturalHeight;
+            let drawn=false;
+            for(let i=slices-1;i>=0;i--){
+              const t0=i/slices,t1=(i+1)/slices;
+              const z0=near+width*t0,z1=near+width*t1;
+              const a=frontPoint(z0),b=frontPoint(z1);
+              if(!a||!b)continue;
+              const left=Math.min(a.x,b.x),right=Math.max(a.x,b.x);
+              if(right<-.5||left>480.5)continue;
+              const u0=side<0?t0:1-t0,u1=side<0?t1:1-t1;
+              const srcX=Math.min(u0,u1)*sw,srcW=Math.abs(u1-u0)*sw;
+              const zMid=(z0+z1)/2,ground=P.project(side*frontageX-cameraLane,zMid);
+              const h=height*60/zMid;
+              ctx.drawImage(streetWorkshop,srcX,0,srcW,sh,
+                            left-.12,ground.y-h,Math.max(.7,right-left+.24),h);
+              drawn=true;
             }
-            if(wasVisible)visible++;
+            if(drawn)visible++;
           }
         }
       }
