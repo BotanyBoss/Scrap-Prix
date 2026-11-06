@@ -921,7 +921,7 @@
         }
         // Reuse ONE approved-asset candidate in Street; all other buildings
         // retain their existing renderer until separately reviewed.
-        if(side<0&&serial%11===0&&drawStreetWorkshop(lot,side,cameraLane,h)){
+        if(side<0&&((serial%9+9)%9)===4&&drawStreetWorkshop(lot,side,cameraLane,h)){
           gapFurniture(lot,side,seed);
           continue;
         }
