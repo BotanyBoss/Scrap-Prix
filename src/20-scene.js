@@ -11,7 +11,7 @@
   // Reversible Street-only visual test. The normal race view stays unchanged unless opted in.
   const STREET_WORKSHOP_TEST = window.SCRAP_STREET_WORKSHOP_TEST===true ||
     (typeof location!=='undefined' && (/(?:\?|&)workshopTest=1(?:&|$)/.test(location.search) || /STREET-PREVIEW\.html$/i.test(location.pathname)));
-  const streetWorkshop=new Image();streetWorkshop.src='{{ASSET:assets/embedded/street-tyre-workshop-test.png}}';
+  const streetWorkshop=new Image();streetWorkshop.src='data:image/png;base64,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';
   // Shared visual world-space timeline. Road markings, terrain details and
   // roadside props advance at the same rate. No gameplay code reads this.
   const WORLD_UNITS_PER_MS=.0033;
@@ -873,21 +873,21 @@
       let visible=0;
       if(streetWorkshop.complete&&streetWorkshop.naturalWidth){
         const distance=Math.max(0,Number.isFinite(time)?time:0)*WORLD_UNITS_PER_MS;
-        const spacing=68,trimRoad=.932;
+        const spacing=68,trimRoad=1;
         for(const side of [-1,1]){
           const offset=side<0?12:46;
           const cycle=Math.floor((distance-offset)/spacing);
           for(let serial=cycle+2;serial>=cycle;serial--){
             const center=serial*spacing+offset-distance;
-            const near=center-2.0,far=center+2.0;
+            const near=center-3.2,far=center+3.2;
             if(far<1.0||near>70)continue;
-            const height=4.7;
+            const height=4.25;
             // Entire facade sits beyond the pavement edge, at an angle to
             // the road. Its projected strips move past at different depths.
             const projectFace=(t,y=0)=>{
               const z=near+(far-near)*t;
               if(z<=.75)return null;
-              const lateral=side*(12.7+(7.8-12.7)*t)-cameraLane;
+              const lateral=side*7.55-cameraLane;
               const p=P.project(lateral,z);
               return{x:p.x,y:p.y-y*60/z,z};
             };
@@ -901,19 +901,7 @@
                 ctx.lineTo(faceFar.x,faceFar.y+1);ctx.stroke();ctx.restore();
               }
             }
-            // A solid return wall adds actual volume at the near corner.
-            if(faceNear){
-              const zEnd=Math.max(1,near+1.55);
-              const backGround=P.project(side*14.7-cameraLane,zEnd);
-              const backTop={x:backGround.x,y:backGround.y-height*60/zEnd};
-              const top=projectFace(0,height);
-              if(top){
-                poly([[faceNear.x,faceNear.y],[backGround.x,backGround.y],
-                      [backTop.x,backTop.y],[top.x,top.y]],'#45535a');
-                line(faceNear.x,faceNear.y,backGround.x,backGround.y,'#ab6b40',1.5);
-                line(top.x,top.y,backTop.x,backTop.y,'#aa5b3f',1.5);
-              }
-            }
+            // This shop is a unit in a continuous Street row, so no exposed side-wall slab.
             // Texture the oblique front in depth-sorted slices. Trim the
             // asphalt painted into the source, but preserve tyres and paint.
             const slices=128,sw=streetWorkshop.naturalWidth,sh=streetWorkshop.naturalHeight*trimRoad;
@@ -938,7 +926,7 @@
         }
       }
       canvas.dataset.streetWorkshopVisible=String(visible);
-      canvas.dataset.streetWorkshopTest='2';
+      canvas.dataset.streetWorkshopTest='3';
     }
     function weatherFX(weather,time,motion) {
       // Reusable weather particles; fallback retains old behaviour if module is absent.
