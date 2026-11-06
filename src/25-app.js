@@ -19,7 +19,7 @@
     'deep-sand':'dune-shortcut'
   });
   const SHORTCUT_RE=/^(wreckage|overgrown|flooded|dune|frozen-lake)-shortcut$/;
-  const KEY='scrap-prix-v0400-systems-run-v21',RECORDS='scrap-prix-v0400-records',SETTINGS='scrap-prix-v0320-visual-options';
+  const KEY='scrap-prix-v0400-systems-run-v21',RECORDS='scrap-prix-v0400-records',SETTINGS='scrap-prix-v0320-visual-options',SKIP_HINT='scrap-prix-skip-hint-seen';
   const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=n=>Number(n).toLocaleString('en-GB');
   const signed=n=>n>0?'+'+n:String(n);
@@ -47,7 +47,7 @@
   let screen='title',replay=null,raf=0,renderer=null,lastTick=null,lastPhase=-1,lastRaceDisplay='';
   let raceBefore=null,raceChoices={};
   let modalKind=null,shopFilter='all',pendingConfirm=null,returnFocus=null,resumePause=false,resultTab='finish';
-  let storageNotice='WORK IN PROGRESS';
+  let storageNotice='WORK IN PROGRESS',skipHintSeen=false;
   const survived=s=>Math.max(0,s.raceIndex-(s.noStartStrikes||0)-(s.finished==='wrecked'?1:0));
   function notify(text,error=false){$('status').textContent=text;$('status').dataset.error=error?'true':'false';}
   function readRecords(raw){try{const v=JSON.parse(raw);if(Number.isInteger(v?.bestRaces)&&Number.isInteger(v?.bestPoints)&&v.bestRaces>=0&&v.bestRaces<=9999999&&v.bestPoints>=0&&v.bestPoints<=1000000000)return {bestRaces:v.bestRaces,bestPoints:v.bestPoints};}catch(_){}return {bestRaces:0,bestPoints:0};}
@@ -67,6 +67,7 @@
     }
   }}catch(_){blocked=true;storageNotice='SAVE UNAVAILABLE';}
   try {prefs=normalizeSettings(JSON.parse(localStorage.getItem(SETTINGS)||'{}'),!prefs.motion);}catch(_){}
+  try {skipHintSeen=localStorage.getItem(SKIP_HINT)==='1';}catch(_){}
   function persist(){
     if(blocked){storageNotice='AUTO-SAVE PAUSED';$('save-status').textContent=storageNotice;return;}
     try{if(hasRun)localStorage.setItem(KEY,E.encodeSave(state));localStorage.setItem(RECORDS,JSON.stringify(records));storageNotice='SAVED LOCALLY';}
@@ -87,7 +88,8 @@
     const efficiency=Math.round(E.conditionEfficiency(v)*100),up=E.partUpgradeQuote(state,slot),level=E.equipmentLevel(state.levels[slot]);
     const mark=p.price?`LV ${level}`:'STARTER / LV 0';
     const upgrading=!up.purchased?'FIND A REAL PART':up.atCap?'MAX LV 10':up.marketLocked?`MARKET LV ${up.marketLevel} · TUNE LOCKED`:up.alreadyUsed?'BUILD ACTION USED':up.affordable?`TUNE TO LV ${up.targetLevel} / £${money(up.cost)}`:`LV ${up.targetLevel} NEED £${money(up.cost)}`;
-    const control=`<button class="tune-button" data-action="upgrade-part" data-id="${slot}" ${up.affordable?'':'disabled'} title="Tune this exact part +1 level. Condition and repair history stay unchanged.">${upgrading}</button>`;
+    const risk=critical&&v>0&&['engine','tyres'].includes(slot)?'<div class="part-risk">CAN FAIL IN RACE: 0% causes a DNF, no rewards and no strike. At 0% before the start: no start and +1 strike.</div>':'';
+    const control=`${risk}<button class="tune-button" data-action="upgrade-part" data-id="${slot}" ${up.affordable?'':'disabled'} title="Tune this exact part +1 level. Condition and repair history stay unchanged.">${upgrading}</button>`;
     return `<article class="part-slot ${critical?'critical':''} ${v===0&&['engine','tyres'].includes(slot)?'no-start':''}" data-slot="${slot}"><div class="slot-headrow"><canvas class="part-mini" data-part-art="${slot}" aria-hidden="true"></canvas><div class="slot-copy"><div class="slot-title"><b>${icon(slot)}${P.pretty(slot)}</b><small>${mark}</small></div><p class="part-name" title="${esc(p.name)}">${esc(p.name)}</p></div></div><div class="condition-label"><span>${v===0?(['engine','tyres'].includes(slot)?'NO START':'BROKEN'):critical?'CRITICAL':'CONDITION'}</span><b>${v}%</b></div><div class="output-status ${efficiency<95?'worn-output':''}">${v===0?'NO OUTPUT':efficiency===100?'FULL PERFORMANCE':`POSITIVE STATS ${efficiency}% EFFECTIVE`}</div><progress max="100" value="${v}" aria-label="${P.pretty(slot)} durability ${v}%"></progress><button class="repair-button" data-action="repair" data-id="${slot}" ${q.amount===0||state.wrenches<q.cost?'disabled':''}>${q.amount?`REPAIR +${q.amount} / ${q.cost} W`:'FULL CONDITION'}</button>${control}<p>${['engine','tyres'].includes(slot)?'0% means no start, automatic 5th and +1 strike': '0% = 0 stats + no perks, still fitted'} · Next repair ${q.amount?q.cost:state.repairs[slot]+1} W · Tuning never repairs</p></article>`;
   }
   function garageMarkup(){
@@ -230,7 +232,7 @@
   function tick(time){
     if(screen!=='race'||!replay)return;
     const delta=lastTick===null?0:Math.min(100,Math.max(0,time-lastTick));lastTick=time;
-    if(!document.hidden&&!replay.paused&&prefs.autoplay)replay.elapsed=Math.min(replay.total,replay.elapsed+delta*prefs.speed);
+    if(!document.hidden&&!$('confirm-modal').open&&!replay.paused&&prefs.autoplay)replay.elapsed=Math.min(replay.total,replay.elapsed+delta*prefs.speed);
     updateRace();if(replay.elapsed>=replay.total){showResult();return;}raf=requestAnimationFrame(tick);
   }
   // Replay pacing: chosen and forced detours take 9.5s at 1x, allowing
@@ -383,7 +385,15 @@
         }
         case 'pause':if(replay){const f=P.frame(replay,replay.elapsed);if(f.step.choice&&!Object.hasOwn(raceChoices,f.step.choice.key)){notify('Choose a route before continuing.',true);return;}replay.paused=!replay.paused;updateRace();}break;
         case 'next-phase':if(replay){const f=P.frame(replay,replay.elapsed);if(f.step.choice&&!Object.hasOwn(raceChoices,f.step.choice.key)){notify('Choose a route before continuing.',true);return;}replay.elapsed=P.nextTime(replay,replay.elapsed);if(replay.elapsed>=replay.total)showResult();else updateRace();}break;
-        case 'skip':if(screen==='race')showResult();break;
+        case 'skip':if(screen==='race'){
+          if(skipHintSeen)showResult();
+          else ask('SKIP THE REPLAY?',`<p>Skipping finishes the replay immediately. Any route choices you have not made will take the <b>safe route</b>; choices you already made are kept.</p><p>You can continue watching if you want to make those choices yourself.</p>`,()=>{
+            skipHintSeen=true;
+            let saved=true;try{localStorage.setItem(SKIP_HINT,'1');}catch(_){saved=false;}
+            if(screen==='race')showResult();
+            if(!saved)notify('Skip explanation will be shown again if browser storage is unavailable.');
+          },'SKIP REPLAY');
+        }break;
         case 'speed':if([1,2,3,4].includes(Number(id)))setSpeed(Number(id));break;
         case 'continue':state=E.continueRun(state);persist();changeScreen('garage');notify('New shop stock and your build action is available again.');break;
         case 'replay-seed':askNew(state.seed);break;
@@ -420,5 +430,3 @@
   window.addEventListener('beforeunload',()=>{stopRenderer();if(DEV_MODE)window.ScrapVisualLab.dispose();if(ENV_LAB)window.ScrapEnvironmentLab.dispose();});
   render(false);notify(blocked?'A previous save could not be read. It has not been overwritten. Use Options to import or start a new run.':'Your decisions in the garage. The consequences on the track.',blocked);
 })();
-
-
