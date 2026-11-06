@@ -12,7 +12,9 @@ def build():
         if path not in manifest:raise ValueError('Unknown asset: '+path)
         return 'data:'+manifest[path]['mime']+';base64,'+base64.b64encode((ROOT/path).read_bytes()).decode('ascii')
     text=re.sub(r'\{\{ASSET:([^}]+)\}\}',embed,text)
-    if re.search(r'\{\{(?:SCRIPT|STYLE|ASSET):',text):raise ValueError('Unresolved build token')
+    game=json.loads(read('src/game.config.json'))['name']
+    text=text.replace('{{GAME_NAME_UPPER}}',game.upper()).replace('{{GAME_NAME_FILE}}',re.sub(r'\s+','-',game)).replace('{{GAME_NAME}}',game)
+    if re.search(r'\{\{(?:SCRIPT|STYLE|ASSET|GAME_NAME[A-Z_]*)[:}]',text):raise ValueError('Unresolved build token')
     anchor=text[text.index('<a href="FOSSIL-TEST-DRIVE.html"'):]
     play=text.replace(anchor,'').replace('window.SCRAP_PRIX_DEV_MODE=true;','window.SCRAP_PRIX_DEV_MODE=false;')
     panel=read('previews/environment-panel.html').replace('\r\n','\n').replace("const c=$('canvas')", "$('env').value='street';const c=$('canvas')")

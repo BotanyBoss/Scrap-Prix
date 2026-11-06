@@ -1,0 +1,4 @@
+{
+  "name": "Scrap Prix",
+  "note": "Working title. Change only this value; the build fills {{GAME_NAME}}, {{GAME_NAME_UPPER}} and {{GAME_NAME_FILE}} everywhere."
+}

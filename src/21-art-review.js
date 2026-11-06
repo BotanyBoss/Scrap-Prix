@@ -81,7 +81,7 @@
   }
   function report(all){
    const data=serialize(all);
-   return [`SCRAP PRIX / ${kind.toUpperCase()} ART REVIEWS`,`${data.reviewed} rated · ${data.catalogueSize} core assets · ${data.exportedAt}`,
+   return [`{{GAME_NAME_UPPER}} / ${kind.toUpperCase()} ART REVIEWS`,`${data.reviewed} rated · ${data.catalogueSize} core assets · ${data.exportedAt}`,
     ...data.reviews.map(r=>`[${(r.rating||'NOT RATED').toUpperCase()}] ${r.name} (${r.itemId})${r.notes?'\n'+r.notes:''}`)].join('\n\n');
   }
   function attach(root,{current,candidates,onNavigate}){
@@ -140,7 +140,7 @@
    function download(){
     const body=JSON.stringify(serialize(reviews),null,2)+'\n';
     const url=URL.createObjectURL(new Blob([body],{type:'application/json'}));
-    const anchor=document.createElement('a');anchor.href=url;anchor.download=`Scrap-Prix-${kind==='vehicle'?'Vehicle':'Environment'}-Art-Feedback-${new Date().toISOString().slice(0,10)}.json`;
+    const anchor=document.createElement('a');anchor.href=url;anchor.download=`{{GAME_NAME_FILE}}-${kind==='vehicle'?'Vehicle':'Environment'}-Art-Feedback-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
     status('Feedback exported. Upload the JSON to our chat for review.');
    }
@@ -171,7 +171,7 @@
     try{
      if(file.size>2_000_000)throw Error('Feedback file is too large');
      const incoming=JSON.parse(await file.text());
-     if(incoming.format!==FORMAT||incoming.schemaVersion!==SCHEMA||incoming.kind!==kind||!Array.isArray(incoming.reviews))throw Error('Choose a matching Scrap Prix art feedback JSON');
+     if(incoming.format!==FORMAT||incoming.schemaVersion!==SCHEMA||incoming.kind!==kind||!Array.isArray(incoming.reviews))throw Error('Choose a matching {{GAME_NAME}} art feedback JSON');
      const normalized=normalize(incoming),n=Object.keys(normalized).length;
      if(!n)throw Error('No recognised reviews in that file');
      Object.assign(reviews,normalized);const ok=persist();refresh();

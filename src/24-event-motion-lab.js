@@ -195,7 +195,7 @@
  }
  function textReviewExport(records){
   const report=createReviewExport(records);
-  const lines=[`SCRAP PRIX EVENT VISUAL FEEDBACK / ${report.build}`,
+  const lines=[`{{GAME_NAME_UPPER}} EVENT VISUAL FEEDBACK / ${report.build}`,
    `Reviewed ${report.reviewed}/${report.catalogueSize} | Not ready ${report.counts['not-ready']} | Rework ${report.counts.rework} | Polish ${report.counts.polish} | Good ${report.counts.good} | Standout ${report.counts.standout}`,''];
   for(const review of report.reviews){
    lines.push(`[${review.rating?reviewOptionById[review.rating].label:'NOTE ONLY'}] ${review.name} (${review.eventId}) / ${review.category}`);
@@ -213,7 +213,7 @@
   <div class="motion-layout">
    <section class="motion-stage">
     <div class="motion-stage-head"><strong id="motion-scene-title">SPRING TRAP</strong><small id="motion-family">LAUNCHING / 1000 ms</small></div>
-    <canvas id="motion-canvas" aria-label="Event animation preview on Scrap Prix's race track"></canvas>
+    <canvas id="motion-canvas" aria-label="Event animation preview on {{GAME_NAME}}'s race track"></canvas>
     <div class="motion-timeline"><label for="motion-timeline-slider">FRAME / TIMELINE</label><input id="motion-timeline-slider" type="range" min="0" max="1000" step="10" value="0"><output id="motion-time-value">0 / 1000 ms</output></div>
     <section class="motion-beat-editor" id="motion-beat-editor" hidden aria-label="Event timing beat editor">
       <div class="motion-beat-heading"><strong>FAMILY TIMING / FIVE BEATS</strong><button type="button" data-motion-action="beats-reset">RESTORE DEFAULTS</button></div>
@@ -288,7 +288,7 @@
   function exportFile(){
    const body=JSON.stringify(createReviewExport(reviews),null,2)+'\n';
    const blob=new Blob([body],{type:'application/json'}),url=URL.createObjectURL(blob);
-   const a=document.createElement('a');a.href=url;a.download=`Scrap-Prix-Event-Feedback-${new Date().toISOString().slice(0,10)}.json`;
+   const a=document.createElement('a');a.href=url;a.download=`{{GAME_NAME_FILE}}-Event-Feedback-${new Date().toISOString().slice(0,10)}.json`;
    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
    announce('Feedback JSON exported. Upload that file in our chat so I can read your votes.');
   }
@@ -408,7 +408,7 @@
     try{
      if(file.size>2_000_000)throw Error('File exceeds 2 MB');
      const incoming=JSON.parse(await file.text());
-     if(incoming.format!==REVIEW_FORMAT||incoming.schemaVersion!==1||!Array.isArray(incoming.reviews))throw Error('Not a Scrap Prix event-feedback export');
+     if(incoming.format!==REVIEW_FORMAT||incoming.schemaVersion!==1||!Array.isArray(incoming.reviews))throw Error('Not a {{GAME_NAME}} event-feedback export');
      const imported=normalizeReviews(incoming);
      Object.assign(reviews,imported);persistReviews();updateReviewUI();render();
      announce(`Imported ${Object.keys(imported).length} event reviews. Export JSON again after changes.`);

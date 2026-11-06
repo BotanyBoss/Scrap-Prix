@@ -72,7 +72,7 @@
     }
     function downloadFrame(){
       const url=canvas.toDataURL('image/png');const a=document.createElement('a');
-      a.href=url;a.download=`Scrap-Prix-Environment-${preset}-${weather}.png`;
+      a.href=url;a.download=`{{GAME_NAME_FILE}}-Environment-${preset}-${weather}.png`;
       document.body.appendChild(a);a.click();a.remove();message('PNG preview exported from the current game renderer.');
     }
     function pinFrame(){
@@ -101,7 +101,7 @@
         name:Env.RECIPES[preset].name+' (Custom)',components:{...components},
         note:'Visual-only DEV recipe. Not a saved run or gameplay track.'};
       const text=JSON.stringify(payload,null,2),blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download=`scrap-prix-environment-${preset}-${++previewIndex}.json`;
+      const a=document.createElement('a');a.href=url;a.download=`{{GAME_NAME_FILE}}-environment-${preset}-${++previewIndex}.json`;
       document.body.appendChild(a);a.click();a.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1800);
       message('Environment JSON download requested. This does not affect your saved game.');

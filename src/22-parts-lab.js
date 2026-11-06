@@ -111,7 +111,7 @@ window.SCRAP_PRIX_DEV_MODE=true;
     }
     function downloadFrame(){
       const a=document.createElement('a');a.href=root.querySelector('#lab-main').toDataURL('image/png');
-      a.download=`Scrap-Prix-Vehicle-${surface}-${reviewScope}.png`;
+      a.download=`{{GAME_NAME_FILE}}-Vehicle-${surface}-${reviewScope}.png`;
       document.body.appendChild(a);a.click();a.remove();
     }
     root.addEventListener('click',e=>{

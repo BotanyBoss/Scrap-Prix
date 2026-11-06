@@ -4,21 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17282e">
-  <meta name="description" content="Scrap Prix DEV Fossil Art Review v0.7.23p: Event, Environment and Vehicle feedback tools plus campaign environment refinements.">
-  <title>Scrap Prix · Art Review Studio v0.7.23p</title>
+  <meta name="description" content="{{GAME_NAME}}: a racing roguelike where you build a wacky car and cartoon chaos happens along the way.">
+  <title>{{GAME_NAME}}</title>
   <style>{{STYLE:src/game.css}}</style>
 </head>
 <body>
   <a class="skip-link" href="#screen">Skip to game</a>
   <div id="game" class="game-frame" data-screen="title">
     <header id="topbar" class="topbar"></header>
-    <main id="screen" class="screen" tabindex="-1" aria-label="Scrap Prix"></main>
-    <footer class="statusbar"><span id="status" role="status" aria-live="polite">Loading game…</span><span id="save-status">ART REVIEW LABS / v0.7.23p</span></footer>
+    <main id="screen" class="screen" tabindex="-1" aria-label="{{GAME_NAME}}"></main>
+    <footer class="statusbar"><span id="status" role="status" aria-live="polite">Loading game…</span><span id="save-status">WORK IN PROGRESS</span></footer>
   </div>
   <dialog id="modal" class="game-dialog" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
   <dialog id="confirm-modal" class="game-dialog confirm-dialog" aria-labelledby="confirm-title"><div id="confirm-content"></div></dialog>
   <input id="save-file" type="file" accept=".json,application/json" hidden>
-  <noscript>Scrap Prix needs JavaScript enabled. This standalone game makes no network requests.</noscript>
+  <noscript>{{GAME_NAME}} needs JavaScript enabled. This standalone game makes no network requests.</noscript>
   <script>{{SCRIPT:src/00-legacy-catalogue.js}}</script>
   <script>{{SCRIPT:src/01-legacy-engine.js}}</script>
   <script>{{SCRIPT:src/02-catalogue.js}}</script>
