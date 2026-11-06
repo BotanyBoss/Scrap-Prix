@@ -46,6 +46,8 @@ The build embeds source and assets in their original order. `{{ASSET:path}}` tok
 ```sh
 python scripts/build.py
 node tests/check.cjs
+node tests/determinism.cjs
+node tests/smoke.cjs   # needs Chrome/Chromium and Node 22+
 ```
 
 Checks cover script syntax, all 17 exact gag recipes and near-matches, finite vehicle projections, gameplay-to-visual IDs, Street house counts, gap widths and motion continuity. Browser visual review is still necessary for artwork and animations.
@@ -62,6 +64,6 @@ Environment work proceeds **one environment at a time**, then weather conditions
 
 Gag-vehicle artwork and animation are deferred to the owner for a later Pixel Animation Studio pass. Preserve existing vehicle work while editing environments. Gameplay, economy, save rules and event probabilities are outside the current visual-polish scope.
 
-See [project status](docs/PROJECT-STATUS.md), [asset provenance](docs/ASSET-PROVENANCE.md) and [GitHub setup](docs/GITHUB-SETUP.md).
+See [game design](docs/DESIGN.md), [project status](docs/PROJECT-STATUS.md), [asset provenance](docs/ASSET-PROVENANCE.md) and [GitHub setup](docs/GITHUB-SETUP.md).
 
 No open-source licence has been selected for this initial repository. No licence grant is implied by the handoff.
