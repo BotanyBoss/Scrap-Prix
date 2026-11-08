@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#15252c"><title>Scrap Prix • Real 3D / 2.5D Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#13232b;color:#eae8d8;font:15px/1.45 system-ui,sans-serif}
+header{padding:16px 24px;background:#1c343c;border-bottom:2px solid #486063;display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+h1{font-size:21px;letter-spacing:.03em;margin:0;color:#f6db93}h2{font-size:17px;margin:0 0 12px}
+#note{color:#aabebc;font-size:12px}main{max-width:1100px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(0,680px) 1fr;gap:18px}
+.card{border:1px solid #496168;border-radius:9px;background:#1c3139;padding:16px}
+#frame{display:block;width:100%;max-width:960px;image-rendering:pixelated;background:linear-gradient(#aab6bd,#e1be90);border:2px solid #93a5a4}
+#scene-box{background:#0e1d22;border-radius:7px;padding:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+button,select,input[type=file]{border:1px solid #778c8d;border-radius:5px;background:#29454c;color:#fff3d9;padding:8px 10px;min-height:35px;font:inherit}
+button{cursor:pointer}button:hover{background:#426770}select{max-width:100%;width:100%}input[type=color]{height:37px;width:54px;background:none;border:0;padding:0}
+label{font-weight:650;color:#e5ddbf;font-size:12px;display:block;margin:12px 0 5px}
+small{color:#acbfbc}#stats{display:flex;gap:13px;flex-wrap:wrap;padding:9px 3px;font-size:12px;color:#cbdfd7}
+p{margin:8px 0}#asset-status{font-size:12px;color:#b0d1c0;min-height:2em}
+#loading{color:#e8c686;font-size:13px}footer{color:#94aaa8;padding:14px;text-align:center;font-size:12px}
+@media(max-width:760px){main{display:block;padding:10px}main>*{margin-bottom:12px}header{padding:12px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"}}</script>
+</head>
+<body>
+<header><h1>SCRAP PRIX • 2.5D LAB</h1><span id="note">Real 3D geometry • Fixed straight-road camera • Isolated from saves and gameplay</span></header>
+<main>
+<section class="card">
+ <h2>Street • actual 3D depth test</h2>
+ <div id="scene-box"><canvas id="frame" width="480" height="270" aria-label="3D Street racing preview"></canvas></div>
+ <div id="stats"><span id="fps">FPS: —</span><span id="calls">Draw calls: —</span><span id="tri">Triangles: —</span><span id="distance">Road distance: 0</span></div>
+ <div class="row"><button id="toggle">Pause</button><button id="reset">Restart approach</button><button id="step">Advance 5 seconds</button>
+  <label style="margin:0">Speed <select id="speed" style="width:110px"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+ </div>
+ <p id="loading">Loading Three.js and preparing the 3D scene…</p>
+ <p><small>Every house has real front, side and roof geometry. The camera stays on a controlled straight rear view, just like Scrap Prix. No steering, collision physics or engine rewrite.</small></p>
+</section>
+<aside class="card">
+ <h2>Modular car • four slots</h2>
+ <label for="chassis">Chassis</label><select id="chassis"><option value="gt">Salvaged GT</option><option value="wagon">Wobble Wagon (shape comparison)</option></select>
+ <label for="engine">Engine</label><select id="engine"><option value="v8">Exposed V8</option><option value="boiler">Steam Boiler (shape comparison)</option></select>
+ <label for="tyres">Tyres</label><select id="tyres"><option value="road">Round-ish Tyres</option><option value="balloon">Balloon Tyres (shape comparison)</option></select>
+ <label for="gadget">Gadget</label><select id="gadget"><option value="fan">Desk Fan</option><option value="rocket">Rocket Pack (shape comparison)</option></select>
+ <label for="paint">Recolour bodywork</label><input type="color" id="paint" value="#5cb5a8">
+ <p><small>The four components have separate geometries and mounting groups. This scene uses procedural placeholders only; no Meshy credits spent.</small></p>
+ <hr style="border:0;border-top:1px solid #426067;margin:17px 0">
+ <h2>Test your Meshy export</h2>
+ <label for="glb">Load a local GLB model</label><input id="glb" type="file" accept=".glb,model/gltf-binary">
+ <div id="asset-status">A chosen GLB will replace a house on the left, scaled to the local street's building height. It stays local to your browser.</div>
+ <p><small>Import verifies real model geometry and materials. For production we'll standardise size, pivots, texture budgets and material names in Blender before export.</small></p>
+</aside>
+</main>
+<footer>Experimental rendering layer only • Main Scrap Prix gameplay and GitHub main branch unchanged</footer>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id);
+const WIDTH=480,HEIGHT=270;
+let renderer;
+try{
+ renderer=new THREE.WebGLRenderer({canvas:$('frame'),antialias:false,preserveDrawingBuffer:true,alpha:false});
+}catch(err){$('loading').textContent='WebGL could not start: '+err.message;throw err;}
+renderer.setPixelRatio(1);renderer.setSize(WIDTH,HEIGHT,false);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.NoToneMapping;
+renderer.setClearColor('#acbdc4');
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog('#b7c5c1',58,205);
+const camera=new THREE.PerspectiveCamera(49,WIDTH/HEIGHT,.15,420);
+camera.position.set(0,4.6,15);camera.lookAt(0,1.4,-28);
+scene.add(new THREE.HemisphereLight('#e6efff','#795c50',2.0));
+const sunlight=new THREE.DirectionalLight('#ffdab6',2.0);sunlight.position.set(-19,34,10);scene.add(sunlight);
+const mat=(color,extra={})=>new THREE.MeshLambertMaterial({color,...extra});
+const wallColors=['#b7846f','#a7a79f','#7797a4','#d2af80','#a27c72','#739a90'];
+const wallMats=wallColors.map(color=>mat(color));
+const roofs=['#514c56','#68605d','#875d4d','#596b6d'].map(color=>mat(color));
+const dark=mat('#202f37'),windowLit=mat('#ecb56e',{emissive:'#5d371b',emissiveIntensity:.35});
+const windowFrame=mat('#ddd2af'),lampYellow=new THREE.MeshBasicMaterial({color:'#f8d68d'});
+const asphalt=mat('#475257'),grass=mat('#729076'),pavement=mat('#9a9b95'),roadMark=mat('#dbc996');
+const unitBox=new THREE.BoxGeometry(1,1,1);
+function box(parent,w,h,d,material,x=0,y=0,z=0){
+ const m=new THREE.Mesh(unitBox,material);m.scale.set(w,h,d);m.position.set(x,y,z);parent.add(m);return m;
+}
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(250,510),grass);ground.rotation.x=-Math.PI/2;ground.position.z=-112;ground.position.y=-.07;scene.add(ground);
+box(scene,11.0,.10,330,asphalt,0,-.03,-115);
+for(const side of [-1,1]){
+ box(scene,3.2,.23,330,pavement,side*7.12,.08,-115);
+ box(scene,.20,.24,330,windowFrame,side*5.51,.07,-115);
+}
+const moving=[];
+for(let n=0;n<40;n++){
+ const dash=box(scene,.12,.027,3.1,roadMark,0,.045,12-n*8.6);
+ moving.push({object:dash,start:12-n*8.6,period:344});
+}
+function brickRoof(parent,depth,span,height,roofMaterial){
+ const shape=new THREE.Shape();shape.moveTo(-depth/2,0);shape.lineTo(0,1.55);shape.lineTo(depth/2,0);shape.closePath();
+ const geom=new THREE.ExtrudeGeometry(shape,{depth:span,bevelEnabled:false,steps:1});
+ const mesh=new THREE.Mesh(geom,roofMaterial);mesh.position.set(0,height,-span/2);parent.add(mesh);
+}
+function building(side,index){
+ const obj=new THREE.Group();
+ const store=index%7===0,roofed=!store&&index%3!==0;
+ const depth=7,span=9.7,height=store?4.2:6.0+(index%3)*.35;
+ const wall=wallMats[(index+Math.floor((side+1)*.5))%wallMats.length];
+ box(obj,depth,height,span,wall,0,height/2,0);
+ const face=side<0?1:-1;
+ const x=face*(depth/2+.055);
+ if(store){
+   box(obj,depth+.5,.38,span+.3,roofs[index%roofs.length],0,height+.07,0);
+   box(obj,.14,1.45,4.8,dark,x,1.45,0);
+   for(const dz of [-1.45,1.45])box(obj,.21,.95,1.6,windowLit,x+face*.09,1.65,dz);
+   box(obj,.18,.67,4.8,mat(index%2?'#c17d59':'#538d95'),x+face*.08,3.15,0);
+   box(obj,.22,.22,5.2,windowFrame,x+face*.12,3.45,0);
+ }else{
+   if(roofed)brickRoof(obj,depth+.6,span+.4,height,roofs[index%roofs.length]);
+   else box(obj,depth+.4,.44,span+.3,roofs[index%roofs.length],0,height+.08,0);
+   for(const y of [1.65,4.05])for(const dz of [-2.2,1.65]){
+     box(obj,.14,1.12,1.36,windowFrame,x,y,dz);
+     box(obj,.22,.82,1.06,windowLit,x+face*.12,y,dz);
+     box(obj,.25,.08,1.45,windowFrame,x+face*.15,y-.68,dz);
+   }
+   box(obj,.22,1.9,1.02,dark,x+.12*face,1.04,.22);
+   box(obj,.10,.25,.15,lampYellow,x+.26*face,1.23,.55);
+ }
+ obj.position.set(side*(9.1+depth/2),0,0);
+ return obj;
+}
+function lamp(side,i){
+ const group=new THREE.Group();
+ const poles=mat('#46535a');
+ const x=side*8.25;
+ box(group,.15,5,.15,poles,x,2.5,0);
+ box(group,.11,.12,1.9,poles,x,4.88,-side*.22);
+ const bulb=new THREE.Mesh(new THREE.SphereGeometry(.29,7,5),lampYellow);
+ bulb.position.set(x,4.78,-side*1.0);group.add(bulb);
+ return group;
+}
+const buildings=[];
+const ROWS=18,SPACING=13;
+for(const side of [-1,1])for(let i=0;i<ROWS;i++){
+ const b=building(side,i);const origin=-10-i*SPACING-(side>0?6.5:0);
+ b.position.z=origin;scene.add(b);
+ moving.push({object:b,start:origin,period:ROWS*SPACING});
+ buildings.push(b);
+ if(i%2===0){const pole=lamp(side,i);pole.position.z=origin-5;scene.add(pole);moving.push({object:pole,start:origin-5,period:ROWS*SPACING});}
+}
+const car=new THREE.Group();car.position.set(0,0,5.4);scene.add(car);
+const groups={chassis:new THREE.Group(),engine:new THREE.Group(),tyres:new THREE.Group(),gadget:new THREE.Group()};
+for(const g of Object.values(groups))car.add(g);
+const tireRubber=mat('#242b2d'),tireRim=mat('#b9b8a6'),engineMetal=mat('#697780'),accent=mat('#d7ad69'),gadMat=mat('#cf855c');
+let carPaint=mat('#5cb5a8');
+function removeChildren(group){for(const child of [...group.children]){group.remove(child);}}
+function constructCar(){
+ for(const g of Object.values(groups))removeChildren(g);
+ const wagon=$('chassis').value==='wagon';
+ carPaint.color.set($('paint').value);
+ box(groups.chassis,wagon?2.85:2.35,.65,wagon?3.9:3.5,carPaint,0,.65,0);
+ box(groups.chassis,wagon?2.55:2.1,.45,1.2,carPaint,0,1.05,-.50);
+ box(groups.chassis,1.9,.44,.9,dark,0,1.21,.0);
+ const boiler=$('engine').value==='boiler';
+ box(groups.engine,boiler?1.15:1.4,.7,boiler?1.25:1.0,engineMetal,0,1.22,1.4);
+ for(const x of [-.48,.48]){
+   const unit=new THREE.Mesh(new THREE.CylinderGeometry(boiler?.32:.18,boiler?.32:.18,boiler?1.15:.72,9),engineMetal);
+   unit.position.set(x,boiler?1.85:1.62,1.44);groups.engine.add(unit);
+ }
+ for(const side of [-1,1])for(const z of [-1.28,1.40]){
+   const balloon=$('tyres').value==='balloon';const radius=balloon?.79:.59;
+   const tyre=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,balloon?.57:.40,12),tireRubber);
+   tyre.rotation.z=Math.PI/2;tyre.position.set(side*(wagon?1.55:1.36),.60,z);groups.tyres.add(tyre);
+   const rim=new THREE.Mesh(new THREE.CylinderGeometry(radius*.48,radius*.48,.03,10),tireRim);
+   rim.rotation.z=Math.PI/2;rim.position.set(tyre.position.x+side*.32,.60,z);groups.tyres.add(rim);
+ }
+ if($('gadget').value==='rocket'){
+  for(const x of [-.55,.55]){
+   const c=new THREE.Mesh(new THREE.CylinderGeometry(.27,.38,1.2,10),gadMat);
+   c.rotation.x=Math.PI/2;c.position.set(x,1.36,2.0);groups.gadget.add(c);
+  }
+ }else{
+  const fan=new THREE.Mesh(new THREE.CylinderGeometry(.37,.37,.18,12),accent);
+  fan.rotation.x=Math.PI/2;fan.position.set(0,1.5,2.04);groups.gadget.add(fan);
+  for(let i=0;i<4;i++){const blade=box(groups.gadget,.15,.92,.08,tireRim,0,1.5,2.17);blade.rotation.z=i*Math.PI/4;}
+ }
+}
+for(const id of ['chassis','engine','tyres','gadget','paint'])$(id).addEventListener('input',constructCar);
+constructCar();
+const glbLoader=new GLTFLoader();let imported=null;
+$('glb').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ $('asset-status').textContent='Reading '+file.name+'…';
+ try{
+   const data=await file.arrayBuffer(),model=await glbLoader.parseAsync(data,'');
+   if(imported){scene.remove(imported);imported=null;}
+   const root=model.scene,bb=new THREE.Box3().setFromObject(root);
+   const size=bb.getSize(new THREE.Vector3()),middle=bb.getCenter(new THREE.Vector3());
+   if(!Number.isFinite(size.y)||size.y<=0)throw Error('Model has no usable height.');
+   root.position.sub(middle);root.position.y+=size.y/2;
+   root.scale.multiplyScalar(5.7/size.y);
+   imported=new THREE.Group();imported.position.set(-12.6,0,-26);imported.add(root);
+   scene.add(imported);$('asset-status').textContent='Loaded '+file.name+'. Geometry '+Math.round(size.x*100)/100+' × '+Math.round(size.y*100)/100+' × '+Math.round(size.z*100)/100+' source units; scaled to street height.';
+ }catch(err){$('asset-status').textContent='Could not load GLB: '+err.message;}
+});
+let running=true,roadDistance=0,last=0,frames=0,frameAccum=0;
+$('toggle').onclick=()=>{running=!running;$('toggle').textContent=running?'Pause':'Resume';};
+$('reset').onclick=()=>{roadDistance=0;};
+$('step').onclick=()=>{roadDistance+=45;};
+function frame(now){
+ const dt=Math.min(.055,last?(now-last)/1000:0);last=now;
+ if(running)roadDistance+=dt*9*Number($('speed').value);
+ for(const item of moving){
+   const z=item.start+roadDistance;
+   item.object.position.z=z>22?z-item.period*(Math.floor((z-22)/item.period)+1):z;
+ }
+ car.position.y=Math.sin(now/160)*.015;
+ renderer.render(scene,camera);
+ frames++;frameAccum+=dt;
+ if(frameAccum>=.5){
+   const info=renderer.info.render;
+   $('fps').textContent='FPS: '+Math.round(frames/frameAccum);
+   $('calls').textContent='Draw calls: '+info.calls;
+   $('tri').textContent='Triangles: '+info.triangles;
+   $('distance').textContent='Distance: '+Math.floor(roadDistance);
+   frames=0;frameAccum=0;
+ }
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+$('loading').textContent='Real 3D loaded. This is the actual Street/camera prototype, not a painted mockup.';
+</script>
+</body></html>
