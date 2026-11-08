@@ -34,6 +34,8 @@
   const known=(s,definition)=>!definition.hidden||(s.discoveredGags||[]).includes('tank');
   function bountyOffer(s){
     if(s.phase!=='garage'||s.finished)return null;
+    // Once accepted, the same displayed offer stays on the board until the next race.
+    if(s.bountyAcceptedAt===s.raceIndex&&s.bountyOfferedId)return lookup(s.bountyOfferedId);
     const inUse=new Set(active(s).map(x=>x.id));
     const available=types.filter(t=>!inUse.has(t.id)&&(t.id!=='comeback'||s.history?.length));
     if(!available.length)return null;
@@ -58,6 +60,7 @@
     const next=clone(s);
     next.bounties=[...active(s),{id,remaining:offer.races,progress:0}];
     next.bountyAcceptedAt=s.raceIndex;
+    next.bountyOfferedId=id;
     return next;
   }
   function damagePenalty(s,amount,slot){
@@ -182,6 +185,10 @@
     if(input.bountyAcceptedAt!==undefined){
       if(!nonneg(input.bountyAcceptedAt,input.raceIndex))throw Error('Invalid bounty acceptance index.');
       output.bountyAcceptedAt=input.bountyAcceptedAt;
+    }
+    if(input.bountyOfferedId!==undefined){
+      if(!lookup(input.bountyOfferedId)||input.bountyAcceptedAt===undefined)throw Error('Invalid current bounty offer.');
+      output.bountyOfferedId=input.bountyOfferedId;
     }
     if(input.bountyCoupons!==undefined){
       if(!nonneg(input.bountyCoupons,3))throw Error('Invalid bounty voucher count.');
