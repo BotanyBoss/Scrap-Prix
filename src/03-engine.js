@@ -141,10 +141,11 @@
   }
   function shopOffers(s){
     const round=s.shopRefreshes;integer(round,0,T.maxShopRefreshes,'shop refresh count');
-    if(round===0)return stockForRound(s,0);
+    const restrict=offers=>s.bountyPenalties?.shopOne>0?offers.slice(0,1):offers;
+    if(round===0)return restrict(stockForRound(s,0));
     const previous=stockForRound({...s,shopRefreshes:0},0),before=previous.map(o=>`${o.id}:${o.level}`).join('|');
-    for(let attempt=0;attempt<24;attempt++){const offers=stockForRound(s,round,attempt);if(offers.map(o=>`${o.id}:${o.level}`).join('|')!==before)return offers;}
-    return previous;
+    for(let attempt=0;attempt<24;attempt++){const offers=stockForRound(s,round,attempt);if(offers.map(o=>`${o.id}:${o.level}`).join('|')!==before)return restrict(offers);}
+    return restrict(previous);
   }
   function shopRefreshQuote(s){
     garage(s);const market=marketLevel(s.raceIndex),cost=Math.max(50,round5(freshPrice(market)*.40));
