@@ -42,7 +42,7 @@ for(const def of D.FAKE_PASS_EVENTS)assert((D.FAKE_PASS_EVENT_WEIGHTS?.[def.id]|
 // Sweep independent deterministic course cards. Do not count invented event choices.
 const seenWild=new Set(),seenAnomaly=new Set(),seenTrack=new Set();
 const samples=new Map(),stageSeen=new Set();let cards=0,choices=0;
-for(let seed=1;seed<=320;seed++)for(let race=0;race<90;race++){
+for(let seed=1;seed<=1500;seed++)for(let race=0;race<100;race++){
  const c=E.raceCard(seed,race);seenTrack.add(c.trackId);cards++;
  assert(c.lapCount>=3&&c.lapCount<=7);
  let choiceCount=0;
@@ -56,7 +56,7 @@ for(let seed=1;seed<=320;seed++)for(let race=0;race<90;race++){
    if(event.stage&&event.stage>1)stageSeen.add(event.id);
    if(!samples.has(event.id))samples.set(event.id,[]);
    const examples=samples.get(event.id);
-   if(examples.length<8&&race<50)examples.push({seed,race,event});
+   if(examples.length<12&&race<85)examples.push({seed,race,event});
  }
  assert(choiceCount<=1,'Two incompatible choices in one race');
  choices+=choiceCount;
