@@ -195,6 +195,39 @@
     let value;try{value=JSON.parse(text);}catch{throw Error('This is not valid JSON.');}
     return E.validateSave(value);
   };
+  // Small UI fragments. Keeping bounty display here avoids duplicating rules in the garage UI.
+  const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function activeBountyMarkup(s){
+    const owned=active(s),p=penalties(s);
+    const warnings=[p.repairLock>0?'NO NORMAL REPAIRS: '+p.repairLock+' garage(s)':null,
+      p.shopOne>0?'SHOP LIMITED TO ONE OFFER':null,p.extraEvent>0?'NEXT RACE HAS AN EXTRA BAD EVENT':null].filter(Boolean);
+    return `<section class="bounty-ledger frame-light" aria-label="Active bounty contracts">
+      <div class="bounty-ledger-head"><h3>ACTIVE BOUNTIES</h3><small>${owned.length}/3 SLOTS</small></div>
+      ${warnings.map(t=>`<p class="bounty-warning">${esc(t)}</p>`).join('')}
+      <div class="bounty-slots">${[0,1,2].map(i=>{
+        const entry=owned[i];if(!entry)return '<div class="bounty-slot empty">EMPTY BOUNTY SLOT</div>';
+        const d=visibleBounty(s,entry);
+        return `<div class="bounty-slot"><b>${esc(d.title)}</b><small>${d.remaining} RACE(S) LEFT</small>
+          <span>${esc(d.goal)}</span><small>WIN: ${esc(d.reward)}</small>
+          <small class="bounty-loss">FAIL: ${esc(d.failure)}</small>
+          <button data-action="cancel-bounty" data-id="${d.id}">CANCEL = FAILURE</button></div>`;
+      }).join('')}</div>
+    </section>`;
+  }
+  function shopBountyMarkup(s){
+    const offer=bountyOffer(s);if(!offer)return '';
+    const d=visibleBounty(s,{id:offer.id,remaining:offer.races});
+    const full=active(s).length>=3,already=s.bountyAcceptedAt===s.raceIndex;
+    return `<section class="bounty-shop" aria-label="One optional bounty offer in this shop">
+      <header><h3>BOUNTY OF THE RACE</h3><small>ONE OFFER · ${3-active(s).length} SLOTS FREE</small></header>
+      <b>${esc(d.title)}</b><p>${esc(d.goal)}</p><small>DEADLINE: ${offer.races} RACE(S)</small>
+      <p class="bounty-win">SUCCESS: ${esc(offer.reward)}</p>
+      <p class="bounty-loss">FAILURE / CANCELLATION: ${esc(offer.failure)}</p>
+      <button data-action="accept-bounty" data-id="${offer.id}" ${full||already?'disabled':''}>${already?'ALREADY ACCEPTED THIS RACE':full?'ALL SLOTS FULL':'ACCEPT BOUNTY'}</button>
+    </section>`;
+  }
+  E.activeBountyMarkup=activeBountyMarkup;
+  E.shopBountyMarkup=shopBountyMarkup;
   E.bountyDefinitions=types;
   E.bountyOffer=bountyOffer;
   E.bountyDisplay=visibleBounty;
