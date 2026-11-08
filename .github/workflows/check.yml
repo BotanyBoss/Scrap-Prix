@@ -22,4 +22,5 @@ jobs:
       - run: node tests/recovery-stress.cjs
       - run: node tests/bounty.cjs
       - run: node tests/bounty-balance.cjs
+      - run: node tests/bounty-result-browser.cjs
       - run: node tests/smoke.cjs
