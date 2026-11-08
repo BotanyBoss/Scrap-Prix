@@ -453,9 +453,9 @@
       // Optional failed bounty produces a real, recorded extra bad incident.
       // Event generation and race RNG remain unchanged when no penalty is active.
       if(lap===1&&!failedSlot&&(s.bountyPenalties?.extraEvent||0)>0){
-        const def=eventDefinition({kind:'signature',id:'pothole-chain'});
+        const def=eventDefinition({kind:'wildcard',id:'pothole-chain'});
         if(def){
-          const hit=applyDamage(Math.round((def.extraDamage||4)*approach.wear*stressScale),def.target||'chassis','signature',def.id,def.score||-1,0,{bountyPenalty:true});
+          const hit=applyDamage(Math.round((def.extraDamage||4)*approach.wear*stressScale),def.target||'chassis','wildcard',def.id,def.score||-1,0,{bountyPenalty:true});
           hit.key='bounty-extra-'+s.raceIndex;record.effects.push(hit);
           incidentDamage+=hit.damage;eventScore+=hit.scoreDelta;
         }
