@@ -76,9 +76,19 @@ assert.equal(free.garageAction.kind,'replace');
 assert.deepEqual(clone(E.decodeSave(E.encodeSave(free)).loadout),free.loadout);
 
 let success=0,failed=0;
-for(let seed=1;seed<=30;seed++){
+const builds=[
+ {engine:'v8',tyres:'monster-treads',chassis:'boilerplate',gadget:'cooling-fan'},
+ {engine:'race-block',tyres:'speed-slicks',chassis:'carbon-lite',gadget:'aero-kit'},
+ {engine:'heavy-diesel',tyres:'steel-belt',chassis:'armoured-tub',gadget:'bolt-armour'},
+ {engine:'inline-four',tyres:'scrap-racer',chassis:'longbody',gadget:'deskfan'}
+];
+for(let seed=1;seed<=200;seed++){
   const s=clone(E.newRun(seed));
-  s.bounties=[{id:'third',remaining:1,progress:0}];s.bountyAcceptedAt=0;s.bountyOfferedId='third';
+  s.raceIndex=20;s.loadout=builds[seed%builds.length];
+  for(const slot of ['engine','tyres','chassis','gadget'])s.levels[slot]=E.part(s.loadout[slot]).price?6:0;
+  s.durability={engine:85,tyres:85,chassis:85,gadget:85};
+  s.approach=['careful','balanced','reckless'][seed%3];
+  s.bounties=[{id:'third',remaining:1,progress:0}];s.bountyAcceptedAt=20;s.bountyOfferedId='third';
   const out=clone(E.race(s)),r=out.history.at(-1);
   if(r.place===3&&!r.failedSlot&&!r.noStart){assert(r.bountyResults?.[0]?.success);success++;}
   else {assert.equal(r.bountyResults?.[0]?.success,false);failed++;}
