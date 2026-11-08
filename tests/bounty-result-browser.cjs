@@ -9,14 +9,15 @@ const pause=ms=>new Promise(ok=>setTimeout(ok,ms));
  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'scrap-bounty-result-'));
  const port=9700+Math.floor(Math.random()*600);
  const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
-    '--remote-debugging-port='+port,'--user-data-dir='+profile,'--window-size=1280,880','about:blank'],{stdio:'ignore'});
+    '--remote-debugging-port='+port,'--user-data-dir='+profile,'--window-size=1280,880','about:blank'],{stdio:['ignore','ignore','pipe']});
+ let chromeErrors='';chrome.stderr.on('data',data=>{chromeErrors=(chromeErrors+String(data)).slice(-2000);});
  let ws;const errors=[];
  try{
    let target;
-   for(let i=0;i<60&&!target;i++){await pause(200);try{
+   for(let i=0;i<100&&!target;i++){await pause(250);try{
      const all=await(await fetch('http://127.0.0.1:'+port+'/json')).json();target=all.find(x=>x.type==='page');
    }catch{}}
-   assert(target,'Chromium did not start');
+   assert(target,'Chromium did not start: '+(chromeErrors.slice(-900)||'no stderr')+' (exit '+chrome.exitCode+')');
    ws=new WebSocket(target.webSocketDebuggerUrl);
    await new Promise((yes,no)=>{ws.onopen=yes;ws.onerror=no;});
    const pending=new Map();let seq=0;

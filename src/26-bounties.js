@@ -5,20 +5,49 @@
   const E=window.ScrapEngine;
   if(!E)throw Error('ScrapEngine required before bounties');
   const clone=v=>JSON.parse(JSON.stringify(v));
-  const types=Object.freeze([
+  const GAGS=window.ScrapData.GAG_RECIPES;
+  const regularTypes=[
     {id:'third',title:'The Perfect Third',goal:'Finish exactly third in your next race.',races:1,
       reward:'Patch weakest critical part +20 condition',failure:'Next garage: one shop offer',weight:4},
+    {id:'second',title:'Second Best',goal:'Finish exactly second in your next race. Winning does not count.',races:1,
+      reward:'Patch weakest critical part +20 condition',failure:'Next garage: one shop offer',weight:3},
+    {id:'fourth',title:'Honourable Loser',goal:'Finish exactly fourth without retiring.',races:1,
+      reward:'+1 wrench',failure:'Engine loses 8 condition',weight:3},
+    {id:'fifth',title:'The Wooden Spoon',goal:'Finish exactly fifth without a breakdown or no-start.',races:1,
+      reward:'Patch weakest critical part +20 condition',failure:'An extra bad event in the next started race',weight:2},
+    {id:'match',title:'Déjà Vu',goal:'Match your previous finishing position exactly.',races:1,
+      reward:'+1 wrench',failure:'Next garage: one shop offer',weight:2},
+    {id:'drop',title:'From Hero to Zero',goal:'Finish at least two positions worse than your previous race, without retiring.',races:1,
+      reward:'Patch weakest critical part +20 condition',failure:'Tyres lose 12 condition',weight:2},
     {id:'reckless',title:'Against the Odds',goal:'Finish first or second while driving Reckless.',races:1,
       reward:'+1 wrench',failure:'Engine loses 12 condition',weight:4},
-    {id:'survivor',title:'Keep It Together',goal:'Finish two consecutive races without a critical part failing.',races:3,
+    {id:'balanced',title:'Middle Gear',goal:'Finish in the top three while driving Balanced.',races:1,
+      reward:'+1 wrench',failure:'An extra bad event in the next started race',weight:3},
+    {id:'careful',title:'Slow and Steady',goal:'Finish in the top two while driving Careful.',races:1,
+      reward:'+1 wrench',failure:'Chassis loses 10 condition',weight:2},
+    {id:'clean',title:'Barely a Scratch',goal:'Finish with 15 or less total condition damage.',races:2,
+      reward:'+1 wrench',failure:'No normal repairs for one garage',weight:3},
+    {id:'survivor',title:'Keep It Together',goal:'Finish two consecutive races losing no more than 24 total condition in each.',races:3,
       reward:'+1 wrench',failure:'No normal repairs for one garage',weight:4},
     {id:'worn',title:'Running on Fumes',goal:'Finish with engine, tyres or chassis starting at 25% condition or less.',races:1,
       reward:'Patch weakest critical part +20 condition',failure:'One critical part loses 10 condition',weight:4},
     {id:'comeback',title:'The Comeback Kid',goal:'Improve your finish by at least two places compared with your previous race.',races:2,
-      reward:'+1 wrench',failure:'An extra bad event in the next race',weight:3},
-    {id:'tank',title:'Classified Vehicle Request',goal:'Complete a race driving the Tank gag vehicle.',races:5,
-      reward:'One free replacement from a future shop',failure:'No normal repairs for three garages',weight:1,hidden:true}
-  ]);
+      reward:'+1 wrench',failure:'An extra bad event in the next started race',weight:3},
+    {id:'route',title:'Bad Shortcut, Good Story',goal:'Take a risky event route successfully and finish in the top three.',races:3,
+      reward:'+2 wrenches',failure:'No normal repairs for two garages',weight:2},
+    {id:'fresh',title:'Fresh From the Junkyard',goal:'Finish in the top two after replacing a part at that race’s garage.',races:2,
+      reward:'Patch weakest critical part +20 condition',failure:'Next garage: one shop offer',weight:3}
+  ];
+  // Legacy 'tank' stays stable for existing saved contracts. Other gag contracts are
+  // separately identified so a cancelled/completed one cannot silently change target.
+  const legacyTank={id:'tank',title:'Classified Vehicle Request',goal:'Complete a race driving the Tank gag vehicle.',races:5,
+    reward:'One free replacement from a future shop',failure:'No normal repairs for three garages',weight:.30,hidden:true,gagId:'tank'};
+  const gagTypes=GAGS.filter(g=>g.id!=='tank').map(g=>({
+    id:'gag-'+g.id,title:'Classified Vehicle Request',goal:'Complete a race driving the '+g.name+'.',
+    races:8,reward:'One free replacement from a future shop',
+    failure:'No normal repairs for two garages',weight:.30,hidden:true,gagId:g.id
+  }));
+  const types=Object.freeze([...regularTypes,legacyTank,...gagTypes].map(t=>Object.freeze(t)));
   const lookup=id=>types.find(t=>t.id===id);
   const nonneg=(n,max=100)=>Number.isInteger(n)&&n>=0&&n<=max;
   const hash=(seed,round,salt=0)=>{
@@ -31,13 +60,13 @@
     extraEvent:s.bountyPenalties?.extraEvent||0
   });
   const active=s=>Array.isArray(s.bounties)?s.bounties:[];
-  const known=(s,definition)=>!definition.hidden||(s.discoveredGags||[]).includes('tank');
+  const known=(s,definition)=>!definition.hidden||(s.discoveredGags||[]).includes(definition.gagId);
   function bountyOffer(s){
     if(s.phase!=='garage'||s.finished)return null;
     // Once accepted, the same displayed offer stays on the board until the next race.
     if(s.bountyAcceptedAt===s.raceIndex&&s.bountyOfferedId)return lookup(s.bountyOfferedId);
     const inUse=new Set(active(s).map(x=>x.id));
-    const available=types.filter(t=>!inUse.has(t.id)&&(t.id!=='comeback'||s.history?.length));
+    const available=types.filter(t=>!inUse.has(t.id)&&(!['comeback','match','drop'].includes(t.id)||s.history?.length));
     if(!available.length)return null;
     const total=available.reduce((n,t)=>n+t.weight,0);
     let roll=(hash(s.seed,s.raceIndex,0xB0A71E)/4294967296)*total;
@@ -70,13 +99,19 @@
   }
   function applyFailure(s,id){
     const p=penalties(s);let effect;
-    if(id==='third'){p.shopOne=Math.max(p.shopOne,1);effect={kind:'shopOne',garages:1};}
+    if(id==='third'||id==='second'||id==='match'||id==='fresh'){p.shopOne=Math.max(p.shopOne,1);effect={kind:'shopOne',garages:1};}
     else if(id==='reckless')effect=damagePenalty(s,12,'engine');
-    else if(id==='survivor'){p.repairLock=Math.max(p.repairLock,1);effect={kind:'repairLock',garages:1};}
+    else if(id==='fourth')effect=damagePenalty(s,8,'engine');
+    else if(id==='drop')effect=damagePenalty(s,12,'tyres');
+    else if(id==='careful')effect=damagePenalty(s,10,'chassis');
+    else if(id==='survivor'||id==='clean'){p.repairLock=Math.max(p.repairLock,1);effect={kind:'repairLock',garages:1};}
+    else if(id==='route'){p.repairLock=Math.max(p.repairLock,2);effect={kind:'repairLock',garages:2};}
     else if(id==='worn')effect=damagePenalty(s,10);
-    else if(id==='comeback'){p.extraEvent=Math.max(p.extraEvent,1);effect={kind:'extraEvent',races:1};}
-    else if(id==='tank'){p.repairLock=Math.max(p.repairLock,3);effect={kind:'repairLock',garages:3};}
-    else throw Error('Unknown bounty');
+    else if(id==='comeback'||id==='balanced'||id==='fifth'){p.extraEvent=Math.max(p.extraEvent,1);effect={kind:'extraEvent',races:1};}
+    else if(lookup(id)?.gagId){
+      const n=id==='tank'?3:2;p.repairLock=Math.max(p.repairLock,n);
+      effect={kind:'repairLock',garages:n};
+    }else throw Error('Unknown bounty');
     s.bountyPenalties=p;
     return effect;
   }
@@ -87,11 +122,13 @@
     return{kind:'patch',slot,restored};
   }
   function applyReward(s,id){
-    if(id==='third'||id==='worn')return patchWeakest(s,20);
-    if(id==='reckless'||id==='survivor'||id==='comeback'){s.wrenches+=1;return{kind:'wrench',amount:1};}
-    if(id==='tank'){
-      // Three is an explicit capacity, not a save-corrupting hard limit.
-      // Excess vouchers become one wrench so completing a valid contract never silently loses the reward.
+    if(['third','second','fifth','drop','worn','fresh'].includes(id))return patchWeakest(s,20);
+    if(['reckless','survivor','comeback','fourth','match','balanced','careful','clean'].includes(id)){
+      s.wrenches+=1;return{kind:'wrench',amount:1};
+    }
+    if(id==='route'){s.wrenches+=2;return{kind:'wrench',amount:2};}
+    if(lookup(id)?.gagId){
+      // Three is a hard voucher limit shared by all 17 rare vehicle contracts.
       if((s.bountyCoupons||0)>=3){s.wrenches+=1;return{kind:'voucherOverflowWrench',amount:1,capacity:3};}
       s.bountyCoupons=(s.bountyCoupons||0)+1;return{kind:'replacementVoucher',amount:1};
     }
@@ -107,14 +144,25 @@
     next.bountyLastCancel={id,title:def.title,consequence};
     return next;
   }
-  function finishedGoal(def,entry,result,previous){
+  function finishedGoal(def,entry,result,previous,before){
+    // A DNF/DNS is never a precision finish, even if it is ranked fifth.
     if(result.noStart||result.failedSlot)return false;
     if(def.id==='third')return result.place===3;
+    if(def.id==='second')return result.place===2;
+    if(def.id==='fourth')return result.place===4;
+    if(def.id==='fifth')return result.place===5;
     if(def.id==='reckless')return result.place<=2&&result.approach==='reckless';
-    if(def.id==='survivor')return false; // handled by progress in settle
+    if(def.id==='balanced')return result.place<=3&&result.approach==='balanced';
+    if(def.id==='careful')return result.place<=2&&result.approach==='careful';
+    if(def.id==='clean')return result.damage<=15;
+    if(def.id==='survivor')return false; // counted only by per-race progress
     if(def.id==='worn')return ['engine','tyres','chassis'].some(x=>result.durabilityBefore[x]<=25);
     if(def.id==='comeback')return previous&&previous.place-result.place>=2;
-    if(def.id==='tank')return result.gagId==='tank';
+    if(def.id==='match')return previous&&!previous.noStart&&!previous.failedSlot&&result.place===previous.place;
+    if(def.id==='drop')return previous&&!previous.noStart&&!previous.failedSlot&&result.place-previous.place>=2;
+    if(def.id==='fresh')return before.garageAction?.kind==='replace'&&result.place<=2;
+    if(def.id==='route')return result.place<=3&&(result.laps||[]).some(l=>(l.effects||[]).some(e=>e.choiceEvent&&e.choice==='risk'&&e.outcome==='success'));
+    if(def.gagId)return result.gagId===def.gagId;
     return false;
   }
   const original={
@@ -135,8 +183,8 @@
     for(const entry of active(s)){
       const def=lookup(entry.id);
       let progress=entry.progress||0;
-      if(def.id==='survivor')progress=!result.noStart&&!result.failedSlot?progress+1:0;
-      const success=def.id==='survivor'?progress>=2:finishedGoal(def,entry,result,previous);
+      if(def.id==='survivor')progress=!result.noStart&&!result.failedSlot&&result.damage<=24?progress+1:0;
+      const success=def.id==='survivor'?progress>=2:finishedGoal(def,entry,result,previous,s);
       const remaining=entry.remaining-1;
       if(success){const reward=applyReward(next,entry.id);settlements.push({id:entry.id,title:def.title,success:true,reward});}
       else if(remaining<=0){const consequence=applyFailure(next,entry.id);settlements.push({id:entry.id,title:def.title,success:false,consequence});}
@@ -186,7 +234,7 @@
       output.bounties=input.bounties.map(x=>{
         if(!x||!lookup(x.id)||taken.has(x.id))throw Error('Invalid bounty contract.');
         taken.add(x.id);
-        if(!nonneg(x.remaining,5)||x.remaining<1||!nonneg(x.progress,3))throw Error('Invalid bounty deadline.');
+        if(!nonneg(x.remaining,lookup(x.id).races)||x.remaining<1||!nonneg(x.progress,3))throw Error('Invalid bounty deadline.');
         return{id:x.id,remaining:x.remaining,progress:x.progress};
       });
     }
@@ -243,7 +291,7 @@
       <b>${esc(d.title)}</b><p>${esc(d.goal)}</p><small>DEADLINE: ${offer.races} RACE(S)</small>
       <p class="bounty-win">SUCCESS: ${esc(offer.reward)}</p>
       <p class="bounty-loss">FAILURE / CANCELLATION: ${esc(offer.failure)}</p>
-      ${offer.id==='tank'?`<small>FREE REPLACEMENT VOUCHERS: ${s.bountyCoupons||0}/3 · At capacity, an extra voucher becomes +1 wrench.</small>`:''}
+      ${offer.gagId?`<small>FREE REPLACEMENT VOUCHERS: ${s.bountyCoupons||0}/3 · At capacity, an extra voucher becomes +1 wrench.</small>`:''}
       <button data-action="accept-bounty" data-id="${offer.id}" ${full||already?'disabled':''}>${already?'ALREADY ACCEPTED THIS RACE':full?'ALL SLOTS FULL':'ACCEPT BOUNTY'}</button>
     </section>`;
   }
