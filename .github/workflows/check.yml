@@ -25,6 +25,7 @@ jobs:
       - run: node tests/gag-buildability.cjs
       - run: node tests/gag-perks.cjs
       - run: node tests/pass-event-audit.cjs
+      - run: node tests/bounty-goals.cjs
       - run: node tests/bounty-balance.cjs
       - run: node tests/bounty-result-browser.cjs
       - run: node tests/smoke.cjs
