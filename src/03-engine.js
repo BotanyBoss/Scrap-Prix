@@ -256,7 +256,11 @@
     // Broken items remain physically installed but have zero mechanical output, including terrain/trait effects.
     const tyre=s.durability.tyres>0?part(s.loadout.tyres):null,engine=s.durability.engine>0?part(s.loadout.engine):null,chassis=s.durability.chassis>0?part(s.loadout.chassis):null,gadget=part(s.loadout.gadget),gadgetTraits=activeGadgetTraits(s);
     let grip=st.grip*tyreGripMultiplier(tyre,surf,t,w,gag),windReduction=gadgetTraits.windReduction||0;if(gag?.id==='plane')windReduction=clamp(windReduction+(ge.extraWindReduction||0),0,.9);grip*=1-(w.wind||0)*(1-windReduction)*.35;
-    if(gag?.id==='spaceship')grip+=1;
+    if(gag?.id==='spaceship'){
+      // Refund 50% of this exact recipe's rocket engine/pack grip penalty.
+      const lost=Math.max(0,-(engine?.stats.grip||0))+Math.max(0,-(s.durability.gadget>0?gadget?.stats.grip||0:0));
+      grip+=lost*(ge.rocketGripPenaltyReduction||0);
+    }
     if(gag?.id==='dune'&&surf.id==='sand')grip*=1+(ge.sandGripBonus||0);
     if(gag?.id==='snowmobile'&&['snow','ice'].includes(surf.id))grip*=1+(ge.winterGripBonus||0);
     if(gadget?.id==='aero-kit'&&gadgetTraits.smoothGripBonus&&surf.roughness===0&&surf.softness===0&&t.course.straight>=3)grip*=1+gadgetTraits.smoothGripBonus;
@@ -345,6 +349,8 @@
     if(tags.has('heat')){const cool=clamp(profile.stats.cooling/20,0,.65);damageMultiplier*=1-cool*.55;penaltyMultiplier*=1-cool*.35;}
     if(tags.has('visibility'))penaltyMultiplier*=clamp(1-profile.grip*.012,.68,1);
     if(tags.has('obstacle')&&profile.stats.armour>0)damageMultiplier*=clamp(1-profile.stats.armour*.012,.68,1);
+    // The Monster Truck's advertised obstacle momentum perk acts on negative event score.
+    if(tags.has('obstacle')&&gag)penaltyMultiplier*=1-(D.GAG_EFFECTS[gag.id]?.obstacleMomentumReduction||0);
     const gagAdj=eventGagAdjustment(def,gag);damageMultiplier*=gagAdj.damageMultiplier;
     return{damageMultiplier:clamp(damageMultiplier,.05,1.5),penaltyMultiplier:clamp(penaltyMultiplier,.15,1.5),bonusScore:gagAdj.score||0};
   }
@@ -443,7 +449,9 @@
       const heat=profile.heat,weights={engine:next.durability.engine>0?1.1+heat*.10:0,tyres:next.durability.tyres>0?1.15+surf.tyreStress*.16:0,chassis:next.durability.chassis>0?1.2+t.course.impact*.12:0,gadget:next.durability.gadget>0?.65:0};if(target&&next.durability[target]>0)weights[target]+=1.6;
       let allocation=distributeDamage(amount,weights);
       const tyre=next.durability.tyres>0?part(next.loadout.tyres):null,rough=surf.roughness>=2||surf.softness>=2;
-      if(rough&&allocation.tyres>0){let reduce=tyre?.traits?.roughDamageReduction||0;if(tyre?.traits?.roughDamage)reduce-=tyre.traits.roughDamage;if(gag?.id==='f1'&&surf.roughness===0)reduce+=ge.smoothTyreWearReduction||0;allocation.tyres=Math.max(0,Math.round(allocation.tyres*(1-reduce)));}
+      if(rough&&allocation.tyres>0){let reduce=tyre?.traits?.roughDamageReduction||0;if(tyre?.traits?.roughDamage)reduce-=tyre.traits.roughDamage;allocation.tyres=Math.max(0,Math.round(allocation.tyres*(1-reduce)));}
+      // An earlier rough-terrain condition made this smooth-surface F1 perk impossible to trigger.
+      if(gag?.id==='f1'&&surf.roughness===0&&surf.softness===0&&allocation.tyres>0)allocation.tyres=Math.max(0,Math.round(allocation.tyres*(1-(ge.smoothTyreWearReduction||0))));
       if(gag?.id==='icecream'&&allocation.engine>0&&heat>0)allocation.engine=Math.round(allocation.engine*(1-(ge.engineHeatWearReduction||0)));
       const damageBySlot={};for(const slot of SLOTS){const value=next.durability[slot],loss=Math.max(0,allocation[slot]||0);next.durability[slot]=Math.max(0,value-loss);damageBySlot[slot]=value-next.durability[slot];}
       const damage=SLOTS.reduce((n,slot)=>n+damageBySlot[slot],0);failedSlot=next.durability.engine===0?'engine':next.durability.tyres===0?'tyres':null;return{kind,id,damage,damageBySlot,scoreDelta,credits,...meta};
