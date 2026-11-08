@@ -4,7 +4,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
 const {spawn,spawnSync}=require('node:child_process');
 const chromePath=process.env.CHROME_PATH||['google-chrome','chromium','chromium-browser'].find(c=>spawnSync('which',[c]).status===0);
 if(!chromePath)throw Error('Chrome/Chromium is required');
-const pageUrl='file://'+path.join(__dirname,'..','dist','index.html');
+const pageUrl='file://'+path.join(__dirname,'..','..','dist','index.html');
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 (async()=>{
   const profile=fs.mkdtempSync(path.join(os.tmpdir(),'scrap-dialogue-image-'));
