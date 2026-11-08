@@ -42,7 +42,7 @@ for(const def of regular){
    if(build===3)s.loadout={engine:'clunker',tyres:'balloon-tyres',chassis:'wobble-wagon',gadget:'cooling-fan'};
    for(const slot of D.SLOTS)if(build)s.levels[slot]=Math.min(10,2+Math.floor(s.raceIndex/6));
    s.approach=['careful','balanced','reckless'][seed%3];
-   s.durability={engine:100,tyres:100,chassis:def.id==='worn'?25:100,gadget:100};
+   s.durability={engine:100,tyres:100,chassis:def.id==='worn'&&seed%2===0?25:100,gadget:100};
    if(['comeback','match','drop'].includes(def.id)){
      const prev={place:def.id==='drop'?1+(seed%2):1+(seed%5),noStart:false,failedSlot:null};
      s.history=[prev];
