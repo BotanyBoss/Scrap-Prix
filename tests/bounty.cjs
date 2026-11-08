@@ -95,5 +95,70 @@ for(let seed=1;seed<=200;seed++){
   assert.equal(out.bounties.length,0);
 }
 assert(success>0&&failed>0,'Precision contract should be winnable yet risky across seeds');
+
+// Regression: an apparent affordable engine hidden by a restricted shop must not disqualify Emergency Bodge.
+let restricted=null,hiddenEngine=null;
+for(let seed=1;seed<=160&&!restricted;seed++){
+  const candidate=clone(E.newRun(seed));
+  candidate.raceIndex=50;candidate.credits=10000;candidate.wrenches=0;candidate.durability.engine=0;
+  candidate.bountyPenalties={shopOne:1,repairLock:0,extraEvent:0};
+  const unrestricted=E.shopOffers({...candidate,bountyPenalties:{}});
+  const hidden=unrestricted.slice(1).find(o=>o.slot==='engine');
+  if(unrestricted[0].slot!=='engine'&&hidden){restricted=candidate;hiddenEngine=hidden;}
+}
+assert(restricted&&hiddenEngine,'Find a shop with an affordable but hidden engine offer');
+assert.equal(E.shopOffers(restricted).length,1);
+assert.equal(E.bodgeQuote(restricted,'engine').available,true,'Bodge must use genuinely accessible stock');
+assert.throws(()=>E.buy(restricted,hiddenEngine.id),'Hidden engine cannot be purchased');
+
+// Regression: sabotage cannot disappear on a DNS, but must be consumed when the bad event fires.
+let noStartSabotage=clone(E.newRun(1234));
+noStartSabotage.durability.engine=0;
+noStartSabotage.bountyPenalties={shopOne:0,repairLock:0,extraEvent:1};
+const dns=clone(E.race(noStartSabotage));
+assert(dns.history.at(-1).noStart,'Zero-engine test must cause a DNS');
+assert.equal(dns.bountyPenalties.extraEvent,1,'Pending bad event survives a no-start');
+assert.deepEqual(clone(E.decodeSave(E.encodeSave(dns)).bountyPenalties),dns.bountyPenalties);
+const repaired=clone(E.continueRun(dns));repaired.durability.engine=100;
+const started=clone(E.race(repaired));
+assert(started.history.at(-1).laps.some(l=>l.effects.some(e=>e.bountyPenalty)),'Resumed race must receive the event');
+assert.equal(started.bountyPenalties.extraEvent,0,'Incident applied exactly once');
+
+// Regression: a fourth completed Tank voucher cannot create an invalid or unredeemable save.
+const tankRecipe=ctx.ScrapData.GAG_RECIPES.find(g=>g.id==='tank');
+assert(tankRecipe);
+let overflow=null;
+for(let seed=1;seed<=120&&!overflow;seed++){
+  const s=clone(E.newRun(seed));s.bountyCoupons=3;s.loadout={...tankRecipe.requires};
+  s.durability={engine:100,tyres:100,chassis:100,gadget:100};
+  for(const slot of ['engine','tyres','chassis','gadget'])s.levels[slot]=E.part(s.loadout[slot]).price?6:0;
+  s.bounties=[{id:'tank',remaining:1,progress:0}];s.bountyAcceptedAt=0;s.bountyOfferedId='tank';
+  const out=clone(E.race(s));
+  if(out.history.at(-1).bountyResults?.[0]?.success)overflow={before:s,after:out};
+}
+assert(overflow,'Tank bounty can be completed with a full set of vouchers');
+assert.equal(overflow.after.bountyCoupons,3,'Voucher capacity remains three');
+assert.equal(overflow.after.history.at(-1).bountyResults[0].reward.kind,'voucherOverflowWrench');
+assert.equal(overflow.after.bountyWrenches,undefined,'Post-race accounting belongs on result history');
+assert.equal(overflow.after.history.at(-1).bountyWrenches,1);
+assert.equal(overflow.after.wrenches,overflow.before.wrenches+overflow.after.history.at(-1).wrenchDrop+1);
+assert.equal(E.decodeSave(E.encodeSave(overflow.after)).bountyCoupons,3,'Saving at capacity must work');
+const garageAfterOverflow=clone(E.continueRun(overflow.after));
+const redeemable=E.shopOffers(garageAfterOverflow)[0];
+const redeemed=clone(E.claimBountyReplacement(garageAfterOverflow,redeemable.id));
+assert.equal(redeemed.bountyCoupons,2,'Vouchers can still be redeemed after overflow');
+
+// Regression: final garage condition and bonus wrenches are recorded separately from lap wear / race drops.
+let both=clone(E.newRun(582));both.durability={engine:100,tyres:100,chassis:25,gadget:100};
+both.bounties=[{id:'survivor',remaining:1,progress:1},{id:'worn',remaining:1,progress:0}];
+const bothDone=clone(E.race(both)),bresult=bothDone.history.at(-1);
+assert.equal(bresult.bountyResults.length,2);
+assert(bresult.bountyResults.every(b=>b.success),'Both contracts should settle successfully in controlled case');
+assert.equal(bresult.bountyWrenches,1,'Separate bounty wrench bonus is recorded');
+assert.equal(bresult.bountyGarageWrenches,bothDone.wrenches);
+assert.equal(bresult.bountyGarageDurabilityAfter.chassis,bothDone.durability.chassis);
+assert.equal(bresult.bountyGarageDurabilityAfter.chassis,Math.min(100,bresult.durabilityAfter.chassis+20));
+assert.equal(E.decodeSave(E.encodeSave(bothDone)).history.at(-1).bountyWrenches,1);
+
 console.log('PASS: six offers, slots, hidden Tank, penalties, rescue compatibility, voucher, exact-third results and saves.');
 console.log(JSON.stringify({success,failed}));
