@@ -439,7 +439,7 @@
     garage(s);if(!choices||typeof choices!=='object'||Array.isArray(choices))fail('Race choices must be an object.');
     if(s.durability.engine===0||s.durability.tyres===0)return noStartRace(s);
     const next=clone(s),card=raceCard(s.seed,s.raceIndex,s),t=track(card.trackId),surf=surface(card.surfaceId),w=weather(card.weatherId),profile=environmentProfile(s,card),approach=APPROACHES[s.approach],gag=profile.gag,ge=gag?D.GAG_EFFECTS[gag.id]||{}:{},post=postCapRaces(s.raceIndex),stressScale=1+post*T.postCapStressPerRace;
-    const before={...s.durability},laps=[];let failedSlot=null,failureLap=null,eventScore=0,eventCredits=0,normalWear=0,incidentDamage=0,hazardDamage=0,firstMajorImpact=true,method=strongestMitigation(signature(card.signatureId),profile.stats);
+    const before={...s.durability},laps=[];let failedSlot=null,failureLap=null,eventScore=0,eventCredits=0,normalWear=0,incidentDamage=0,hazardDamage=0,firstMajorImpact=true,smoothTyreCredit=0,method=strongestMitigation(signature(card.signatureId),profile.stats);
     function applyDamage(amount,target,kind,id,scoreDelta=0,credits=0,meta={}){
       amount=Math.max(0,Math.round(amount));const def=eventDefinition({kind,id}),obstacle=def?.tags?.includes('obstacle')||['pileup','debris','collapse','grass','rails'].includes(id),major=amount>=6,gadgetTraits=activeGadgetTraits(next);
       if(obstacle&&gadgetTraits.obstacleDamageReduction)amount=Math.round(amount*(1-gadgetTraits.obstacleDamageReduction));
@@ -451,7 +451,12 @@
       const tyre=next.durability.tyres>0?part(next.loadout.tyres):null,rough=surf.roughness>=2||surf.softness>=2;
       if(rough&&allocation.tyres>0){let reduce=tyre?.traits?.roughDamageReduction||0;if(tyre?.traits?.roughDamage)reduce-=tyre.traits.roughDamage;allocation.tyres=Math.max(0,Math.round(allocation.tyres*(1-reduce)));}
       // An earlier rough-terrain condition made this smooth-surface F1 perk impossible to trigger.
-      if(gag?.id==='f1'&&surf.roughness===0&&surf.softness===0&&allocation.tyres>0)allocation.tyres=Math.max(0,Math.round(allocation.tyres*(1-(ge.smoothTyreWearReduction||0))));
+      if(kind==='wear'&&gag?.id==='f1'&&surf.roughness===0&&surf.softness===0&&allocation.tyres>0){
+        // Retain fractional savings between laps so a 10% perk does not round to zero per hit.
+        smoothTyreCredit+=allocation.tyres*(ge.smoothTyreWearReduction||0);
+        const saved=Math.min(allocation.tyres,Math.floor(smoothTyreCredit+1e-9));
+        allocation.tyres-=saved;smoothTyreCredit-=saved;
+      }
       if(gag?.id==='icecream'&&allocation.engine>0&&heat>0)allocation.engine=Math.round(allocation.engine*(1-(ge.engineHeatWearReduction||0)));
       const damageBySlot={};for(const slot of SLOTS){const value=next.durability[slot],loss=Math.max(0,allocation[slot]||0);next.durability[slot]=Math.max(0,value-loss);damageBySlot[slot]=value-next.durability[slot];}
       const damage=SLOTS.reduce((n,slot)=>n+damageBySlot[slot],0);failedSlot=next.durability.engine===0?'engine':next.durability.tyres===0?'tyres':null;return{kind,id,damage,damageBySlot,scoreDelta,credits,...meta};
