@@ -21,6 +21,8 @@ jobs:
       - run: node tests/bodge.cjs
       - run: node tests/recovery-stress.cjs
       - run: node tests/bounty.cjs
+      - run: node tests/event-content-audit.cjs
+      - run: node tests/gag-buildability.cjs
       - run: node tests/bounty-balance.cjs
       - run: node tests/bounty-result-browser.cjs
       - run: node tests/smoke.cjs
