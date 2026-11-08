@@ -814,3 +814,27 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 .part-slot .bodge-button:disabled{opacity:.57;cursor:not-allowed}
 .part-slot .bodge-note{display:block;margin:0 0 7px;color:var(--muted,#b4ada2);font-size:11px;line-height:1.35}
 .podium-hero .bodge-repayment{margin:10px 12px 0;padding:6px 9px;text-align:center;background:#48352b;color:#ffddb0;border-radius:5px;font-size:12px}
+
+/* Optional Bounty Board: clean, compact display in garage and equipment shop. */
+.bounty-ledger{margin:10px 0 12px;padding:12px;border:1px solid #7d6d58}
+.bounty-ledger-head,.bounty-shop header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bounty-ledger h3,.bounty-shop h3{margin:0;font-size:14px;letter-spacing:.08em}
+.bounty-ledger-head small,.bounty-shop header small{opacity:.8}
+.bounty-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}
+.bounty-slot{border:1px solid #8c7660;background:#342f2c;padding:10px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.bounty-slot.empty{min-height:100px;align-items:center;justify-content:center;color:#b0a492;font-size:12px}
+.bounty-slot b,.bounty-slot span{overflow-wrap:anywhere}
+.bounty-slot small{color:#c9c3b1;font-size:11px}
+.bounty-slot .bounty-loss,.bounty-shop .bounty-loss{color:#f1a99f}
+.bounty-slot button,.bounty-shop button,.offer button.bounty-free-buy{padding:8px 10px;border:1px solid #c0a477;background:#4d4032;color:#f6e5bd;font-weight:700;cursor:pointer;margin-top:auto}
+.bounty-slot button:hover,.bounty-shop button:hover,.offer button.bounty-free-buy:hover{background:#6b4e39}
+.bounty-slot button:disabled,.bounty-shop button:disabled{opacity:.5;cursor:not-allowed}
+.bounty-warning{color:#f7bb92;background:#5a372e;padding:6px 8px;font-size:12px;margin:6px 0}
+.bounty-shop{border:1px solid #d1a96a;margin:14px 0 0;padding:13px;background:#252c31;color:#f9e4c8}
+.bounty-shop>p{margin:8px 0}.bounty-shop>small{color:#cfbda4}
+.bounty-shop .bounty-win{color:#aadac3}
+.bounty-shop>button{width:100%;margin-top:10px}
+.offer button.bounty-free-buy{width:100%;margin-top:6px}
+.bounty-results{padding:7px 12px;margin-top:6px;text-align:center;font-size:12px}
+.bounty-results p{margin:3px 0}.bounty-results .win{color:#a5e2c4}.bounty-results .loss{color:#f8b19b}
+@media(max-width:700px){.bounty-slots{grid-template-columns:1fr}.bounty-ledger{margin:8px 0}.bounty-slot.empty{min-height:42px}}
