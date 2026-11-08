@@ -80,7 +80,7 @@ const builds=[
  {engine:'v8',tyres:'monster-treads',chassis:'boilerplate',gadget:'cooling-fan'},
  {engine:'race-block',tyres:'speed-slicks',chassis:'carbon-lite',gadget:'aero-kit'},
  {engine:'heavy-diesel',tyres:'steel-belt',chassis:'armoured-tub',gadget:'bolt-armour'},
- {engine:'inline-four',tyres:'scrap-racer',chassis:'longbody',gadget:'deskfan'}
+ {engine:'inline-four',tyres:'scrap-racer',chassis:'longbody',gadget:'stock-gadget'}
 ];
 for(let seed=1;seed<=200;seed++){
   const s=clone(E.newRun(seed));
