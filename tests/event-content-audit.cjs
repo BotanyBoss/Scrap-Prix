@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const html=fs.readFileSync(path.join(__dirname,'..','dist','dev.html'),'utf8');
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
-for(const i of [0,1,2,3,5])vm.runInContext(scripts[i],ctx);
+for(const i of [0,1,2,3,4,5])vm.runInContext(scripts[i],ctx);
 const D=ctx.ScrapData,E=ctx.ScrapEngine,P=ctx.ScrapPresentation;
 const clone=v=>JSON.parse(JSON.stringify(v));
 const assertUnique=(name,items)=>assert.equal(new Set(items.map(x=>x.id)).size,items.length,name+' has duplicate IDs');
