@@ -6,9 +6,14 @@ const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
 for(const i of [0,1,2,3,25])vm.runInContext(scripts[i],ctx);
 const E=ctx.ScrapEngine,clone=s=>JSON.parse(JSON.stringify(s));
 const types=Array.from(E.bountyDefinitions);
-assert.equal(types.length,6);
-const ids=types.map(x=>x.id).sort().join(',');
-assert.equal(ids,'comeback,reckless,survivor,tank,third,worn');
+assert.equal(types.length,32,'Fifteen ordinary challenges and seventeen classified gag contracts');
+const ids=types.map(x=>x.id);
+assert.equal(new Set(ids).size,32,'Contract IDs remain unique');
+assert.equal(types.filter(t=>!t.gagId).length,15);
+assert.equal(types.filter(t=>t.gagId).length,ctx.ScrapData.GAG_RECIPES.length);
+assert.deepEqual(types.filter(t=>t.gagId).map(t=>t.gagId).sort(),
+  Array.from(ctx.ScrapData.GAG_RECIPES,g=>g.id).sort(),'Every gag can be a bounty');
+for(const t of types){assert(t.races>=1&&t.races<=8&&t.weight>0);assert(t.reward&&t.failure&&t.goal);}
 const start=clone(E.newRun(20261017));
 assert.equal(start.bounties,undefined);
 assert.equal(E.decodeSave(E.encodeSave(start)).bounties,undefined,'Existing saves stay unchanged');
