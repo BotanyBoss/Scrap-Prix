@@ -214,7 +214,7 @@
     if(!CRITICAL.includes(slot))fail('Only engine, tyres and chassis can be bodged.');
     const bodge=s.bodge||{uses:0,lastRaceIndex:-1,debt:0};
     const repairOption=repairQuote(s,slot);
-    const canRepair=repairOption.amount>0&&s.wrenches>=repairOption.cost;
+    const canRepair=!(s.bountyPenalties?.repairLock>0)&&repairOption.amount>0&&s.wrenches>=repairOption.cost;
     const canReplace=!s.garageAction&&shopOffers(s).some(offer=>offer.slot===slot&&s.credits>=offer.price);
     const amount=Math.min(BODGE_RESTORE,T.maxDurability-s.durability[slot]);
     const wait=bodge.uses>0?Math.max(0,BODGE_COOLDOWN_RACES-(s.raceIndex-bodge.lastRaceIndex)):0;
@@ -450,6 +450,16 @@
     const baseWear=Math.max(2,Math.round((3+t.course.impact*1.05+surf.roughness*1.15+surf.tyreStress*.55+profile.heat*.35+(w.wear||0)-profile.stats.armour*.12)*card.wearMultiplier*approach.wear*stressScale));
     for(let lap=1;lap<=card.lapCount;lap++){
       const record={lap,before:{...next.durability},effects:[],weatherId:card.weatherId,completed:false};const cumulative=Math.round(baseWear*lap/card.lapCount),prev=Math.round(baseWear*(lap-1)/card.lapCount),wear=applyDamage(cumulative-prev,null,'wear',null);record.effects.push(wear);normalWear+=wear.damage;
+      // Optional failed bounty produces a real, recorded extra bad incident.
+      // Event generation and race RNG remain unchanged when no penalty is active.
+      if(lap===1&&!failedSlot&&(s.bountyPenalties?.extraEvent||0)>0){
+        const def=eventDefinition({kind:'anomaly',id:'pothole-chain'});
+        if(def){
+          const hit=applyDamage(Math.round((def.extraDamage||4)*approach.wear*stressScale),def.target||'chassis','anomaly',def.id,def.score||-1,0,{bountyPenalty:true});
+          hit.key='bounty-extra-'+s.raceIndex;record.effects.push(hit);
+          incidentDamage+=hit.damage;eventScore+=hit.scoreDelta;
+        }
+      }
       if(!failedSlot)for(const event of card.events.filter(e=>e.lap===lap)){
         const def=eventDefinition(event);if(!def)continue;let amount=0,scoreDelta=def.score||0,credits=def.credits||0,meta={};
         if(event.stage)meta.stage=event.stage;
