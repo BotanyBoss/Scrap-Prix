@@ -89,7 +89,12 @@
   function applyReward(s,id){
     if(id==='third'||id==='worn')return patchWeakest(s,20);
     if(id==='reckless'||id==='survivor'||id==='comeback'){s.wrenches+=1;return{kind:'wrench',amount:1};}
-    if(id==='tank'){s.bountyCoupons=(s.bountyCoupons||0)+1;return{kind:'replacementVoucher',amount:1};}
+    if(id==='tank'){
+      // Three is an explicit capacity, not a save-corrupting hard limit.
+      // Excess vouchers become one wrench so completing a valid contract never silently loses the reward.
+      if((s.bountyCoupons||0)>=3){s.wrenches+=1;return{kind:'voucherOverflowWrench',amount:1,capacity:3};}
+      s.bountyCoupons=(s.bountyCoupons||0)+1;return{kind:'replacementVoucher',amount:1};
+    }
     throw Error('Unknown bounty');
   }
   function cancelBounty(s,id){
@@ -120,9 +125,12 @@
     const next=original.race(s,choices);
     if(!s.bounties&&!s.bountyPenalties)return next;
     const prior=penalties(s);
-    next.bountyPenalties={shopOne:Math.max(0,prior.shopOne-1),
-      repairLock:Math.max(0,prior.repairLock-1),extraEvent:Math.max(0,prior.extraEvent-1)};
     const result=next.history.at(-1),previous=s.history?.at(-1)||null;
+    // A no-start or a pre-incident wreck must not consume sabotage that never fired.
+    const sabotageApplied=(result.laps||[]).some(l=>(l.effects||[]).some(e=>e.bountyPenalty===true));
+    next.bountyPenalties={shopOne:Math.max(0,prior.shopOne-1),
+      repairLock:Math.max(0,prior.repairLock-1),
+      extraEvent:Math.max(0,prior.extraEvent-(sabotageApplied?1:0))};
     const settlements=[],pending=[];
     for(const entry of active(s)){
       const def=lookup(entry.id);
@@ -135,7 +143,14 @@
       else pending.push({...entry,progress,remaining});
     }
     next.bounties=pending;
-    if(settlements.length){result.bountyResults=settlements;next.bountyLastResults=settlements;}
+    if(settlements.length){
+      result.bountyResults=settlements;
+      next.bountyLastResults=settlements;
+      // Preserve race-only condition and wrench drops for the lap history; report the post-contract garage state separately.
+      result.bountyWrenches=settlements.reduce((sum,x)=>sum+(x.success&&['wrench','voucherOverflowWrench'].includes(x.reward?.kind)?x.reward.amount:0),0);
+      result.bountyGarageDurabilityAfter={...next.durability};
+      result.bountyGarageWrenches=next.wrenches;
+    }
     return next;
   };
   E.repairQuote=function(s,slot){
@@ -146,10 +161,8 @@
     if(penalties(s).repairLock>0)throw Error('Normal repairs suspended by bounty failure.');
     return original.repair(s,slot);
   };
-  E.shopOffers=function(s){
-    const offers=original.shopOffers(s);
-    return penalties(s).shopOne>0?offers.slice(0,1):offers;
-  };
+  // Restricted offers are now resolved by the engine itself, also used by Bodge and buy().
+  E.shopOffers=original.shopOffers;
   E.buy=function(s,id){
     if(!E.shopOffers(s).some(o=>o.id===id))throw Error('This part is not on the restricted shop shelf.');
     return original.buy(s,id);
@@ -230,6 +243,7 @@
       <b>${esc(d.title)}</b><p>${esc(d.goal)}</p><small>DEADLINE: ${offer.races} RACE(S)</small>
       <p class="bounty-win">SUCCESS: ${esc(offer.reward)}</p>
       <p class="bounty-loss">FAILURE / CANCELLATION: ${esc(offer.failure)}</p>
+      ${offer.id==='tank'?`<small>FREE REPLACEMENT VOUCHERS: ${s.bountyCoupons||0}/3 · At capacity, an extra voucher becomes +1 wrench.</small>`:''}
       <button data-action="accept-bounty" data-id="${offer.id}" ${full||already?'disabled':''}>${already?'ALREADY ACCEPTED THIS RACE':full?'ALL SLOTS FULL':'ACCEPT BOUNTY'}</button>
     </section>`;
   }
