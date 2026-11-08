@@ -379,6 +379,33 @@
           },'PAY & REFRESH');break;
         }
         case 'buy':buyConfirmation(id);break;
+        case 'accept-bounty':{
+          const offer=E.bountyOffer(state);
+          if(!offer||offer.id!==id)throw Error('Bounty offer changed.');
+          const d=E.bountyDisplay(state,{id:offer.id,remaining:offer.races});
+          ask('ACCEPT OPTIONAL BOUNTY?',`<p><b>${esc(d.title)}</b>: ${esc(d.goal)}</p>
+            <p>Complete within ${offer.races} race(s). Success: <b>${esc(offer.reward)}</b>.</p>
+            <p>Failure, expiry, or cancellation: <b>${esc(offer.failure)}</b>. There is no free escape once accepted.</p>`,()=>{
+              mutate(E.acceptBounty(state,id),`Bounty accepted: ${d.title}.`);
+              renderModal();
+            },'ACCEPT CONTRACT');break;
+        }
+        case 'cancel-bounty':{
+          const entry=(state.bounties||[]).find(x=>x.id===id);
+          if(!entry)throw Error('Contract no longer active.');
+          const d=E.bountyDisplay(state,entry);
+          ask('ABANDON CONTRACT?',`<p><b>${esc(d.title)}</b> immediately fails.</p><p>The following consequence applies now: <b>${esc(d.failure)}</b>.</p><p>This frees the contract slot. There is no additional cancellation cost.</p>`,()=>{
+             mutate(E.cancelBounty(state,id),`Contract abandoned: ${d.failure}.`);
+          },'ACCEPT FAILURE');break;
+        }
+        case 'bounty-free-buy':{
+          const o=E.shopOffers(state).find(o=>o.id===id);
+          if(!o||!state.bountyCoupons)throw Error('Bounty voucher is not available.');
+          ask('USE FREE REPLACEMENT?',`<p>Replace your installed ${esc(P.pretty(o.slot))} with <b>${esc(E.part(o.id).name)}</b> at Level ${o.level}.</p><p>Fresh at 100% condition. Spend one earned voucher and your usual build action. No money is deducted.</p>`,()=>{
+             mutate(E.claimBountyReplacement(state,id),`Free bounty replacement installed: ${E.part(o.id).name}.`);
+             renderModal();
+          },'CLAIM REPLACEMENT');break;
+        }
         case 'upgrade-part':if(screen==='garage')upgradeConfirmation(id);break;
         case 'repair':{const q=E.repairQuote(state,id);mutate(E.repair(state,id),`${P.pretty(id)} repaired +${q.amount} for ${q.cost} wrenches.`);const replacement=document.querySelector(`[data-action="repair"][data-id="${id}"]`);if(replacement&&!replacement.disabled)replacement.focus();else $('screen').focus();break;}
         case 'bodge':{
