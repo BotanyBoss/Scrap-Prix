@@ -66,6 +66,9 @@ const pause=ms=>new Promise(ok=>setTimeout(ok,ms));
    console.log(JSON.stringify({expected,summary:finish.settlement.slice(0,155),details}));
  }finally{
    if(ws&&ws.readyState===WebSocket.OPEN)ws.close();
-   chrome.kill('SIGTERM');fs.rmSync(profile,{recursive:true,force:true});
+   chrome.kill('SIGTERM');
+   await pause(650);
+   // Chromium may still be flushing profile data after the browser assertions succeed.
+   fs.rmSync(profile,{recursive:true,force:true,maxRetries:8,retryDelay:250});
  }
 })().catch(error=>{console.error(error);process.exitCode=1;});
