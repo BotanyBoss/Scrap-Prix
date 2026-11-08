@@ -206,6 +206,39 @@
   function repairQuote(s,slot){if(!SLOTS.includes(slot))fail('Unknown component slot.');const amount=Math.min(T.repairAmount,T.maxDurability-s.durability[slot]);return{amount,cost:amount?s.repairs[slot]+1:0};}
   function repair(s,slot){garage(s);const q=repairQuote(s,slot);if(!q.amount)fail('That component is already fully repaired.');if(s.wrenches<q.cost)fail('Not enough wrenches.');const next=clone(s);next.wrenches-=q.cost;next.durability[slot]+=q.amount;next.repairs[slot]++;return next;}
 
+  // Last-resort safety valve. No free prize money or normal repair resources.
+  // The legacy save schema remains valid until the player uses a bodge.
+  const BODGE_MAX_USES=3,BODGE_COOLDOWN_RACES=3,BODGE_CONDITION_LIMIT=25,BODGE_RESTORE=30;
+  function bodgeQuote(s,slot){
+    garage(s);
+    if(!CRITICAL.includes(slot))fail('Only engine, tyres and chassis can be bodged.');
+    const bodge=s.bodge||{uses:0,lastRaceIndex:-1,debt:0};
+    const repairOption=repairQuote(s,slot);
+    const canRepair=repairOption.amount>0&&s.wrenches>=repairOption.cost;
+    const canReplace=!s.garageAction&&shopOffers(s).some(offer=>offer.slot===slot&&s.credits>=offer.price);
+    const amount=Math.min(BODGE_RESTORE,T.maxDurability-s.durability[slot]);
+    const wait=bodge.uses>0?Math.max(0,BODGE_COOLDOWN_RACES-(s.raceIndex-bodge.lastRaceIndex)):0;
+    const fee=60+20*bodge.uses;
+    let reason='';
+    if(s.durability[slot]>BODGE_CONDITION_LIMIT)reason='Only available at 25% condition or lower.';
+    else if(canRepair||canReplace)reason='A normal repair or affordable replacement is available.';
+    else if(s.garageAction)reason='Your build action has already been used.';
+    else if(bodge.uses>=BODGE_MAX_USES)reason='No emergency bodges remain this run.';
+    else if(wait>0)reason=`Available after ${wait} more race${wait===1?'':'s'}.`;
+    else if(amount<=0)reason='No repair needed.';
+    return {slot,amount,fee,uses:bodge.uses,maxUses:BODGE_MAX_USES,debt:bodge.debt,
+      wait,available:reason==='',reason};
+  }
+  function emergencyBodge(s,slot){
+    const q=bodgeQuote(s,slot);
+    if(!q.available)fail(q.reason||'Emergency bodge unavailable.');
+    const next=clone(s),old=next.bodge||{uses:0,lastRaceIndex:-1,debt:0};
+    next.durability[slot]=Math.min(T.maxDurability,next.durability[slot]+q.amount);
+    next.bodge={uses:old.uses+1,lastRaceIndex:next.raceIndex,debt:old.debt+q.fee};
+    next.garageAction={kind:'bodge',slot};
+    return next;
+  }
+
   function tyreGripMultiplier(tyre,surf,t,w,gag){
     let mult=w.grip||1,tr=tyre?.traits||{};const dry=!['rain','snowfall','blizzard'].includes(w.id)&&!['snow','ice'].includes(surf.id),smooth=surf.roughness===0&&surf.softness===0,loose=surf.traction>=2||surf.softness>=2||surf.roughness>=2;
     if(tr.drySmoothGripBonus&&dry&&smooth)mult*=1+tr.drySmoothGripBonus;
@@ -447,8 +480,9 @@
     const passEvents=choosePassEvents(s.seed,s.raceIndex,failedSlot?0:Math.max(0,5-place),laps,gag),fakePassEvents=chooseFakePassEvents(s.seed,s.raceIndex,failedSlot?0:Math.max(0,5-place),passEvents);
     const positionMultiplier=T.positionMultipliers[place-1]||.75,cleanMultiplier=damage<=8?1.25:damage<=16?1.10:1,riskMultiplier=1,showcase=settleShowcase(showcaseForRace(s.seed,s.raceIndex,card),failedSlot,place,damage),prize=failedSlot?0:Math.round(basePrize(s.raceIndex)*positionMultiplier*cleanMultiplier)+eventCredits+(showcase?.credits||0),pointsEarned=failedSlot?0:Math.round(T.basePoints*positionMultiplier*cleanMultiplier)+(showcase?.points||0);
     const drops=stream(s.seed,s.raceIndex,'wrenches'),dropChance=wrenchDropChance(s.raceIndex),wrenchDrop=failedSlot||drops()>=dropChance?0:(drops()<.13?3:drops()<.34?2:1);
-    const result={rulesVersion:16,race:s.raceIndex+1,...card,showcase,loadoutBefore:{...s.loadout},levelsBefore:{...s.levels},approach:s.approach,method,stats:profile.stats,base,weight:profile.weight,evasion:0,weightPenalty:profile.massPenalty,terrainPenalty:round(profile.roughPenalty+profile.softPenalty),conditionPenalty:profile.conditionPenalty,heatPenalty:profile.heatPenalty,fortune,score,marketLevel:marketLevel(s.raceIndex),rivalTierBudget:rivalTierBudget(s.raceIndex),rivalBuilds:rivalResults,hazardDamage,normalWear,incidentDamage,eventScore,eventCredits,laps,lapsCompleted:laps.filter(l=>l.completed).length,failureLap,damage,damageBySlot,durabilityBefore:before,durabilityAfter:{...next.durability},failedSlot,place,positionMultiplier,cleanMultiplier,riskMultiplier,prize,pointsEarned,wrenchDrop,passEvents,fakePassEvents,gagId:gag?.id||null,gagName:gag?.name||null,standings:standings.map(({name,score,player,archetype})=>({name,score,player,...(player?{}:{archetype})}))};
-    next.noStartStrikes=s.noStartStrikes||0;next.raceIndex++;next.credits+=prize;next.wrenches+=wrenchDrop;next.points+=pointsEarned;next.history.push(result);next.history=next.history.slice(-T.historyLimit);next.phase='result';next.finished=null;next.garageAction=null;next.shopRefreshes=0;
+    const bodgeDebt=s.bodge?.debt||0,bodgeRepayment=failedSlot?0:Math.min(bodgeDebt,Math.floor(Math.max(0,prize)*.25)),netPrize=prize-bodgeRepayment;
+    const result={rulesVersion:16,race:s.raceIndex+1,...card,showcase,...(bodgeRepayment?{grossPrize:prize,bodgeRepayment}:{}),loadoutBefore:{...s.loadout},levelsBefore:{...s.levels},approach:s.approach,method,stats:profile.stats,base,weight:profile.weight,evasion:0,weightPenalty:profile.massPenalty,terrainPenalty:round(profile.roughPenalty+profile.softPenalty),conditionPenalty:profile.conditionPenalty,heatPenalty:profile.heatPenalty,fortune,score,marketLevel:marketLevel(s.raceIndex),rivalTierBudget:rivalTierBudget(s.raceIndex),rivalBuilds:rivalResults,hazardDamage,normalWear,incidentDamage,eventScore,eventCredits,laps,lapsCompleted:laps.filter(l=>l.completed).length,failureLap,damage,damageBySlot,durabilityBefore:before,durabilityAfter:{...next.durability},failedSlot,place,positionMultiplier,cleanMultiplier,riskMultiplier,prize:netPrize,pointsEarned,wrenchDrop,passEvents,fakePassEvents,gagId:gag?.id||null,gagName:gag?.name||null,standings:standings.map(({name,score,player,archetype})=>({name,score,player,...(player?{}:{archetype})}))};
+    next.noStartStrikes=s.noStartStrikes||0;next.raceIndex++;next.credits+=netPrize;if(next.bodge)next.bodge.debt-=bodgeRepayment;next.wrenches+=wrenchDrop;next.points+=pointsEarned;next.history.push(result);next.history=next.history.slice(-T.historyLimit);next.phase='result';next.finished=null;next.garageAction=null;next.shopRefreshes=0;
     if(!failedSlot&&gag){next.discoveredGags=[...new Set([...(next.discoveredGags||[]),gag.id])];next.gagStreak=next.gagStreak?.id===gag.id?{id:gag.id,count:next.gagStreak.count+1}:{id:gag.id,count:1};}else if(!gag)next.gagStreak={id:null,count:0};
     return next;
   }
@@ -458,14 +492,25 @@
     if(!input||typeof input!=='object'||Array.isArray(input))fail('Save must be an object.');if(input.version!==T.version)fail('This save belongs to a different build. Start a fresh v0.4.0 run.');
     integer(input.seed,0,4294967295,'seed');integer(input.raceIndex,0,9999999,'race index');integer(input.credits,0,1000000000,'credits');integer(input.wrenches,0,1000000000,'wrenches');integer(input.points,0,1000000000,'score');if(!['garage','result'].includes(input.phase))fail('Invalid phase.');if(input.finished!==null&&!['wrecked','strikes'].includes(input.finished))fail('Invalid finish state.');if(!Object.hasOwn(APPROACHES,input.approach))fail('Invalid approach.');
     const loadout={},levels={},durability={},repairs={};for(const slot of SLOTS){const id=input.loadout?.[slot],p=part(id);if(!p||p.slot!==slot)fail('Invalid '+slot+' part.');loadout[slot]=id;integer(input.levels?.[slot],0,T.maxLevel,slot+' level');if(p.price===0&&input.levels[slot]!==0)fail('Starter parts must remain Lv0.');if(p.price>0&&input.levels[slot]<1)fail('Purchased parts require Lv1+.');levels[slot]=input.levels[slot];integer(input.durability?.[slot],0,100,slot+' condition');durability[slot]=input.durability[slot];integer(input.repairs?.[slot],0,1000000,slot+' repairs');repairs[slot]=input.repairs[slot];}
-    const shopRefreshes=Number.isInteger(input.shopRefreshes)?input.shopRefreshes:0;integer(shopRefreshes,0,T.maxShopRefreshes,'shop refresh count');const garageAction=input.garageAction&&typeof input.garageAction==='object'?{kind:String(input.garageAction.kind),slot:String(input.garageAction.slot)}:null;if(garageAction&&(!['tune','replace'].includes(garageAction.kind)||!SLOTS.includes(garageAction.slot)))fail('Invalid garage action.');
+    const shopRefreshes=Number.isInteger(input.shopRefreshes)?input.shopRefreshes:0;integer(shopRefreshes,0,T.maxShopRefreshes,'shop refresh count');const garageAction=input.garageAction&&typeof input.garageAction==='object'?{kind:String(input.garageAction.kind),slot:String(input.garageAction.slot)}:null;if(garageAction&&(!['tune','replace','bodge'].includes(garageAction.kind)||!SLOTS.includes(garageAction.slot)||(garageAction.kind==='bodge'&&!CRITICAL.includes(garageAction.slot))))fail('Invalid garage action.');
     const noStartStrikes=input.noStartStrikes===undefined?0:input.noStartStrikes;integer(noStartStrikes,0,3,'no-start strikes');if(input.finished==='strikes'&&noStartStrikes!==3)fail('Strike-out requires three no-starts.');if(noStartStrikes===3&&input.finished!=='strikes')fail('Three no-starts must end a run.');
     const streak=input.gagStreak&&typeof input.gagStreak==='object'?input.gagStreak:{id:null,count:0};if(streak.id!==null&&!D.GAG_RECIPES.some(g=>g.id===streak.id))fail('Invalid gag streak.');integer(streak.count||0,0,9999999,'gag streak count');const discovered=Array.isArray(input.discoveredGags)?[...new Set(input.discoveredGags.filter(id=>D.GAG_RECIPES.some(g=>g.id===id)))]:[];const history=Array.isArray(input.history)?input.history.slice(-T.historyLimit):[];
-    return {version:T.version,seed:input.seed,phase:input.phase,finished:input.finished,raceIndex:input.raceIndex,credits:input.credits,wrenches:input.wrenches,points:input.points,approach:input.approach,loadout,levels,durability,repairs,garageAction,shopRefreshes,noStartStrikes,gagStreak:{id:streak.id,count:streak.count||0},discoveredGags:discovered,history};
+    // Optional to keep saves created before the emergency rule valid.
+    let bodge=null;
+    if(input.bodge!==undefined){
+      if(!input.bodge||typeof input.bodge!=='object'||Array.isArray(input.bodge))fail('Invalid emergency bodge state.');
+      const {uses,lastRaceIndex,debt}=input.bodge;
+      integer(uses,1,BODGE_MAX_USES,'bodge uses');
+      integer(lastRaceIndex,0,input.raceIndex,'last bodge race index');
+      integer(debt,0,1000,'bodge debt');
+      if(garageAction?.kind==='bodge'&&lastRaceIndex!==input.raceIndex)fail('Bodge action must match this workshop.');
+      bodge={uses,lastRaceIndex,debt};
+    }else if(garageAction?.kind==='bodge')fail('Missing emergency bodge state.');
+    return {version:T.version,seed:input.seed,phase:input.phase,finished:input.finished,raceIndex:input.raceIndex,credits:input.credits,wrenches:input.wrenches,points:input.points,approach:input.approach,loadout,levels,durability,repairs,garageAction,shopRefreshes,noStartStrikes,gagStreak:{id:streak.id,count:streak.count||0},discoveredGags:discovered,history,...(bodge?{bodge}:{})};
   }
   function encodeSave(s){return JSON.stringify(validateSave(s),null,2);}
   function decodeSave(text){if(typeof text!=='string'||text.length>400000)fail('Save file exceeds 400 KB or is not text.');let value;try{value=JSON.parse(text);}catch(_){fail('This is not valid JSON.');}return validateSave(value);}
 
-  return {newRun,random,raceCard,raceOutlook,shopOffers,stockForRound,shopRefreshQuote,refreshShop,upgradePrice,freshPrice,tunePrice,marketLevel,part,track,surface,signature,wildcard,weather,anomaly,eventDefinition,passEvent,fakePassEvent,stats,effectiveStats,partStats,conditionEfficiency,vehicleWeight,evasionRate,upgradeCondition,partUpgradeQuote,upgradePart,gadgetTuneQuote,tuneGadget,buy,setApproach,repairQuote,repair,race,continueRun,validateSave,encodeSave,decodeSave,generationForTier,minimumTier,equipmentLevel,rivalTierBudget,rivalIncidentExposure,showcaseForRace,settleShowcase,resolveGag,gagEffect,environmentProfile,wrenchDropChance,choiceSuccessChance};
+  return {newRun,random,raceCard,raceOutlook,shopOffers,stockForRound,shopRefreshQuote,refreshShop,upgradePrice,freshPrice,tunePrice,marketLevel,part,track,surface,signature,wildcard,weather,anomaly,eventDefinition,passEvent,fakePassEvent,stats,effectiveStats,partStats,conditionEfficiency,vehicleWeight,evasionRate,upgradeCondition,partUpgradeQuote,upgradePart,gadgetTuneQuote,tuneGadget,buy,setApproach,repairQuote,repair,bodgeQuote,emergencyBodge,race,continueRun,validateSave,encodeSave,decodeSave,generationForTier,minimumTier,equipmentLevel,rivalTierBudget,rivalIncidentExposure,showcaseForRace,settleShowcase,resolveGag,gagEffect,environmentProfile,wrenchDropChance,choiceSuccessChance};
 });
 
