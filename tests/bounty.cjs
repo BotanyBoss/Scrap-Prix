@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const html=fs.readFileSync(path.join(__dirname,'..','dist','dev.html'),'utf8');
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
-for(const i of [0,1,2,3,26])vm.runInContext(scripts[i],ctx);
+for(const i of [0,1,2,3,25])vm.runInContext(scripts[i],ctx);
 const E=ctx.ScrapEngine,clone=s=>JSON.parse(JSON.stringify(s));
 const types=Array.from(E.bountyDefinitions);
 assert.equal(types.length,6);
