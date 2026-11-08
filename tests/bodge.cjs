@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'..','dist','dev.html'),'utf8');
-const scripts=[...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/g)].map(m=>m[1]);
+const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 const sandbox=vm.createContext({console});sandbox.window=sandbox;sandbox.globalThis=sandbox;
 for(const i of [0,1,2,3])vm.runInContext(scripts[i],sandbox);
 const E=sandbox.ScrapEngine,copy=x=>JSON.parse(JSON.stringify(x));
