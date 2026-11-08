@@ -234,7 +234,7 @@
       output.bounties=input.bounties.map(x=>{
         if(!x||!lookup(x.id)||taken.has(x.id))throw Error('Invalid bounty contract.');
         taken.add(x.id);
-        if(!nonneg(x.remaining,5)||x.remaining<1||!nonneg(x.progress,3))throw Error('Invalid bounty deadline.');
+        if(!nonneg(x.remaining,lookup(x.id).races)||x.remaining<1||!nonneg(x.progress,3))throw Error('Invalid bounty deadline.');
         return{id:x.id,remaining:x.remaining,progress:x.progress};
       });
     }
