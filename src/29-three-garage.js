@@ -185,5 +185,5 @@
       live=view;report('3D TEST · PROCEDURAL PARTS');return true;
     }catch(err){if(token===serial)report('3D UNAVAILABLE · USING ORIGINAL GARAGE');throw err;}
   }
-  window.ScrapThreeGarage={mount,dispose,shapeHints,parts:()=>live?.parts||null,sourceVersion:'three@0.162.0'};
+  window.ScrapThreeGarage={mount,dispose,shapeHints,parts:()=>live?.parts||null,metrics:()=>live?{calls:live.renderer.info.render.calls,triangles:live.renderer.info.render.triangles}:null,sourceVersion:'three@0.162.0'};
 })();
