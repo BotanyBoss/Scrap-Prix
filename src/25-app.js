@@ -4,7 +4,7 @@
    Replay speed, scenery and menus cannot modify the resolved result. */
 (function () {
   'use strict';
-  const D=window.ScrapData,E=window.ScrapEngine,P=window.ScrapPresentation;
+  const D=window.ScrapData,E=window.ScrapEngine,P=window.ScrapPresentation,Enc=window.ScrapEncyclopaedia;
   const DEV_MODE=window.SCRAP_PRIX_DEV_MODE===true&&!!window.ScrapVisualLab;
   const normalizeSettings=(value,reduced=false)=>{const settings=P.settings(value,reduced);if(Number(value?.speed)===3)settings.speed=3;return settings;};
   const ENV_LAB=DEV_MODE&&!!window.ScrapEnvironmentLab;
@@ -46,7 +46,7 @@
   let prefs=normalizeSettings({},window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   let screen='title',replay=null,raf=0,renderer=null,lastTick=null,lastPhase=-1,lastRaceDisplay='';
   let raceBefore=null,raceChoices={};
-  let modalKind=null,shopFilter='all',shopTab='parts',pendingConfirm=null,returnFocus=null,resumePause=false,resultTab='finish';
+  let modalKind=null,shopFilter='all',shopTab='parts',pediaTab='events',pediaSelection=null,raceWitnessed=new Set(),pendingConfirm=null,returnFocus=null,resumePause=false,resultTab='finish';
   let storageNotice='WORK IN PROGRESS',skipHintSeen=false;
   const survived=s=>Math.max(0,s.raceIndex-(s.noStartStrikes||0)-(s.finished==='wrecked'?1:0));
   function notify(text,error=false){$('status').textContent=text;$('status').dataset.error=error?'true':'false';}
@@ -77,12 +77,12 @@
   function persistPrefs(){try{localStorage.setItem(SETTINGS,JSON.stringify(prefs));}catch(_){notify('Settings work for this session; browser storage is unavailable.');}}
   function header(){
     const v=P.visibleState(replay,state);
-    const inRun=hasRun&&screen!=='title'&&screen!=='records';
+    const inRun=hasRun&&screen!=='title'&&screen!=='records'&&screen!=='pedia';
     $('topbar').innerHTML=`<div class="brand"><div class="checkered" aria-hidden="true"></div>${pixelWord('{{GAME_NAME_UPPER}}','{{GAME_NAME}}')}</div>
       ${inRun?`<div class="top-resources"><span class="resource" aria-label="Money ${v.credits}">${icon('money')}<b id="money-value">£${money(v.credits)}</b></span><span class="resource" aria-label="${v.wrenches} wrenches">${icon('wrench')}<b id="wrench-value">${v.wrenches}</b></span><span class="resource score-resource"><small>SCORE</small><b>${money(v.points)}</b></span></div>`:`<div class="caption">BUILD / RACE / SURVIVE</div>`}
       <div class="top-actions"><button class="quiet icon-button fullscreen-button" data-action="fullscreen" aria-label="${document.fullscreenElement?'Leave fullscreen':'Enter fullscreen'}" title="Fullscreen · F">${icon('screen')}</button><button class="quiet" data-action="settings" aria-label="Open settings">${screen==='title'?'OPTIONS':'MENU'}</button></div>`;
   }
-  function titleMarkup(){return `<div class="title-screen"><section class="title-hero" aria-label="{{GAME_NAME}} racing artwork"><canvas id="title-canvas" aria-hidden="true"></canvas><h1 class="title-logo">${pixelWord('SCRAP')}${pixelWord('PRIX')}</h1><p class="title-slogan">BUILD &gt; RACE &gt; SURVIVE &gt; REPEAT</p></section><section class="title-menu"><p class="caption">A CAR-BUILDING ROGUELIKE</p><h2>ONE MORE RACE.</h2><p class="title-note">Build something unreasonable.<br>See how long it holds together.</p><nav class="menu-buttons" aria-label="Main menu">${hasRun?`<button class="primary" data-action="continue-title">${state.finished?'LAST RUN REPORT':'CONTINUE RUN'} <span class="arrow" aria-hidden="true">▶</span></button>`:''}<button ${hasRun?'':'class="primary"'} data-action="new">${hasRun?'NEW RUN':'START RUN'} <span class="arrow" aria-hidden="true">▶</span></button>${DEV_MODE?`<button data-action="visual-lab">PARTS LAB ${icon('gadget')}</button>${ENV_LAB?`<button data-action="environment-lab">ENVIRONMENT LAB ${icon('road')}</button><button data-action="event-motion-lab">EVENT MOTION LAB ${icon('flag')}</button>`:''}`:''}<button data-action="records">RECORDS ${icon('trophy')}</button><button data-action="settings">OPTIONS / SAVES ${icon('gadget')}</button></nav><div class="title-records"><div><small>BEST SCORE</small><b>${money(records.bestPoints)}</b></div><div><small>LONGEST RUN</small><b>${records.bestRaces} <small>RACES</small></b></div></div><p class="seed-note">${hasRun?`SAVED RUN · SEED ${state.seed}`:'No run started. Your first bad idea awaits.'}</p></section></div>`;}
+  function titleMarkup(){return `<div class="title-screen"><section class="title-hero" aria-label="{{GAME_NAME}} racing artwork"><canvas id="title-canvas" aria-hidden="true"></canvas><h1 class="title-logo">${pixelWord('SCRAP')}${pixelWord('PRIX')}</h1><p class="title-slogan">BUILD &gt; RACE &gt; SURVIVE &gt; REPEAT</p></section><section class="title-menu"><p class="caption">A CAR-BUILDING ROGUELIKE</p><h2>ONE MORE RACE.</h2><p class="title-note">Build something unreasonable.<br>See how long it holds together.</p><nav class="menu-buttons" aria-label="Main menu">${hasRun?`<button class="primary" data-action="continue-title">${state.finished?'LAST RUN REPORT':'CONTINUE RUN'} <span class="arrow" aria-hidden="true">▶</span></button>`:''}<button ${hasRun?'':'class="primary"'} data-action="new">${hasRun?'NEW RUN':'START RUN'} <span class="arrow" aria-hidden="true">▶</span></button>${DEV_MODE?`<button data-action="visual-lab">PARTS LAB ${icon('gadget')}</button>${ENV_LAB?`<button data-action="environment-lab">ENVIRONMENT LAB ${icon('road')}</button><button data-action="event-motion-lab">EVENT MOTION LAB ${icon('flag')}</button>`:''}`:''}<button data-action="records">RECORDS ${icon('trophy')}</button><button data-action="encyclopaedia">ENCYCLOPAEDIA ${icon('menu')}</button><button data-action="settings">OPTIONS / SAVES ${icon('gadget')}</button></nav><div class="title-records"><div><small>BEST SCORE</small><b>${money(records.bestPoints)}</b></div><div><small>LONGEST RUN</small><b>${records.bestRaces} <small>RACES</small></b></div></div><p class="seed-note">${hasRun?`SAVED RUN · SEED ${state.seed}`:'No run started. Your first bad idea awaits.'}</p></section></div>`;}
   function slotMarkup(slot){
     const p=E.part(state.loadout[slot]),q=E.repairQuote(state,slot),v=state.durability[slot],critical=D.CRITICAL.includes(slot)&&v<=25;
     const efficiency=Math.round(E.conditionEfficiency(v)*100),up=E.partUpgradeQuote(state,slot),level=E.equipmentLevel(state.levels[slot]);
@@ -171,6 +171,12 @@
   function paintPartArt(root=document){
     if(!window.ScrapVehicleArt?.drawPart)return;
     root.querySelectorAll('canvas[data-part-art]').forEach(c=>{const slot=c.dataset.partArt;c.width=180;c.height=90;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);window.ScrapVehicleArt.drawPart(ctx,{x:90,y:45,w:166,h:78,slot,loadout:state.loadout,view:'garage'});});
+    root.querySelectorAll('canvas[data-pedia-part]').forEach(c=>{
+      const id=c.dataset.pediaPart,p=E.part(id);if(!p||!window.ScrapVehicleArt?.drawPart)return;
+      c.width=200;c.height=125;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+      const loadout={...state.loadout,[p.slot]:id};
+      window.ScrapVehicleArt.drawPart(ctx,{x:100,y:65,w:190,h:110,slot:p.slot,loadout,view:'garage'});
+    });
     root.querySelectorAll('canvas[data-offer-art]').forEach(c=>{
       const id=c.dataset.offerArt,o=E.shopOffers(state).find(x=>x.id===id);if(!o)return;
       const loadout={...state.loadout,[o.slot]:o.id};c.width=640;c.height=290;
@@ -198,9 +204,40 @@
     document.querySelectorAll('.leaderboard-car').forEach(c=>{const i=Number(c.dataset.standingIndex),standing=r.standings[i];let loadout=r.loadoutBefore;if(!standing?.player){const rb=r.rivalBuilds.find(b=>b.name===standing?.name);if(rb)loadout=rb.loadout;}c.width=148;c.height=76;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);window.ScrapVehicleArt.draw(ctx,{x:74,y:70,w:132,h:60,loadout,view:'rear',style:'chunky',comboBodywork:true});});
     document.querySelectorAll('.incident-visual-canvas').forEach(c=>{const lap=Number(c.dataset.lap),record=r.laps.find(x=>x.lap===lap),effect=record?.effects.filter(x=>x.kind!=='wear')[Number(c.dataset.eventIndex)||0];if(!effect)return;c.width=300;c.height=160;const scene=window.ScrapScene.create(c,{style:'chunky',camera:'rear',comboBodywork:true});scene?.drawRace({time:2200,track:r.trackId,surface:r.surfaceId,weather:r.weatherId,event:effect.id||effect.key,eventVariant:'normal',eventPhaseTime:800,motion:false,loadout:r.loadoutBefore,rivalLoadouts:r.rivalBuilds?.map(b=>b.loadout)||[]});});
   }
+  function pediaMarkup(){
+    const labels={events:'EVENTS',weather:'WEATHER',shortcuts:'SHORTCUTS',tracks:'TRACKS',parts:'PARTS',bounties:'BOUNTIES',gags:'GAG VEHICLES'};
+    const all=Enc.tabs();if(!all.includes(pediaTab))pediaTab='events';
+    const items=Enc.list(pediaTab);
+    const groups=[...new Set(items.map(x=>x.group))];
+    const selected=items.find(x=>x.key===pediaSelection)||items[0]||null;
+    const card=x=>{
+      const active=selected?.key===x.key,spotted=x.tab==='parts'&&x.state==='spotted',hidden=!x.known;
+      const label=x.known?x.name:spotted?'SILHOUETTE':'?';
+      const art=x.tab==='parts'?`<canvas class="pedia-part-art" data-pedia-part="${esc(x.key)}" data-silhouette="${spotted}" aria-hidden="true"></canvas>`:
+        hidden?'<span class="pedia-question">?</span>':`<span class="pedia-entry-mark">${icon(x.tab==='gags'?'engine':x.tab==='tracks'?'road':x.tab==='bounties'?'trophy':x.tab==='weather'?'weather':'flag')}</span>`;
+      return `<button class="pedia-entry ${hidden?'pedia-unknown':''} ${spotted?'pedia-spotted':''}" data-action="pedia-entry" data-id="${esc(x.key)}" aria-pressed="${active}" aria-label="${hidden?'Unknown '+labels[x.tab].toLowerCase()+' entry':esc(x.name)}">${art}<span class="pedia-entry-label">${esc(label)}</span>${x.tab==='bounties'&&x.known?`<small>COMPLETED ×${x.count}</small>`:''}</button>`;
+    };
+    const groupsMarkup=items.length?groups.map(g=>`<section class="pedia-group"><h3>${esc(g==='engine'||g==='tyres'||g==='chassis'||g==='gadget'?P.pretty(g):g)}</h3><div class="pedia-entries">${items.filter(x=>x.group===g).map(card).join('')}</div></section>`).join(''):
+      '<div class="pedia-no-records">NOTHING RECORDED YET.<p>Only things you actually encounter will appear here.</p></div>';
+    let more='';
+    if(selected?.known){
+      if(pediaTab==='parts')more=`<div class="pedia-records"><div><small>HIGHEST LEVEL USED</small><strong>${selected.level} / 10</strong></div><div><small>MOST TUNES IN ONE RUN</small><strong>${selected.mostTunes}</strong></div></div>`;
+      if(pediaTab==='bounties')more=`<div class="pedia-records"><div><small>COMPLETIONS</small><strong>${selected.count}</strong></div><div><small>CATEGORY</small><strong class="pedia-record-small">${esc(selected.category||'')}</strong></div></div>`;
+      if(pediaTab==='tracks')more='<p class="pedia-milestone">★ FIRST PLACE ACHIEVED</p>';
+      if(pediaTab==='gags')more=`<section class="pedia-recipe"><h3>DISCOVERED FOUR-PART RECIPE</h3>${Object.entries(selected.recipe||{}).map(([slot,id])=>`<p><b>${esc(P.pretty(slot))}</b><span>${esc(E.part(id)?.name||id)}</span></p>`).join('')}</section>`;
+    }
+    const detail=selected?`<div class="pedia-detail-top"><small>${esc(labels[pediaTab])} / ${selected.known?'DISCOVERED':'NOT YET UNLOCKED'}</small><h2>${esc(selected.known?selected.name:'?')}</h2><p>${selected.known?esc(selected.description):pediaTab==='parts'?'Spotted in a shop. Equip this part to unlock its record.':pediaTab==='tracks'?'Race here and finish first to reveal this entry.':pediaTab==='bounties'?'You have been offered this contract. Complete it to reveal the record.':'You missed the opportunity to witness this. Encounter it again to discover what happened.'}</p></div>${more}`:
+      '<div class="pedia-empty-detail"><h2>THE UNKNOWN</h2><p>No records in this section yet. The archive grows as you actually experience Scrap Prix.</p></div>';
+    return `<div class="pedia-screen"><div class="screen-heading"><div class="section-title">${icon('menu')}<h2>ENCYCLOPAEDIA</h2></div><button class="quiet" data-action="menu">MAIN MENU</button></div>
+      <nav class="pedia-tabs" aria-label="Encyclopaedia sections">${all.map(t=>`<button data-action="pedia-tab" data-id="${t}" aria-pressed="${pediaTab===t}">${labels[t]}</button>`).join('')}</nav>
+      <div class="pedia-body"><section class="pedia-list scroll-panel" aria-label="${labels[pediaTab]} discoveries">${groupsMarkup}</section><aside class="pedia-detail frame-light scroll-panel" aria-label="Selected discovery details">${detail}</aside></div>
+      <p class="pedia-footnote">A run can end. Your discoveries don't. Unencountered content is not listed.</p></div>`;
+  }
   function render(focus=true){
+    if(screen==='garage')recordEquipmentTransition(state,state);
+    if(screen==='result'&&state.history.length)Enc.recordResult(state.history.at(-1));
     stopRenderer();$('game').dataset.screen=screen;$('screen').className='screen'+(screen==='race'?' race-screen':'');
-    header();$('screen').innerHTML=screen==='title'?titleMarkup():screen==='garage'?garageMarkup():screen==='race'?raceMarkup():screen==='result'?resultsMarkup():recordsMarkup();
+    header();$('screen').innerHTML=screen==='title'?titleMarkup():screen==='garage'?garageMarkup():screen==='race'?raceMarkup():screen==='result'?resultsMarkup():screen==='pedia'?pediaMarkup():recordsMarkup();
     $('save-status').textContent=storageNotice;
     if(screen==='race'){renderer=window.ScrapScene.create($('race-canvas'),rendererPreferences());lastTick=null;updateRace();raf=requestAnimationFrame(tick);}
     else if(screen==='garage')paintStatic('garage');else if(screen==='title')paintStatic('title');
@@ -227,16 +264,20 @@
       const actions=$('event-choice-actions'),choiceVisual=$('event-choice-visual');
       if(choiceVisual)choiceVisual.hidden=!unresolvedChoice;
       if(special){
+        Enc.recordEventSeen('pass',special.id);raceWitnessed.add('pass:'+special.id);
         $('event-label').textContent=special.motion==='shortcut'?'GAG SHORTCUT PASS':'SPECIAL OVERTAKE';$('event-title').textContent=special.title;$('event-copy').textContent=special.text;$('event-box').className='race-event compact';actions.hidden=true;actions.innerHTML='';
       }else if(fake){
+        Enc.recordEventSeen('fake',fake.id);raceWitnessed.add('fake:'+fake.id);
         $('event-label').textContent='RIVAL COMEBACK';$('event-title').textContent=fake.title;$('event-copy').textContent=fake.text;$('event-box').className='race-event compact fake-pass';actions.hidden=true;actions.innerHTML='';
       }else if(unresolvedChoice){
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
         $('event-label').textContent='ROUTE CHOICE';$('event-title').textContent=f.step.title;$('event-copy').textContent=`${f.step.choice.prompt} Build fit: ${f.step.choice.riskRating}.`;$('event-box').className='race-event has-choice';
         actions.hidden=false;actions.innerHTML=`<button data-action="event-choice" data-id="safe"><b>${esc(f.step.choice.safeLabel)}</b><small>Safer route</small></button><button class="primary" data-action="event-choice" data-id="risk"><b>${esc(f.step.choice.riskLabel)}</b><small>${esc(f.step.choice.riskRating)} build fit</small></button>`;requestAnimationFrame(()=>paintChoiceEvent(f));
       }else{
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
         $('event-label').textContent=f.step.label;$('event-title').textContent=f.step.title;$('event-copy').textContent=f.step.copy;$('event-box').className='race-event'+(f.step.id==='opening'?' compact':'')+(f.step.jumpScare?' jump-scare':'');actions.hidden=true;actions.innerHTML='';
       }
-      $('stage-counter').textContent=fin?'END':replay.result.noStart?'GRID':`${f.step.lap||Math.min(3,f.index+1)} / ${replay.result.lapCount||3}`;$('phase-label').textContent=special?'SPECIAL OVERTAKE':fake?'RIVAL COMEBACK':f.step.label;$('race-weather-label').textContent=E.weather(f.step.weatherId||replay.result.weatherId).name+' · '+E.surface(replay.result.surfaceId).name+' · '+D.APPROACHES[replay.result.approach].name;header();
+      $('stage-counter').textContent=fin?'END':replay.result.noStart?'GRID':`${f.step.lap||Math.min(3,f.index+1)} / ${replay.result.lapCount||3}`;$('phase-label').textContent=special?'SPECIAL OVERTAKE':fake?'RIVAL COMEBACK':f.step.label;$('race-weather-label').textContent=E.weather(f.step.weatherId||replay.result.weatherId).name+' · '+E.surface(replay.result.surfaceId).name+' · '+D.APPROACHES[replay.result.approach].name;header();Enc.recordWeather(f.step.weatherId||replay.result.weatherId);
     }
     // Never show the usual event card/HUD across an actual transformation movie.
     // Race controls (pause, speed and skip) remain visible and fully functional.
@@ -291,13 +332,41 @@
     view.total=view.steps.reduce((n,step)=>n+step.duration,0);
     return window.ScrapEventTiming?.prepareReplay(view,E)||view;
   }
-  function showResult(){replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
+  function recordEquipmentTransition(before,next){
+    if(!next?.loadout)return;
+    for(const slot of D.SLOTS){
+      const id=next.loadout[slot];
+      if(id)Enc.recordPartEquipped(id,next.levels?.[slot]||0);
+      if(before&&next.garageAction?.kind==='tune'&&next.garageAction.slot===slot
+        &&before.loadout?.[slot]===id&&before.levels?.[slot]<next.levels?.[slot]){
+        Enc.recordPartTuned(id,next.levels[slot]);
+      }
+    }
+    const gag=E.resolveGag(next);if(gag?.id)Enc.recordGag(gag.id);
+  }
+  function finalizeEncyclopaediaRace(){
+    if(replay){
+      for(const step of replay.steps){
+        if(!step.sourceId||!step.sourceKind)continue;
+        const key=step.sourceKind+':'+step.sourceId;
+        if(!raceWitnessed.has(key))Enc.recordEventMissed(step.sourceKind,step.sourceId);
+      }
+      for(const pass of replay.result.passEvents||[]){
+        if(!raceWitnessed.has('pass:'+pass.id))Enc.recordEventMissed('pass',pass.id);
+      }
+      for(const fake of replay.result.fakePassEvents||[]){
+        if(!raceWitnessed.has('fake:'+fake.id))Enc.recordEventMissed('fake',fake.id);
+      }
+    }
+    if(state.history.length)Enc.recordResult(state.history.at(-1));
+  }
+  function showResult(){finalizeEncyclopaediaRace();replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
   function updateRecords(){records.bestRaces=Math.max(records.bestRaces,survived(state));records.bestPoints=Math.max(records.bestPoints,state.points);}
   function closeAll(){if($('confirm-modal').open){pendingConfirm=null;$('confirm-modal').close();}if($('modal').open)$('modal').close();modalKind=null;}
   function changeScreen(next){closeAll();if(next!=='race')replay=null;screen=next;render();}
-  function mutate(next,text){state=next;hasRun=true;persist();render(false);notify(text);}
+  function mutate(next,text){const previous=state;state=next;recordEquipmentTransition(previous,next);hasRun=true;persist();render(false);notify(text);}
   function freshSeed(){if(window.crypto?.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0];}return Math.floor(Math.random()*4294967296);}
-  function newRun(seed){state=E.newRun(seed);resultTab='finish';hasRun=true;blocked=false;replay=null;persist();changeScreen('garage');notify('New run started. Restored events and modular animations are active.');}
+  function newRun(seed){state=E.newRun(seed);Enc.startRun();recordEquipmentTransition(null,state);resultTab='finish';hasRun=true;blocked=false;replay=null;persist();changeScreen('garage');notify('New run started. Restored events and modular animations are active.');}
   function ask(title,html,callback,label='CONFIRM'){
     if($('confirm-modal').open)return;
     pendingConfirm=callback;$('confirm-content').innerHTML=`<h2 id="confirm-title">${esc(title)}</h2>${html}<div class="confirm-actions"><button data-action="confirm-cancel" autofocus>CANCEL</button><button class="primary" data-action="confirm-ok">${esc(label)}</button></div>`;$('confirm-modal').showModal();
@@ -358,8 +427,10 @@
       const offers=E.shopOffers(state),filtered=offers.filter(o=>shopFilter==='all'||o.slot===shopFilter),quote=E.shopRefreshQuote(state);
       const tabs=`<nav class="garage-shop-tabs" aria-label="Shop and bounties"><button data-action="shop-tab" data-id="parts" aria-pressed="${shopTab==='parts'}">PARTS SHOP</button><button data-action="shop-tab" data-id="bounties" aria-pressed="${shopTab==='bounties'}">BOUNTY BOARD · ${state.bounties?.length||0}/3</button></nav>`;
       if(shopTab==='bounties'){
+        const bounty=E.bountyOffer(state);if(bounty)Enc.recordBountyOffered(bounty.id);
         $('modal-content').innerHTML=modalHeading('SHOP / BOUNTIES')+tabs+`<div class="modal-main bounty-board-main">${E.bountyBoardMarkup(state)}</div><div class="modal-footer"><span>OFFER REFRESHES AFTER EACH RACE</span><span>THREE ACTIVE CONTRACTS · FAILURE PENALTIES ARE FINAL</span></div>`;
       }else{
+      for(const offer of filtered)Enc.recordPartSpotted(offer.id);
       $('modal-content').innerHTML=modalHeading('SHOP / BOUNTIES',`<span class="modal-money">£${money(state.credits)} / ${state.wrenches} W</span>`)+tabs+`<div class="modal-main"><nav class="filter-tabs" aria-label="Equipment categories">${['all',...D.SLOTS].map(k=>`<button data-action="filter-shop" data-id="${k}" aria-pressed="${shopFilter===k}">${k==='all'?'ALL':P.pretty(k).toUpperCase()} (${k==='all'?offers.length:offers.filter(o=>o.slot===k).length})</button>`).join('')}</nav><section class="shop-offers" data-count="${filtered.length}" aria-label="Available upgrades">${filtered.length?filtered.map(offerMarkup).join(''):'<div class="empty-shop">NO OFFERS IN THIS CATEGORY<br>Keep your current part. New stock arrives after the next race.</div>'}</section><div class="shop-refresh"><div><strong>CHANGE THIS SHOP'S STOCK</strong><small>One paid refresh maximum · price £${money(quote.cost)} · resets next race.<br>Stock rolls around Market Lv ${quote.marketLevel}: 10% -1 / 67% market / 20% +1 / 3% +2.</small></div><button data-action="refresh-shop" ${quote.affordable?'':'disabled'}>${!quote.available?(state.shopRefreshes?'REFRESH USED':'BUILD ACTION USED'):quote.affordable?`REFRESH / £${money(quote.cost)}`:`NEED £${money(quote.cost)}`}</button></div></div><div class="modal-footer"><span>${state.shopRefreshes ? 'PAID REFRESH USED THIS STOP' : 'THREE RANDOM OFFERS'}</span><span>LV 1–10 · One TUNE OR REPLACEMENT per stop. Repairs are separate.</span></div>`;
       }
     }else if(modalKind==='settings'){
@@ -394,6 +465,9 @@
         case 'continue-title':if(hasRun)changeScreen(state.phase==='garage'?'garage':'result');break;
         case 'menu':changeScreen('title');notify('Run saved. Continue whenever you are ready.');break;
         case 'records':changeScreen('records');break;
+        case 'encyclopaedia':pediaTab='events';pediaSelection=null;changeScreen('pedia');break;
+        case 'pedia-tab':if(screen==='pedia'&&Enc.tabs().includes(id)){pediaTab=id;pediaSelection=null;render(false);}break;
+        case 'pedia-entry':if(screen==='pedia'&&Enc.list(pediaTab).some(x=>x.key===id)){pediaSelection=id;render(false);}break;
         case 'settings':openModal('settings');break;
         case 'visual-lab':if(DEV_MODE)openModal('visual-lab');break;
         case 'environment-lab':if(ENV_LAB)openModal('environment-lab');break;
@@ -435,6 +509,7 @@
           const d=E.bountyDisplay(state,entry);
           ask('ABANDON CONTRACT?',`<p><b>${esc(d.title)}</b> immediately fails.</p><p>The following consequence applies now: <b>${esc(d.failure)}</b>.</p><p>This frees the contract slot. There is no additional cancellation cost.</p>`,()=>{
              const next=E.cancelBounty(state,id);
+             if(next.bountyLastCancel?.riskReward?.success)Enc.recordBountyCompleted('risk-reward');
              mutate(next,`Contract abandoned: ${d.failure}.${next.bountyLastCancel?.riskReward?' Risk/Reward complete: +2 wrenches.':''}`);
              if(modalKind==='shop')renderModal();
           },'ACCEPT FAILURE');break;
@@ -458,7 +533,7 @@
           },'TAKE THE BODGE');break;
         }
         case 'approach':mutate(E.setApproach(state,id),D.APPROACHES[id].note);document.querySelector(`[data-action="approach"][data-id="${id}"]`).focus();break;
-        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart){replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
+        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart){Enc.recordResult(next.history.at(-1));replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);raceWitnessed=new Set();Enc.recordWeather(next.history.at(-1).weatherId);if(next.history.at(-1).gagId)Enc.recordGag(next.history.at(-1).gagId);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
         case 'event-choice':{
           if(!replay||!raceBefore)return;const f=P.frame(replay,replay.elapsed),choice=f.step.choice;if(!choice||Object.hasOwn(raceChoices,choice.key)||!['safe','risk'].includes(id))return;
           const elapsedInScene=f.local*f.step.duration,sceneId=f.step.id;raceChoices[choice.key]=id;const next=E.race(raceBefore,raceChoices);state=next;persist();replay=paceShortcutReplay(P.createReplay(raceBefore,next),raceChoices);replay.elapsed=window.ScrapEventTiming.reanchorScene(replay,sceneId,elapsedInScene);replay.paused=false;lastRaceDisplay='';lastTick=null;updateRace();notify(id==='risk'?'Risky route committed. Whatever happens next was technically your idea.':'Safe route chosen. Sensible behaviour has been documented.');break;
