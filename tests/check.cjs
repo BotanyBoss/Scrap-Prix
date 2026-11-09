@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'dist/dev.html'),'utf8');
-const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);assert.equal(scripts.length,28);scripts.forEach(s=>new vm.Script(s));
+const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);assert.equal(scripts.length,29);scripts.forEach(s=>new vm.Script(s));
 const context=vm.createContext({console});for(const i of [0,2,7,8,9])vm.runInContext(scripts[i],context);const art=context.ScrapVehicleArt;
 assert.equal(art.recipes.length,17);
 let projections=0;

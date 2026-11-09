@@ -1,0 +1,28 @@
+name: Dialogue UI visual review
+
+on:
+  push:
+    branches:
+      - prototype/race-garage-dialogue-ui
+  workflow_dispatch:
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: python scripts/build.py
+      - run: node prototypes/dialogue-ui/capture.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scrap-prix-dialogue-real-screens
+          path: artifacts/dialogue-ui/
+          if-no-files-found: error
+          retention-days: 14
