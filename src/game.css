@@ -942,3 +942,51 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 .race-bounty-note{font-size:10px;line-height:1.6;color:#bacbcd;text-align:center}
 .race-bounty-empty{font-size:13px;letter-spacing:.08em;padding:32px;color:#c3d6d6}
 @media(max-width:620px){.race-bounty-trigger{font-size:9px!important;padding:6px!important}.race-bounty-modal-body{padding:9px}.race-bounty-sheet{min-height:280px}.race-bounty-sheet h3{font-size:19px}.race-bounty-status{font-size:10px}.race-bounty-pages button{min-width:82px;font-size:9px}.race-bounty-pages span{font-size:11px}}
+
+/* Anonymous dialogue UI prototype: presentation-only, temporary and outside critical HUD. */
+.dialogue-dock{display:grid;grid-template-columns:65px minmax(0,1fr) 20px;align-items:stretch;gap:10px;
+  background:linear-gradient(150deg,#1b353eeb,#102830f2);border:2px solid #6f98a0;
+  box-shadow:inset 0 0 0 1px #19252a,3px 5px 0 #071921a8;color:#f5ead4;
+  padding:9px 9px 8px 8px;min-width:0;z-index:7;pointer-events:auto;backdrop-filter:blur(4px)}
+.dialogue-dock[hidden]{display:none!important}
+.dialogue-face{display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#4d6671,#203c48);border:2px solid #90aab0;min-height:68px}
+.dialogue-face::before{content:"";position:absolute;inset:5px;border:1px dashed #aac1bd66}
+.dialogue-face-shape{width:40px;height:56px;display:block;background:#0d252d;
+  clip-path:polygon(20% 95%,10% 76%,24% 69%,37% 64%,34% 51%,26% 45%,22% 26%,30% 13%,47% 8%,69% 14%,77% 30%,72% 46%,65% 53%,67% 63%,84% 68%,91% 83%,88% 100%)}
+.dialogue-face small{position:absolute;bottom:4px;right:5px;font-size:11px;color:#d5d5bd;font-weight:900}
+.dialogue-face[data-role=rival]{border-color:#d89d87;background:linear-gradient(150deg,#795149,#3a3840)}
+.dialogue-face[data-role=garage]{border-color:#d2b479;background:linear-gradient(150deg,#806b4b,#3b4141)}
+.dialogue-copy{display:flex;flex-direction:column;min-width:0;justify-content:center;gap:5px}
+.dialogue-speaker{display:flex;align-items:center;justify-content:space-between;gap:7px;padding-bottom:4px;border-bottom:1px solid #54737a}
+.dialogue-speaker strong{font-family:var(--font-display,'Courier New',monospace);font-size:13px;color:#f2d88a;letter-spacing:.035em}
+.dialogue-speaker span{font-size:8px;white-space:nowrap;color:#a8cad0;letter-spacing:.09em}
+.dialogue-copy p{font-size:12px;line-height:1.43;color:#f0f1e7;font-weight:500;overflow-wrap:anywhere}
+.dialogue-test-tag{font-size:8px;letter-spacing:.06em;color:#8aa8ad;line-height:1.3}
+.dialogue-close{align-self:start;display:grid;place-items:center;width:21px;min-width:21px;height:21px;min-height:21px;
+  padding:0!important;margin:0;border:1px solid #60777c;background:#19353d;color:#e5d0af;box-shadow:none;
+  font-size:17px;line-height:1;font-weight:900}
+.dialogue-close:hover:not(:disabled){background:#43616a}
+.race-radio-dock{position:absolute;right:12px;bottom:76px;width:min(390px,40%);max-height:155px}
+.garage-radio-dock{position:absolute;right:10px;bottom:56px;width:min(370px,54%);max-height:135px}
+.garage-dialogue-test{min-height:27px;padding:4px 8px;font-size:9px;box-shadow:none;background:#264650;
+  color:#dce9e8;border:1px solid #5e8a91}
+.garage-dialogue-test:hover:not(:disabled){background:#3a6570;color:#fbecd0}
+.race-wrap[data-cinematic="true"] .race-radio-dock{display:none!important}
+@media(max-width:900px){
+  .race-radio-dock{right:9px;bottom:65px;width:min(360px,47%);grid-template-columns:50px minmax(0,1fr) 19px;gap:7px;padding:7px}
+  .garage-radio-dock{grid-template-columns:50px minmax(0,1fr) 19px;gap:7px;padding:7px}
+  .dialogue-face{min-height:58px}.dialogue-face-shape{transform:scale(.8)}
+  .dialogue-speaker strong{font-size:11px}.dialogue-speaker span{font-size:7px}.dialogue-copy p{font-size:11px}
+}
+@media(max-width:620px){
+  .garage-dialogue-test{font-size:8px;padding:3px 5px;min-height:25px}
+  .garage-radio-dock{right:6px;bottom:42px;width:min(240px,70%);grid-template-columns:38px minmax(0,1fr) 15px;gap:5px;padding:5px}
+  .race-radio-dock{right:5px;bottom:56px;width:min(250px,60%);grid-template-columns:40px minmax(0,1fr) 16px;gap:5px;padding:6px;max-height:135px}
+  .dialogue-face{min-height:52px;border-width:1px}.dialogue-face-shape{transform:scale(.6)}
+  .dialogue-speaker{gap:4px;padding-bottom:2px}.dialogue-speaker strong{font-size:9px}.dialogue-speaker span{font-size:6px}
+  .dialogue-copy{gap:3px}.dialogue-copy p{font-size:9px;line-height:1.3}
+  .dialogue-test-tag{font-size:6px}
+  .dialogue-close{width:16px;min-width:16px;height:17px;min-height:17px;font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.dialogue-dock{backdrop-filter:none}}
