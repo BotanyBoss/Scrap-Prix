@@ -28,7 +28,7 @@
         const res=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,fromSurface:true});
         assert(res.result?.data,'Screenshot capture was empty');
         fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(res.result.data,'base64'));
-        const details=await evalJs(`(()=>{const id=document.getElementById('game').dataset.screen,d=document.querySelector('.dialogue-dock:not([hidden])'),p=d?.getBoundingClientRect(),ctrl=document.querySelector('.race-controls')?.getBoundingClientRect();return{screen:id,visibleDialogue:!!d,speaker:d?.querySelector('.dialogue-speaker')?.textContent,dialogue:p?{top:p.top,right:p.right,bottom:p.bottom,left:p.left}:null,controls:ctrl?{top:ctrl.top,bottom:ctrl.bottom}:null}})()`);
+        const details=await evalJs(`(()=>{const id=document.getElementById('game').dataset.screen,d=document.querySelector('.dialogue-dock:not([hidden])'),p=d?.getBoundingClientRect(),ctrl=document.querySelector('.race-controls')?.getBoundingClientRect();return{screen:id,visibleDialogue:!!d,speaker:d?.querySelector('.dialogue-speaker')?.textContent,dialogue:p?{top:p.top,right:p.right,bottom:p.bottom,left:p.left}:null,controls:ctrl?{top:ctrl.top,bottom:ctrl.bottom}:null,bountyButton:!!document.querySelector('[data-action=race-bounties]')}})()`);
         if(!details.visibleDialogue)throw Error(name+': expected dialogue preview to be visible');
         return {name,details};
       };
@@ -42,6 +42,11 @@
       await viewport(390,844);
       gallery.push(await shot('garage-mobile-390x844'));
       await viewport(1440,900);
+      assert(await click('shop'),'Garage shop entry missing');
+      await evalJs("document.querySelector('[data-action=shop-tab][data-id=bounties]').click()");
+      assert(await click('accept-bounty'),'Could not accept a bounty for HUD stress capture');
+      assert(await click('confirm-ok'),'Could not confirm bounty acceptance');
+      assert(await click('close-modal'));
       await click('settings');await sleep(140);
       await evalJs("(()=>{const box=document.getElementById('setting-autoplay');if(box.checked)box.click();})()");
       await click('close-modal');
