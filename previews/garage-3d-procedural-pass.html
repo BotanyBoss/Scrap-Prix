@@ -61,6 +61,10 @@
     .primary { width: 100%; background: #e3b66b; color: #172024; border: 1px solid #ffdaa1; padding: 13px; border-radius: 7px; font-weight: 900; letter-spacing: .08em; }
     .primary:hover { background: #ffd692; }
     .notice { margin-top: 9px; color: #a3b4b2; font-size: 11px; }
+    .model-feedback { margin: 10px 0 0; color: #e5cb94; font-size: 11px; font-weight: 750; min-height: 17px; }
+    .control:disabled { opacity: .5; cursor: wait; }
+    #export-car,#export-part { border-color: #ae8755; background: #3c382d; color: #f6d99a; }
+    #export-car:hover,#export-part:hover { background: #514531; }
 
     /* Race briefing is an overlay, not a route. Garage stays mounted behind it. */
     [hidden] { display: none !important; }
@@ -168,20 +172,20 @@
 </head>
 <body>
   <header>
-    <div class="brand"><div class="flag" aria-hidden="true"></div><div><strong>SCRAP PRIX</strong><div class="eyebrow">3D WORKSHOP / FIRST FLIGHT</div></div></div>
+    <div class="brand"><div class="flag" aria-hidden="true"></div><div><strong>SCRAP PRIX</strong><div class="eyebrow">3D WORKSHOP / PROCEDURAL PASS 01</div></div></div>
     <div class="version">PROTOTYPE ONLY<br>NO GAMEPLAY / SAVE CHANGES</div>
   </header>
   <div id="garage-layout" class="layout">
     <main class="showcase">
-      <div class="showcase-top"><div><div class="eyebrow">YOUR CURRENT MASTERPIECE</div><h1>THE GARAGE</h1></div><span class="stamp">TEST BUILD 01</span></div>
+      <div class="showcase-top"><div><div class="eyebrow">BUILT WITH THREE.JS</div><h1>THE GARAGE</h1></div><span class="stamp">ART PASS 01</span></div>
       <div class="stage"><canvas id="garage-canvas" aria-label="Interactive 3D prototype vehicle. Drag to rotate, scroll to zoom"></canvas><span class="stage-tip">DRAG TO ROTATE · SCROLL TO ZOOM · SELECT A PART</span></div>
-      <div class="toolbar"><div class="button-row" role="group" aria-label="Camera views"><button class="control" data-view="three-quarter" aria-pressed="true">3/4 VIEW</button><button class="control" data-view="front" aria-pressed="false">FRONT</button><button class="control" data-view="rear" aria-pressed="false">REAR</button><button class="control" data-view="side" aria-pressed="false">SIDE</button></div><button id="auto-rotate" class="control" aria-pressed="false">AUTO ROTATE: OFF</button></div>
+      <div class="toolbar"><div class="button-row" role="group" aria-label="Camera views"><button class="control" data-view="three-quarter" aria-pressed="true">3/4 VIEW</button><button class="control" data-view="front" aria-pressed="false">FRONT</button><button class="control" data-view="rear" aria-pressed="false">REAR</button><button class="control" data-view="side" aria-pressed="false">SIDE</button></div><div class="button-row"><button id="auto-rotate" class="control" aria-pressed="false">AUTO ROTATE: OFF</button><button type="button" id="export-part" class="control" title="Export selected component in shared car coordinates">EXPORT PART .GLB</button><button type="button" id="export-car" class="control" title="Export assembled car geometry">EXPORT CAR .GLB</button></div></div>
     </main>
     <aside class="sidebar" aria-label="Equipped parts">
       <div class="side-header"><div><div class="eyebrow">EQUIPPED COMPONENTS</div><h2>BUILD & INSPECT</h2><p>Durability controls are for visual testing only.</p></div><span class="stamp">4 SLOTS</span></div>
       <div id="parts"></div>
-      <div class="summary"><b>Prototype rules:</b> Damage is applied to each slot independently. Replacements start clean. The actual game keeps its existing economy, repair rules and four-part gag recipes.</div>
-      <div class="side-footer"><button class="primary" id="go-to-race">GO TO RACE BRIEFING →</button><p class="notice">This first slice is isolated from the live game. Model geometry is placeholder art; the workshop, part slots and damage behaviour are what we're testing.</p></div>
+      <div class="summary"><b>Procedural asset experiment:</b> Eight visual variants made using Three.js geometry rather than generated meshes. Export the whole car or your selected component as a GLB, preserving shared attachment coordinates. Only the preview changes; actual race rules and saves are untouched.<p id="model-feedback" class="model-feedback" role="status" aria-live="polite">Ready to export reusable 3D assets.</p></div>
+      <div class="side-footer"><button class="primary" id="go-to-race">GO TO RACE BRIEFING →</button><p class="notice">Review-only sandbox. These 3D parts are prototypes, not final production-approved artwork.</p></div>
     </aside>
   </div>
   
@@ -237,6 +241,7 @@
    Replace procedural parts with approved GLBs during the asset pass. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 const SLOT_ORDER = ['engine', 'tyres', 'chassis', 'gadget'];
 const PRESETS = {
