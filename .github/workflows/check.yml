@@ -8,11 +8,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: python scripts/build.py
@@ -24,6 +24,7 @@ jobs:
       - run: node tests/bounty-new-contracts.cjs
       - run: node tests/encyclopaedia.cjs
       - run: node tests/dialogue-ui.cjs
+      - run: node tests/three-garage.cjs
       - run: node tests/event-content-audit.cjs
       - run: node tests/gag-buildability.cjs
       - run: node tests/gag-perks.cjs

@@ -3,7 +3,7 @@
   const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
   const html=fs.readFileSync(path.join(__dirname,'..','dist','dev.html'),'utf8');
   const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
-  assert.equal(scripts.length,29);
+  assert.equal(scripts.length,30);
   const saved=new Map(),storage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,String(v))};
   const load=()=>{
     const ctx=vm.createContext({console,localStorage:storage});

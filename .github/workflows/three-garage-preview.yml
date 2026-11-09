@@ -1,0 +1,30 @@
+name: Review integrated Three.js Garage
+on:
+  push:
+    branches: [feature/threejs-garage-first-pass]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Build current Scrap Prix with opt-in 3D renderer
+        run: python scripts/build.py
+      - name: Render true Three.js garage and check unchanged save
+        run: node prototypes/three-garage/capture.cjs
+      - name: Upload real in-game 3D vs 2D screenshots
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: scrap-prix-integrated-threejs-garage
+          path: artifacts/three-garage/
+          retention-days: 14
+          if-no-files-found: warn
