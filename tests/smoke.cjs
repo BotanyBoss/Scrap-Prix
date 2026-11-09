@@ -103,6 +103,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     assert(await click('race'),'No race button in the garage');
     await sleep(500);
     assert.equal(await screen(),'race','Race should open');
+    assert(await evaluate("(()=>{const n=document.querySelector('[data-action=race-bounties]');const r=n?.getBoundingClientRect();return !!r&&r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()"),'Bounty button must be visible inside mobile viewport');
     assert(await click('race-bounties'),'Race HUD should open active bounty pages');
     assert(await evaluate("document.getElementById('modal').open"));
     assert(await evaluate("!!document.querySelector('.race-bounty-sheet')"),'Read-only contract sheet should render');
