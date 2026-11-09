@@ -9,11 +9,11 @@ jobs:
   browser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Build current Scrap Prix with opt-in 3D renderer
@@ -22,7 +22,7 @@ jobs:
         run: node prototypes/three-garage/capture.cjs
       - name: Upload real in-game 3D vs 2D screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scrap-prix-integrated-threejs-garage
           path: artifacts/three-garage/
