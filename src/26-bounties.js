@@ -38,6 +38,18 @@
     {id:'fresh',title:'Fresh From the Junkyard',goal:'Finish in the top two after replacing a part at that race’s garage.',races:2,
       reward:'Patch weakest critical part +20 condition',failure:'Next garage: one shop offer',weight:3}
   ];
+  // Player-confirmed workshop, survival and high-risk contracts. No duplicates of existing goals.
+  const newTypes=[
+    {id:'risk-reward',title:'Risk/Reward',goal:'Deliberately cancel another active, unfinished bounty. Its full failure penalty still applies.',races:2,reward:'+2 wrenches',failure:'Next garage: one shop offer',weight:1.2,rarity:'Rare',category:'Absurd Gambles'},
+    {id:'bodge-podium',title:'I Have a Plan',goal:'Use Emergency Bodge, then finish on the podium in that same race.',races:3,reward:'+2 wrenches',failure:'Engine loses 12 condition',weight:1.3,rarity:'Rare',category:'Survival & Durability'},
+    {id:'phoenix',title:'The Phoenix',goal:'Use Emergency Bodge, then win that same race.',races:5,reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',weight:.55,rarity:'Legendary',category:'Absurd Gambles'},
+    {id:'tyre-cliff',title:'Tyred but Not Out',goal:'Finish a race with tyres between 1% and 10% condition.',races:3,reward:'+1 wrench',failure:'Tyres lose 10 condition',weight:1.7,rarity:'Rare',category:'Survival & Durability'},
+    {id:'engine-cliff',title:'The Little Engine That Could',goal:'Finish a race with engine between 1% and 10% condition.',races:3,reward:'+1 wrench',failure:'Engine loses 10 condition',weight:1.7,rarity:'Rare',category:'Survival & Durability'},
+    {id:'everything-fine',title:'Everything Is Fine',goal:'Start a race with all four components at 30% condition or lower, then finish 1st–4th.',races:5,reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',weight:.5,rarity:'Legendary',category:'Absurd Gambles'},
+    {id:'biscuit',title:'Risk It for a Chocolate Biscuit',goal:'Take a risky shortcut successfully without taking any damage from that shortcut.',races:4,reward:'+2 wrenches',failure:'No normal repairs for one garage',weight:1.5,rarity:'Rare',category:'Event & Hazard Challenges'},
+    {id:'double-disaster',title:'Double Disaster',goal:'In two consecutive finished races, encounter a potentially damaging event and take no more than 5 total event damage in each race.',races:5,reward:'+2 wrenches',failure:'An extra bad event in the next started race',weight:1.5,rarity:'Rare',category:'Event & Hazard Challenges'},
+    {id:'no-repairs-five',title:'No Time for Repairs',goal:'Finish five consecutive races without using any normal repairs. Replacements and Emergency Bodge are allowed.',races:5,reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',weight:1.1,rarity:'Rare',category:'Streaks & Endurance'}
+  ];
   // Legacy 'tank' stays stable for existing saved contracts. Other gag contracts are
   // separately identified so a cancelled/completed one cannot silently change target.
   const legacyTank={id:'tank',title:'Classified Vehicle Request',goal:'Complete a race driving the Tank gag vehicle.',races:5,
@@ -47,7 +59,9 @@
     races:8,reward:'One free replacement from a future shop',
     failure:'No normal repairs for two garages',weight:.30,hidden:true,gagId:g.id
   }));
-  const types=Object.freeze([...regularTypes,legacyTank,...gagTypes].map(t=>Object.freeze(t)));
+  const categoryById={third:'Placement & Precision',second:'Placement & Precision',fourth:'Placement & Precision',fifth:'Placement & Precision',match:'Placement & Precision',drop:'Placement & Precision',comeback:'Placement & Precision',reckless:'Driving Challenges',balanced:'Driving Challenges',careful:'Driving Challenges',clean:'Survival & Durability',survivor:'Streaks & Endurance',worn:'Survival & Durability',route:'Event & Hazard Challenges',fresh:'Workshop Challenges'};
+  const types=Object.freeze([...regularTypes,...newTypes,legacyTank,...gagTypes].map(t=>Object.freeze({...t,category:t.category||categoryById[t.id]||'Gag Vehicle & Mystery',rarity:t.rarity||(t.gagId?'Classified':t.weight>=3?'Common':t.weight>=2?'Uncommon':'Rare')})));
+  if(new Set(types.map(t=>t.id)).size!==types.length||new Set(types.map(t=>t.title).filter(t=>t!=='Classified Vehicle Request')).size!==types.filter(t=>t.title!=='Classified Vehicle Request').length)throw Error('Duplicate bounty ID or title');
   const lookup=id=>types.find(t=>t.id===id);
   const nonneg=(n,max=100)=>Number.isInteger(n)&&n>=0&&n<=max;
   const hash=(seed,round,salt=0)=>{
@@ -66,7 +80,7 @@
     // Once accepted, the same displayed offer stays on the board until the next race.
     if(s.bountyAcceptedAt===s.raceIndex&&s.bountyOfferedId)return lookup(s.bountyOfferedId);
     const inUse=new Set(active(s).map(x=>x.id));
-    const available=types.filter(t=>!inUse.has(t.id)&&(!['comeback','match','drop'].includes(t.id)||s.history?.length));
+    const available=types.filter(t=>!inUse.has(t.id)&&(!['comeback','match','drop'].includes(t.id)||s.history?.length)&&(!['bodge-podium','phoenix'].includes(t.id)||(s.bodge?.uses||0)<3));
     if(!available.length)return null;
     const total=available.reduce((n,t)=>n+t.weight,0);
     let roll=(hash(s.seed,s.raceIndex,0xB0A71E)/4294967296)*total;
@@ -100,6 +114,13 @@
   function applyFailure(s,id){
     const p=penalties(s);let effect;
     if(id==='third'||id==='second'||id==='match'||id==='fresh'){p.shopOne=Math.max(p.shopOne,1);effect={kind:'shopOne',garages:1};}
+    else if(id==='risk-reward'){p.shopOne=Math.max(p.shopOne,1);effect={kind:'shopOne',garages:1};}
+    else if(id==='bodge-podium')effect=damagePenalty(s,12,'engine');
+    else if(id==='tyre-cliff')effect=damagePenalty(s,10,'tyres');
+    else if(id==='engine-cliff')effect=damagePenalty(s,10,'engine');
+    else if(['phoenix','everything-fine','no-repairs-five'].includes(id)){p.repairLock=Math.max(p.repairLock,2);effect={kind:'repairLock',garages:2};}
+    else if(id==='biscuit'){p.repairLock=Math.max(p.repairLock,1);effect={kind:'repairLock',garages:1};}
+    else if(id==='double-disaster'){p.extraEvent=Math.max(p.extraEvent,1);effect={kind:'extraEvent',races:1};}
     else if(id==='reckless')effect=damagePenalty(s,12,'engine');
     else if(id==='fourth')effect=damagePenalty(s,8,'engine');
     else if(id==='drop')effect=damagePenalty(s,12,'tyres');
@@ -126,9 +147,10 @@
     if(['reckless','survivor','comeback','fourth','match','balanced','careful','clean'].includes(id)){
       s.wrenches+=1;return{kind:'wrench',amount:1};
     }
-    if(id==='route'){s.wrenches+=2;return{kind:'wrench',amount:2};}
-    if(lookup(id)?.gagId){
-      // Three is a hard voucher limit shared by all 17 rare vehicle contracts.
+    if(id==='route'||['risk-reward','bodge-podium','biscuit','double-disaster'].includes(id)){s.wrenches+=2;return{kind:'wrench',amount:2};}
+    if(['tyre-cliff','engine-cliff'].includes(id)){s.wrenches+=1;return{kind:'wrench',amount:1};}
+    if(lookup(id)?.gagId||['phoenix','everything-fine','no-repairs-five'].includes(id)){
+      // Three is a hard voucher limit shared by rare vehicle and exceptional contracts.
       if((s.bountyCoupons||0)>=3){s.wrenches+=1;return{kind:'voucherOverflowWrench',amount:1,capacity:3};}
       s.bountyCoupons=(s.bountyCoupons||0)+1;return{kind:'replacementVoucher',amount:1};
     }
@@ -142,7 +164,20 @@
     next.bounties.splice(index,1);
     const consequence=applyFailure(next,id);
     next.bountyLastCancel={id,title:def.title,consequence};
+    // Risk/Reward only succeeds by sacrificing a DIFFERENT active contract.
+    // First apply that contract's real failure, then grant the advertised payout.
+    if(id!=='risk-reward'&&active(next).some(b=>b.id==='risk-reward')){
+      next.bounties=active(next).filter(b=>b.id!=='risk-reward');
+      const reward=applyReward(next,'risk-reward');
+      next.bountyLastCancel.riskReward={id:'risk-reward',title:'Risk/Reward',success:true,reward};
+    }
     return next;
+  }
+  function lowDamagingEventRace(result){
+    if(result.noStart||result.failedSlot)return false;
+    const incidents=(result.laps||[]).flatMap(l=>(l.effects||[]).filter(e=>e.kind!=='wear'));
+    const danger=incidents.some(e=>{const d=E.eventDefinition(e);return e.kind==='signature'||!!(d&&(d.extraDamage>0||d.choice?.failDamage>0||d.choice?.successDamage>0));});
+    return danger&&incidents.reduce((n,e)=>n+(e.damage||0),0)<=5;
   }
   function finishedGoal(def,entry,result,previous,before){
     // A DNF/DNS is never a precision finish, even if it is ranked fifth.
@@ -155,6 +190,13 @@
     if(def.id==='balanced')return result.place<=3&&result.approach==='balanced';
     if(def.id==='careful')return result.place<=2&&result.approach==='careful';
     if(def.id==='clean')return result.damage<=15;
+    if(def.id==='bodge-podium')return before.garageAction?.kind==='bodge'&&result.place<=3;
+    if(def.id==='phoenix')return before.garageAction?.kind==='bodge'&&result.place===1;
+    if(def.id==='tyre-cliff')return result.durabilityAfter.tyres>=1&&result.durabilityAfter.tyres<=10;
+    if(def.id==='engine-cliff')return result.durabilityAfter.engine>=1&&result.durabilityAfter.engine<=10;
+    if(def.id==='everything-fine')return result.place<=4&&['engine','tyres','chassis','gadget'].every(x=>result.durabilityBefore[x]<=30);
+    if(def.id==='biscuit')return (result.laps||[]).some(l=>(l.effects||[]).some(e=>e.choiceEvent&&e.choice==='risk'&&e.outcome==='success'&&e.damage===0));
+    if(def.id==='risk-reward'||def.id==='double-disaster'||def.id==='no-repairs-five')return false;
     if(def.id==='survivor')return false; // counted only by per-race progress
     if(def.id==='worn')return ['engine','tyres','chassis'].some(x=>result.durabilityBefore[x]<=25);
     if(def.id==='comeback')return previous&&previous.place-result.place>=2;
@@ -184,7 +226,9 @@
       const def=lookup(entry.id);
       let progress=entry.progress||0;
       if(def.id==='survivor')progress=!result.noStart&&!result.failedSlot&&result.damage<=24?progress+1:0;
-      const success=def.id==='survivor'?progress>=2:finishedGoal(def,entry,result,previous,s);
+      if(def.id==='double-disaster')progress=lowDamagingEventRace(result)?progress+1:0;
+      if(def.id==='no-repairs-five')progress=!result.noStart&&!result.failedSlot?progress+1:0;
+      const success=['survivor','double-disaster','no-repairs-five'].includes(def.id)?progress>=(def.id==='no-repairs-five'?5:2):finishedGoal(def,entry,result,previous,s);
       const remaining=entry.remaining-1;
       if(success){const reward=applyReward(next,entry.id);settlements.push({id:entry.id,title:def.title,success:true,reward});}
       else if(remaining<=0){const consequence=applyFailure(next,entry.id);settlements.push({id:entry.id,title:def.title,success:false,consequence});}
@@ -207,7 +251,10 @@
   };
   E.repair=function(s,slot){
     if(penalties(s).repairLock>0)throw Error('Normal repairs suspended by bounty failure.');
-    return original.repair(s,slot);
+    const next=original.repair(s,slot);
+    // A normal repair breaks the five-race streak; replacement/Bodge do not.
+    if(active(next).some(b=>b.id==='no-repairs-five'&&b.progress>0))next.bounties=active(next).map(b=>b.id==='no-repairs-five'?{...b,progress:0}:b);
+    return next;
   };
   // Restricted offers are now resolved by the engine itself, also used by Bodge and buy().
   E.shopOffers=original.shopOffers;
@@ -234,7 +281,7 @@
       output.bounties=input.bounties.map(x=>{
         if(!x||!lookup(x.id)||taken.has(x.id))throw Error('Invalid bounty contract.');
         taken.add(x.id);
-        if(!nonneg(x.remaining,lookup(x.id).races)||x.remaining<1||!nonneg(x.progress,3))throw Error('Invalid bounty deadline.');
+        if(!nonneg(x.remaining,lookup(x.id).races)||x.remaining<1||!nonneg(x.progress,x.id==='no-repairs-five'?5:3))throw Error('Invalid bounty deadline.');
         return{id:x.id,remaining:x.remaining,progress:x.progress};
       });
     }
