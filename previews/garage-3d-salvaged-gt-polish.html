@@ -263,15 +263,15 @@ let selected = 'chassis';
 const container = document.getElementById('garage-canvas');
 const slotsEl = document.getElementById('parts');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#12252a');
-scene.fog = new THREE.Fog('#12252a', 9, 19);
+scene.background = new THREE.Color('#172c30');
+scene.fog = new THREE.Fog('#172c30', 10, 21);
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 35);
 camera.position.set(5.8, 3.4, 6.6);
 const renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.7;
+renderer.toneMappingExposure = 1.28;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const controls = new OrbitControls(camera, container);
@@ -284,32 +284,52 @@ controls.maxPolarAngle = Math.PI / 2.02;
 controls.autoRotateSpeed = 0.65;
 controls.update();
 
-scene.add(new THREE.HemisphereLight('#c2edf3', '#30251d', 2.2));
+scene.add(new THREE.HemisphereLight('#c8e3e5', '#4b3e2e', 1.35));
 function spotlight(colour, intensity, x, y, z) {
   const lamp = new THREE.DirectionalLight(colour, intensity);
   lamp.position.set(x, y, z);
   lamp.castShadow = x > 0;
-  lamp.shadow.mapSize.set(1024, 1024);
+  lamp.shadow.mapSize.set(2048, 2048);
+  lamp.shadow.normalBias = 0.025;
   lamp.shadow.camera.left = -6; lamp.shadow.camera.right = 6;
   lamp.shadow.camera.top = 6; lamp.shadow.camera.bottom = -6;
   scene.add(lamp);
 }
-spotlight('#ffdfa3', 3.3, 4, 8, 5);
-spotlight('#70c6e3', 2.0, -5, 5, -3);
+spotlight('#ffe1b0', 3.7, 4, 8, 5);
+spotlight('#70b5dc', 1.55, -5, 5, -3);
+spotlight('#fff5d8', 1.0, -3, 8, 4);
 const stage = new THREE.Group();
 scene.add(stage);
-const floor = new THREE.Mesh(new THREE.CylinderGeometry(3.25, 3.5, 0.22, 72), new THREE.MeshStandardMaterial({ color: '#243338', metalness: 0.6, roughness: 0.45 }));
+const floor = new THREE.Mesh(new THREE.CylinderGeometry(3.25, 3.5, 0.22, 72), new THREE.MeshStandardMaterial({ color: '#2e4041', metalness: 0.38, roughness: 0.72 }));
 floor.position.y = -0.15; floor.receiveShadow = true; stage.add(floor);
-const ring = new THREE.Mesh(new THREE.TorusGeometry(3.25, 0.035, 8, 90), new THREE.MeshBasicMaterial({ color: '#e5b968' }));
+const ring = new THREE.Mesh(new THREE.TorusGeometry(3.25, 0.035, 8, 90), new THREE.MeshBasicMaterial({ color: '#d5ac70' }));
 ring.rotation.x = Math.PI / 2; ring.position.y = -0.028; stage.add(ring);
 const line = new THREE.Mesh(new THREE.TorusGeometry(2.98, 0.009, 6, 84), new THREE.MeshBasicMaterial({ color: '#64878a' }));
 line.rotation.x = Math.PI / 2; line.position.y = -0.022; stage.add(line);
-const grid = new THREE.GridHelper(15, 28, '#294950', '#263a40'); grid.position.y = -0.28; scene.add(grid);
+/* Workshop floor cues are independent of the car asset and never exported. */
+for (const side of [-1,1]) {
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(4.05,.018,.045),
+    new THREE.MeshStandardMaterial({color:'#caa668',metalness:.45,roughness:.62}));
+  strip.position.set(0,-.021,side*2.33); stage.add(strip);
+  for (const x of [-1.92,1.92]) {
+    const bolt = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.01,10),
+      new THREE.MeshStandardMaterial({color:'#7c9591',metalness:.7,roughness:.45}));
+    bolt.position.set(x,-.013,side*2.33); stage.add(bolt);
+  }
+}
+const grid = new THREE.GridHelper(15, 28, '#2c4b4d', '#24373b'); grid.position.y = -0.28; scene.add(grid);
 const car = new THREE.Group(); stage.add(car);
 
-function material(colour, slot, { roughness = 0.48, metalness = 0.25, damage = true, emissive = null } = {}) {
-  const m = new THREE.MeshStandardMaterial({ color: colour, roughness, metalness, emissive: emissive || '#000000' });
-  m.userData = { slot, damage, roughness };
+function material(colour, slot, { roughness = 0.48, metalness = 0.25, damage = true, emissive = null, finish = 'standard' } = {}) {
+  const props = { color: colour, roughness, metalness, emissive: emissive || '#000000' };
+  /* Paint and glass get distinct highlights. Rubber and engine parts stay matte/metal. */
+  const m = (finish === 'paint' || finish === 'glass')
+    ? new THREE.MeshPhysicalMaterial({
+        ...props, clearcoat: finish === 'paint' ? .68 : .86,
+        clearcoatRoughness: finish === 'paint' ? .22 : .12
+      })
+    : new THREE.MeshStandardMaterial(props);
+  m.userData = { slot, damage, roughness, finish };
   return m;
 }
 function mesh(group, geometry, colour, slot, pos, options = {}) {
