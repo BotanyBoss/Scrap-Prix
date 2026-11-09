@@ -74,7 +74,9 @@
     extraEvent:s.bountyPenalties?.extraEvent||0
   });
   const active=s=>Array.isArray(s.bounties)?s.bounties:[];
-  const known=(s,definition)=>!definition.hidden||(s.discoveredGags||[]).includes(definition.gagId);
+  // A gag name deciphers from the permanent main-menu Encyclopaedia, not this run.
+  // Older standalone tests that do not load the Encyclopaedia retain their legacy fallback.
+  const known=(s,definition)=>!definition.hidden||(window.ScrapEncyclopaedia?window.ScrapEncyclopaedia.isGagKnown(definition.gagId):(s.discoveredGags||[]).includes(definition.gagId));
   function bountyOffer(s){
     if(s.phase!=='garage'||s.finished)return null;
     // Once accepted, the same displayed offer stays on the board until the next race.
