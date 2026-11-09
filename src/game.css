@@ -982,7 +982,7 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 @media(max-width:620px){
   .garage-dialogue-test{font-size:8px;padding:3px 5px;min-height:25px}
   .garage-radio-dock{right:6px;bottom:42px;width:min(240px,70%);grid-template-columns:38px minmax(0,1fr) 15px;gap:5px;padding:5px}
-  .race-radio-dock{right:5px;bottom:56px;width:min(250px,60%);grid-template-columns:40px minmax(0,1fr) 16px;gap:5px;padding:6px;max-height:135px}
+  .race-radio-dock{right:5px;bottom:125px;width:min(250px,60%);grid-template-columns:40px minmax(0,1fr) 16px;gap:5px;padding:6px;max-height:135px}
   .dialogue-face{min-height:52px;border-width:1px}.dialogue-face-shape{transform:scale(.6)}
   .dialogue-speaker{gap:4px;padding-bottom:2px}.dialogue-speaker strong{font-size:9px}.dialogue-speaker span{font-size:6px}
   .dialogue-copy{gap:3px}.dialogue-copy p{font-size:9px;line-height:1.3}
@@ -990,3 +990,6 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
   .dialogue-close{width:16px;min-width:16px;height:17px;min-height:17px;font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.dialogue-dock{backdrop-filter:none}}
+
+/* Compact landscape has no room for a third transient overlay above the race controls. */
+@media(max-height:450px){.race-radio-dock{display:none!important}}
