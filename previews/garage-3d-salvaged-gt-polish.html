@@ -190,7 +190,7 @@
     <aside class="sidebar" aria-label="Equipped parts">
       <div class="side-header"><div><div class="eyebrow">EQUIPPED COMPONENTS</div><h2>BUILD & INSPECT</h2><p>Durability controls are for visual testing only.</p></div><span class="stamp">4 SLOTS</span></div>
       <div id="parts"></div>
-      <div class="summary"><b>Procedural asset experiment:</b> Salvaged GT and its starter equipment are the current art focus; alternate variants are still blockouts. Built with Three.js geometry rather than generated meshes. Export the whole car or your selected component as a GLB, preserving shared attachment coordinates. Only the preview changes; actual race rules and saves are untouched.<p id="model-feedback" class="model-feedback" role="status" aria-live="polite">Ready to export reusable 3D assets.</p></div>
+      <div class="summary"><b>Procedural asset experiment:</b> Salvaged GT and its starter equipment are the current art focus; alternate variants are still blockouts. Built with Three.js geometry rather than generated meshes. Export clean 100% master geometry as GLB, preserving attachment coordinates; demo damage is never baked into it. Only the preview changes; actual race rules and saves are untouched.<p id="model-feedback" class="model-feedback" role="status" aria-live="polite">Ready to export reusable 3D assets.</p></div>
       <div class="side-footer"><button class="primary" id="go-to-race">GO TO RACE BRIEFING →</button><p class="notice">Review-only sandbox. These 3D parts are prototypes, not final production-approved artwork.</p></div>
     </aside>
   </div>
@@ -817,17 +817,30 @@ async function exportGeometry(mode) {
       axisConvention: 'X=front, Y=up, Z=left-right',
       slotNames: slots,
       modelNames: Object.fromEntries(slots.map(slot => [slot, PRESETS[slot].names[state[slot].variant]])),
-      durabilityPercent: Object.fromEntries(slots.map(slot => [slot, state[slot].durability]))
+      exportCondition: 'pristine-master',
+      previewDurabilityPercent: Object.fromEntries(slots.map(slot => [slot, state[slot].durability]))
     };
     for (const slot of slots) {
       const group = groups[slot].clone(true);
       group.name = slot + '__' + safeFilePart(PRESETS[slot].names[state[slot].variant]);
       group.traverse(node => {
         if (!node.isMesh) return;
-        node.material = node.material.clone();
-        /* An exported car should not permanently glow because a part was highlighted. */
-        node.material.emissive.set('#000000');
-        node.material.emissiveIntensity = 0;
+        const source=node.material;
+        const master=source.clone();
+        /* Keep clean masters independent of demo durability and selection glow. */
+        master.emissive.set('#000000');
+        master.emissiveIntensity=0;
+        if(master.userData.damage) {
+          master.map=null;
+          master.roughness=master.userData.roughness;
+          if(master.isMeshPhysicalMaterial && master.userData.finish==='paint') {
+            master.clearcoat=.68;
+            master.clearcoatRoughness=.22;
+          }
+          master.needsUpdate=true;
+        }
+        /* Decals are intentional art and retain their own texture map. */
+        node.material=master;
       });
       root.add(group);
     }
@@ -841,7 +854,7 @@ async function exportGeometry(mode) {
     link.download = filename; link.href = url;
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    exportStatus.textContent = 'Exported ' + filename + ' (' + (blob.size/1024).toFixed(0) + ' KB).';
+    exportStatus.textContent = 'Clean 100% master exported: ' + filename + ' (' + (blob.size/1024).toFixed(0) + ' KB).';
   } catch (error) {
     console.error('3D export failed:', error);
     exportStatus.textContent = 'Export failed: ' + (error?.message || 'Check browser console.');
