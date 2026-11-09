@@ -462,7 +462,131 @@ function sideNumber(g,side) {
   plane.name='GT-07-racing-number-'+(side>0?'left':'right');
 }
 
+
+/* Two contrasting structural archetypes. Same mechanical slot interface,
+   very different proportions. Sideways volume is reserved for wheel travel. */
+function bodySoapbox(g) {
+  const slot='chassis';
+  const paint='#d59456', panel='#dfbd7b', steel='#49595b', dark='#26363b';
+  profile(g,slot,[[-1.99,.65],[1.95,.65],[2.04,.73],[1.48,.90],[.96,1.00],[.20,1.01],
+    [-.41,.97],[-1.48,.81],[-1.98,.75]],.78,paint,{finish:'paint',metalness:.30,roughness:.40});
+  /* Exposed rails keep this obviously a lightweight machine, not a short GT. */
+  for(const side of [-1,1]) {
+    const z=side*.54;
+    beam(g,slot,[-1.73,.59,z],[1.61,.59,z],.082,steel,{metalness:.66});
+    beam(g,slot,[-1.47,.65,z],[-.55,1.02,z*.82],.049,'#8e9891',{metalness:.70});
+    beam(g,slot,[.43,1.02,z*.82],[1.70,.61,z],.043,'#899795',{metalness:.70});
+    for(const x of [-1.14,1.14]){
+      beam(g,slot,[x,.55,z],[x,.50,side*.96],.055,'#9da5a0',{metalness:.72});
+      beam(g,slot,[x-.30,.83,z],[x,.50,side*.96],.031,'#87928e',{metalness:.72});
+    }
+    beam(g,slot,[-1.12,.93,side*.39],[-.58,1.38,side*.39],.041,'#d0b176',{metalness:.55});
+  }
+  /* An open cockpit and sharply sloped bonnet give a proper formula silhouette. */
+  profile(g,slot,[[-.93,.99],[-.74,1.20],[-.39,1.30],[.07,1.28],[.44,1.07],[.57,.99]],
+    .70,panel,{finish:'paint',metalness:.24});
+  block(g,slot,[.58,.13,.51],[-.40,1.23,0],dark,{roughness:.94});
+  block(g,slot,[.30,.37,.36],[-.63,1.30,0],'#35464c',{roughness:.79});
+  const hoop=ringMesh(g,slot,.29,.038,[-.59,1.56,0],'#929b8c',{metalness:.74});
+  hoop.rotation.y=Math.PI/2;
+  for(const z of [-.27,.27])beam(g,slot,[-.59,1.17,z],[-.59,1.50,z],.044,steel,{metalness:.71});
+  /* Nose and splitter run far ahead of the narrow centre tub. */
+  profile(g,slot,[[.82,1.04],[1.92,.73],[2.10,.70],[2.07,.79],[1.60,.99]],
+    .57,'#b66c41',{finish:'paint',metalness:.31});
+  block(g,slot,[.58,.065,2.24],[1.88,.65,0],steel,{metalness:.49});
+  block(g,slot,[.29,.06,2.00],[-1.66,1.68,0],steel,{metalness:.54});
+  block(g,slot,[.21,.10,1.38],[-1.63,1.73,0],panel,{finish:'paint'});
+  for(const z of [-.58,.58]){
+    beam(g,slot,[-1.64,.83,z],[-1.64,1.66,z],.048,'#798883',{metalness:.71});
+    beam(g,slot,[-1.27,.84,z],[-1.62,1.64,z],.043,'#798883',{metalness:.71});
+    block(g,slot,[.26,.13,.16],[-1.70,1.69,z],dark,{metalness:.55});
+  }
+  for(const z of [-.28,.28]){
+    block(g,slot,[.19,.11,.12],[1.95,.80,z],'#e5d7a7',{emissive:'#5b4628',damage:false});
+    block(g,slot,[.14,.09,.15],[-1.97,.75,z],'#ae5344',{damage:false});
+  }
+  /* Light race number on the bonnet. */
+  const number=mesh(g,new THREE.PlaneGeometry(.42,.25),'#ffffff',slot,[1.41,1.00,0],{damage:false});
+  number.rotation.x=-Math.PI/2;
+  number.material.map=salvagedNumberBadge;
+  number.material.transparent=true;number.material.side=THREE.DoubleSide;
+  number.material.needsUpdate=true;
+}
+function haulerOutline() {
+  const outline=[[-2.06,.83],[-1.98,1.15],[-.61,1.18],[.49,1.17],[.93,1.27],[1.60,1.20],[2.06,.89],[2.06,.80]];
+  for(const x of [1.14,-1.14]){
+    for(let i=0;i<=20;i++) {
+      const a=.34+(Math.PI-.68)*i/20;
+      outline.push([x+.66*Math.cos(a),.56+.66*Math.sin(a)]);
+    }
+  }
+  outline.push([-2.06,.81]);
+  return outline;
+}
+function bodyHauler(g) {
+  const slot='chassis',paint='#64796c', highlight='#90a08d',dark='#324649',steel='#9eab9e';
+  profile(g,slot,haulerOutline(),1.92,paint,{metalness:.29,roughness:.47,finish:'paint'});
+  /* Tall, upright cab, completely different from GT and Soapbox. */
+  profile(g,slot,[[-.73,1.13],[-.72,1.84],[-.48,2.12],[.35,2.12],[.72,1.63],[.74,1.12]],
+    1.68,paint,{metalness:.28,roughness:.44,finish:'paint'});
+  profile(g,slot,[[-.70,2.05],[-.53,2.16],[.40,2.16],[.46,2.05]],
+    1.75,highlight,{finish:'paint',roughness:.46});
+  for(const side of [-1,1]){
+    const z=side*.872;
+    inset(g,slot,[[-.57,1.42],[-.51,1.94],[-.35,2.01],[.08,2.01],[.08,1.42]],
+      z,'#2b5660',{damage:false,finish:'glass',metalness:.2,roughness:.15});
+    inset(g,slot,[[.18,1.42],[.18,2.01],[.29,2.01],[.58,1.58],[.58,1.42]],
+      z,'#315b65',{damage:false,finish:'glass',metalness:.18,roughness:.15});
+    beam(g,slot,[.12,1.32,z],[.12,2.04,z],.034,dark,{metalness:.68});
+    beam(g,slot,[-.73,1.28,z],[.70,1.28,z],.040,dark,{metalness:.62});
+    block(g,slot,[.27,.08,.065],[.39,1.34,side*.92],steel,{metalness:.79,damage:false});
+    block(g,slot,[.38,.26,.14],[.81,1.46,side*.90],dark,{metalness:.53});
+    beam(g,slot,[.76,1.47,side*.81],[.94,1.44,side*.91],.042,steel,{metalness:.68});
+    /* Heavy squared wheel lips are split over the open wheel arch. */
+    for(const x of [-1.14,1.14]){
+      const points=[];
+      for(let i=0;i<=16;i++){
+        const a=.34+(Math.PI-.68)*i/16;
+        points.push(new THREE.Vector3(x+Math.cos(a)*.685,.56+Math.sin(a)*.685,side*.970));
+      }
+      mesh(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),18,.060,7,false),
+        dark,slot,[0,0,0],{metalness:.42});
+      beam(g,slot,[x,.63,side*.80],[x,.63,side*1.15],.09,steel,{metalness:.71});
+    }
+    block(g,slot,[1.13,.11,.06],[-1.41,.96,side*.985],highlight,{finish:'paint'});
+    /* Open bed walls; side rail, tailgate, and support legs are separate meshes. */
+    block(g,slot,[1.36,.14,.10],[-1.37,1.32,side*.92],paint,{finish:'paint'});
+    for(const x of [-1.93,-.78])beam(g,slot,[x,.87,side*.92],[x,1.34,side*.92],.07,steel,{metalness:.62});
+    block(g,slot,[.08,.19,.23],[-2.08,.96,side*.65],'#c44c3c',{damage:false});
+    /* Bolted metal steps beneath tall cab. */
+    block(g,slot,[.48,.07,.31],[.15,.57,side*1.02],steel,{metalness:.67});
+  }
+  block(g,slot,[1.35,.11,1.78],[-1.39,1.00,0],dark,{metalness:.6});
+  for(let n=0;n<7;n++) {
+    block(g,slot,[.07,.09,1.60],[-1.9+n*.20,1.09,0],'#8f958a',{metalness:.64});
+  }
+  block(g,slot,[.14,.43,1.45],[2.05,.98,0],dark,{metalness:.61});
+  for(let n=0;n<8;n++)block(g,slot,[.025,.31,.038],[2.13,.95,-.60+n*.17],steel,{metalness:.81,damage:false});
+  for(const z of [-.70,.70]){
+    block(g,slot,[.12,.16,.35],[2.15,1.20,z],'#f8e6b1',{emissive:'#554b30',damage:false});
+    block(g,slot,[.14,.18,.28],[-2.17,1.07,z],'#b64e3d',{damage:false});
+  }
+  block(g,slot,[.20,.18,2.13],[2.16,.67,0],steel,{metalness:.77,damage:false});
+  block(g,slot,[.18,.15,2.08],[-2.18,.70,0],steel,{metalness:.77,damage:false});
+  frontGlass(g,[[.69,1.49,-.69],[.69,1.49,.69],[.37,2.01,.69],[.37,2.01,-.69]],'#2a535b');
+  /* Exposed vertical exhausts and cab roof lamp identify the workhorse. */
+  for(const z of [-.77,.77]){
+    cylinder(g,slot,.083,.96,[-.55,1.91,z],'#a6aca3','y',14,{metalness:.81});
+    cylinder(g,slot,.098,.12,[-.55,2.40,z],dark,'y',12,{metalness:.73});
+  }
+  for(const z of [-.53,0,.53]){
+    block(g,slot,[.15,.08,.16],[.16,2.20,z],'#f4ce85',{emissive:'#5d3d1b',damage:false});
+  }
+}
+
 function body(g, variant) {
+  if(variant===2) return bodySoapbox(g);
+  if(variant===3) return bodyHauler(g);
   const paint = variant ? '#a46e52' : '#c69b61';
   const highlight = variant ? '#d09e75' : '#e5be79';
   const shade = variant ? '#644c47' : '#655b52';
