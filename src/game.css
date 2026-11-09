@@ -838,3 +838,49 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 .bounty-results{padding:7px 12px;margin-top:6px;text-align:center;font-size:12px}
 .bounty-results p{margin:3px 0}.bounty-results .win{color:#a5e2c4}.bounty-results .loss{color:#f8b19b}
 @media(max-width:700px){.bounty-slots{grid-template-columns:1fr}.bounty-ledger{margin:8px 0}.bounty-slot.empty{min-height:42px}}
+
+/* Garage contract noticeboard: clipped workshop job sheets, not parchment / Wild West posters. */
+.garage-shop-tabs{display:flex;flex:none;padding:10px 14px 0;gap:8px;background:var(--ink);border-bottom:2px solid var(--dark)}
+.garage-shop-tabs button{flex:1;box-shadow:none;background:#283a42;border:2px solid #657980;border-bottom:0;color:#c7d4d5;min-height:40px;font-size:12px}
+.garage-shop-tabs button[aria-pressed=true]{background:var(--light);color:var(--ink);border-color:var(--light)}
+.bounty-board-dialog{width:min(1180px,calc(100vw - 34px))}
+.bounty-board-main{background:#202b32;padding:14px;scrollbar-color:#72848a #1b272e}
+.bounty-board{display:flex;flex-direction:column;gap:12px;min-width:0;background:repeating-linear-gradient(90deg,transparent 0 35px,#ffffff05 36px 37px),linear-gradient(160deg,#28363e,#172329);border:2px solid #526c72;padding:14px;color:#dce9e6}
+.bounty-board-head{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:2px solid #6e7f83;padding:2px 4px 12px}
+.bounty-board-head h3{font-size:23px;letter-spacing:.075em;margin:3px 0 5px;color:#f5f0dc}
+.bounty-board-head p{font-size:12px;line-height:1.5;color:#b7c8c8}
+.bounty-board-head small{font-size:10px;letter-spacing:.15em;color:#b5c3bb}
+.bounty-board-count{text-align:center;min-width:80px;background:#132127;border:2px solid #68828a;padding:7px}
+.bounty-board-count b{display:block;font-size:27px;line-height:1.1;color:#ffdc91}
+.bounty-board-count b span{color:#9baeb1;font-size:14px}
+.bounty-board-count small{display:block;margin-top:3px}
+.bounty-board-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-color:#95aab0 #18272e;padding:12px 4px 16px;outline-offset:2px}
+.bounty-board-rail{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;min-width:925px;align-items:stretch}
+.bounty-sheet{position:relative;display:flex;flex-direction:column;gap:10px;min-height:410px;min-width:0;padding:17px 14px 12px;background:linear-gradient(160deg,#46565b 0%,#303e44 45%,#26363c 100%);border:2px solid #8c9b9c;border-top:6px solid #a6b5b2;box-shadow:3px 5px 0 #101a20,0 8px 18px #08141b88;color:#edf2ed}
+.bounty-sheet:nth-child(even){transform:rotate(.35deg)}.bounty-sheet:nth-child(odd){transform:rotate(-.4deg)}
+.bounty-sheet-offer{background:linear-gradient(160deg,#5b533e,#3c413b 48%,#323d40);border-color:#d3a96d;border-top-color:#f1ca83}
+.bounty-sheet-active{border-top-color:#9eb9bc}
+.bounty-sheet-head{display:flex;justify-content:space-between;align-items:center;gap:7px;border-bottom:1px solid #ffffff55;padding:0 0 10px 16px;font-size:11px;letter-spacing:.08em}
+.bounty-sheet-head small{font-size:8px;color:#d5dbd7;text-align:right}
+.bounty-sheet-clip{position:absolute;left:14px;top:-13px;width:13px;height:22px;border:3px solid #c7cfd0;border-radius:8px 8px 6px 6px;transform:rotate(-10deg);background:transparent;box-shadow:1px 0 0 #152730}
+.bounty-sheet-type{font-size:10px;letter-spacing:.13em;color:#e8c789;font-weight:900}
+.bounty-sheet h3{font-size:17px;line-height:1.22;letter-spacing:.015em;overflow-wrap:anywhere}
+.bounty-sheet-goal{font-size:12px;line-height:1.55;color:#ebf0ed;overflow-wrap:anywhere}
+.bounty-sheet-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid #a0a79c;padding:7px 8px;font-size:10px}
+.bounty-sheet-meta strong{color:#f4d28a;font-size:12px}
+.bounty-sheet-terms{margin-top:auto;display:grid;gap:8px;border-top:1px dashed #a5b1ad;padding-top:10px}
+.bounty-sheet-terms strong{font-size:10px;letter-spacing:.12em;color:#9fe1c5}
+.bounty-sheet-terms p{font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.bounty-sheet-terms .bounty-sheet-failure strong{color:#ffb7a9}
+.bounty-sheet-progress{font-size:10px;letter-spacing:.08em;color:#f9d58b}
+.bounty-sheet-action{margin-top:4px;min-height:41px;width:100%;padding:9px 7px;background:#f0d49c;color:#1f2b30;border:2px solid #182a31;font-size:10px;box-shadow:inset 0 0 0 1px #b28d56}
+.bounty-sheet-action:hover:not(:disabled){background:#fff0c7}.bounty-sheet-action:disabled{background:#68767a;color:#ebefec;opacity:.75}
+.bounty-sheet-active .bounty-sheet-action{background:#334951;color:#dce8e7;border-color:#9caaac;box-shadow:none}
+.bounty-sheet-active .bounty-sheet-action:hover:not(:disabled){background:#516b70}
+.bounty-sheet-empty{justify-content:center;align-items:center;border-style:dashed;border-color:#647a82;background:#1c2930;color:#91a5ac;text-align:center}
+.bounty-sheet-empty b{font-size:12px;letter-spacing:.12em}.bounty-sheet-empty p{font-size:10px}
+.bounty-sheet-empty-mark{font-size:58px;line-height:1;font-weight:900;color:#526973}
+.bounty-board-footnote{color:#b1c3c5;font-size:10px;line-height:1.6;letter-spacing:.05em;padding:0 4px}
+.bounty-board .bounty-warning{margin:0;background:#563b32;border-left:3px solid #e2b180}
+@media(max-width:650px){.bounty-board-main{padding:7px}.bounty-board{padding:8px}.bounty-board-head{gap:7px}.bounty-board-head h3{font-size:18px}.bounty-board-head p{font-size:10px}.bounty-board-rail{grid-template-columns:repeat(4,minmax(208px,1fr));min-width:875px}.bounty-sheet{min-height:370px}.garage-shop-tabs{padding:8px 8px 0}.garage-shop-tabs button{font-size:10px;padding:7px}}
+@media(prefers-reduced-motion:reduce){.bounty-sheet:nth-child(even),.bounty-sheet:nth-child(odd){transform:none}}
