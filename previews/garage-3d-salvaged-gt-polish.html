@@ -389,6 +389,50 @@ function frontGlass(g,points,colour) {
   const result=mesh(g,geom,colour,'chassis',[0,0,0],{metalness:.17,roughness:.11,damage:false});
   result.material.side=THREE.DoubleSide;
 }
+
+/* True arch clearance cut into the lower shell rather than fenders drawn over a box. */
+function salvagedBodyOutline() {
+  const outline=[
+    [-1.76,.95],[-1.57,1.02],[-1.27,1.06],[-.55,1.10],
+    [.48,1.10],[1.43,1.03],[1.78,.86],[1.76,.65]
+  ];
+  for(const center of [1.14,-1.14]) {
+    for(let i=0;i<=20;i++){
+      const angle=.37+((Math.PI-.74)*i/20);
+      outline.push([center+.52*Math.cos(angle),.47+.52*Math.sin(angle)]);
+    }
+  }
+  outline.push([-1.76,.65]);
+  return outline;
+}
+function badgeMap() {
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=144;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,256,144);
+  ctx.fillStyle='#172f32';
+  ctx.beginPath();ctx.roundRect(8,8,240,128,22);ctx.fill();
+  ctx.lineWidth=9;ctx.strokeStyle='#ebc785';ctx.stroke();
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='900 93px system-ui,sans-serif';
+  ctx.fillStyle='#fff3d1';ctx.fillText('07',128,78);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+const salvagedNumberBadge=badgeMap();
+function sideNumber(g,side) {
+  const plane=mesh(g,new THREE.PlaneGeometry(.42,.245),'#ffffff','chassis',[-.16,.96,side*.897],
+    {damage:false,roughness:.7,metalness:.05});
+  plane.rotation.y=side<0?Math.PI:0;
+  plane.material.map=salvagedNumberBadge;
+  plane.material.transparent=true;
+  plane.material.alphaTest=.1;
+  plane.material.side=THREE.DoubleSide;
+  plane.material.needsUpdate=true;
+  plane.name='GT-07-racing-number-'+(side>0?'left':'right');
+}
+
 function body(g, variant) {
   const paint = variant ? '#a46e52' : '#c69b61';
   const highlight = variant ? '#d09e75' : '#e5be79';
@@ -397,14 +441,14 @@ function body(g, variant) {
   /* The core is a single chamfered solid instead of a stack of exposed cubes. */
   profile(g,'chassis',variant ?
     [[-1.77,.66],[1.72,.66],[1.78,.85],[1.48,1.03],[.70,1.09],[-.43,1.08],[-1.42,.99],[-1.77,.94]] :
-    [[-1.76,.66],[1.72,.66],[1.78,.85],[1.49,1.02],[.66,1.11],[-.56,1.09],[-1.36,.98],[-1.76,.93]],
-    1.66,paint,{metalness:.38,roughness:.42});
+    salvagedBodyOutline(),
+    1.66,paint,{metalness:.28,roughness:.39,finish:'paint'});
   profile(g,'chassis',variant ?
     [[-1.03,1.08],[-.92,1.77],[-.66,1.95],[.08,1.94],[.54,1.54],[.65,1.08]] :
     [[-1.04,1.08],[-.82,1.59],[-.51,1.76],[.07,1.75],[.52,1.44],[.65,1.08]],
-    1.40,paint,{metalness:.35,roughness:.4});
+    1.40,paint,{metalness:.27,roughness:.38,finish:'paint'});
   /* Longer roof and extra rack make the Wobble Wagon visibly more upright. */
-  profile(g,'chassis',[[-1.03,1.08],[-.95,1.15],[.61,1.15],[.66,1.08]],1.47,highlight);
+  profile(g,'chassis',[[-1.03,1.08],[-.95,1.15],[.61,1.15],[.66,1.08]],1.47,highlight,{finish:'paint',metalness:.27,roughness:.37});
   for(const side of [-1,1]) {
     const z=side*.736;
     /* Two glass openings and a structural B-pillar on each side. */
@@ -414,27 +458,42 @@ function body(g, variant) {
     const front=variant ?
       [[-.10,1.19],[-.10,1.80],[.04,1.80],[.42,1.49],[.51,1.19]] :
       [[-.10,1.19],[-.10,1.64],[.02,1.64],[.42,1.40],[.53,1.19]];
-    inset(g,'chassis',rear,z,glass,{metalness:.17,roughness:.14,damage:false});
-    inset(g,'chassis',front,z,glass,{metalness:.17,roughness:.14,damage:false});
+    inset(g,'chassis',rear,z,glass,{metalness:.17,roughness:.14,damage:false,finish:'glass'});
+    inset(g,'chassis',front,z,glass,{metalness:.17,roughness:.14,damage:false,finish:'glass'});
     beam(g,'chassis',[-.16,1.17,z],[-.16,variant?1.85:1.67,z],.034,trim,{metalness:.58});
     beam(g,'chassis',[-.97,1.10,z],[.61,1.10,z],.027,shade,{metalness:.6});
     /* Door inset, handle, mirrored threshold, and riveted wheel arches. */
     inset(g,'chassis',[[-.49,.77],[.43,.77],[.43,1.03],[-.49,1.03]],side*.853,shade,{roughness:.55});
     block(g,'chassis',[.19,.045,.055],[.21,1.06,side*.893],'#d5c2a1',{metalness:.85});
-    block(g,'chassis',[1.74,.10,.08],[0,.61,side*.85],trim,{metalness:.6});
+    block(g,'chassis',[1.10,.10,.08],[0,.61,side*.85],trim,{metalness:.6});
     for(const x of [-1.14,1.14]) {
       const curve=[];
-      for(let i=0;i<=12;i++){
-        const a=i*Math.PI/12;
-        curve.push(new THREE.Vector3(x+Math.cos(a)*.59,.51+Math.sin(a)*.59,side*.855));
+      for(let i=0;i<=20;i++){
+        const a=.37+(Math.PI-.74)*i/20;
+        curve.push(new THREE.Vector3(x+Math.cos(a)*.538,.47+Math.sin(a)*.538,side*.859));
       }
-      const arch=mesh(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curve),14,.045,6,false),shade,'chassis',[0,0,0],{metalness:.43});
+      const arch=mesh(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curve),24,.037,7,false),shade,'chassis',[0,0,0],{metalness:.48,damage:true});
       arch.name='Wheel-arch-'+(x<0?'rear':'front')+'-'+(side<0?'right':'left');
     }
     block(g,'chassis',[.27,.13,.085],[.78,1.25,side*.73],paint);
     block(g,'chassis',[.17,.08,.095],[.87,1.21,side*.79],trim);
     for(const x of [-1.44,-.66,.70,1.42]){
       cylinder(g,'chassis',.036,.016,[x,.79,side*.864],'#aab4ab','z',8,{metalness:.8,damage:false});
+    }
+    if(!variant){
+      /* Satin side stripe and single large number help the GT read at race size. */
+      inset(g,'chassis',[[-.54,.82],[.48,.82],[.48,.87],[-.54,.87]],side*.883,
+        '#edc781',{metalness:.23,roughness:.46,finish:'paint'});
+      sideNumber(g,side);
+      /* Visible mounting structure bridging the shell and wheel assemblies. */
+      for(const x of [-1.14,1.14]){
+        beam(g,'chassis',[x,.50,side*.67],[x,.50,side*.91],.078,'#505a58',{metalness:.73});
+        beam(g,'chassis',[x-.22,.86,side*.69],[x,.50,side*.88],.038,'#566361',{metalness:.66});
+      }
+      /* Real door line, fuel cap and a broad centre sill. */
+      beam(g,'chassis',[.46,.78,side*.882],[.46,1.09,side*.882],.014,'#252f31',{metalness:.45});
+      cylinder(g,'chassis',.092,.024,[-.81,.98,side*.856],'#b0aaa0','z',18,{metalness:.8,damage:false});
+      cylinder(g,'chassis',.055,.029,[-.81,.98,side*.873],'#343e3e','z',18,{metalness:.68,damage:false});
     }
   }
   /* Windscreen has a visible rake. */
@@ -451,7 +510,22 @@ function body(g, variant) {
   }
   block(g,'chassis',[.17,.16,1.84],[1.83,.58,0],'#b2b9b1',{metalness:.88,damage:false});
   block(g,'chassis',[.17,.16,1.84],[-1.83,.58,0],'#79827e',{metalness:.85,damage:false});
-  block(g,'chassis',[.25,.09,1.45],[1.00,1.13,0],highlight,{metalness:.4});
+  block(g,'chassis',[.25,.09,1.45],[1.00,1.13,0],highlight,{metalness:.4,finish:'paint'});
+  if(!variant){
+    /* Hood vents, the engine cradle and the visible wiper pair. */
+    block(g,'chassis',[1.10,.055,1.12],[.88,1.08,0],'#344144',{metalness:.52,roughness:.66});
+    for(const z of [-.52,.52]) {
+      for(let n=0;n<3;n++)block(g,'chassis',[.23,.018,.048],[1.35-n*.13,1.114,z],'#303f42',
+        {metalness:.6,roughness:.47,damage:false});
+      beam(g,'chassis',[.52,1.21,z],[.29,1.31,z*.55],.017,'#25343a',{metalness:.75,damage:false});
+    }
+    /* Three small vertical tie rods support the body behind the exposed engine. */
+    for(const z of [-.53,0,.53]) beam(g,'chassis',[.61,.95,z],[.61,1.19,z],.032,'#776a55',{metalness:.7});
+    block(g,'chassis',[.46,.04,1.42],[-1.27,1.04,0],'#6b4c43',{metalness:.3,finish:'paint'});
+    for(const z of [-.56,.56]){
+      cylinder(g,'chassis',.036,.02,[1.82,.67,z],'#262d31','x',8,{metalness:.75,damage:false});
+    }
+  }
   if(variant){
     for(const z of [-.58,.58]){
       beam(g,'chassis',[-.88,2.03,z],[.22,2.03,z],.048,'#74847f',{metalness:.7});
