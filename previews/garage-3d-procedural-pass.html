@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scrap Prix - 3D Garage Prototype</title>
+  <style>
+    :root { color-scheme: dark; font: 14px/1.5 system-ui,sans-serif; background: #0a1215; color: #edf0e9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 35% 23%,#24373b 0%,#0c161a 47%,#080e12 100%); }
+    button,input { font: inherit; }
+    button { cursor: pointer; color: inherit; }
+    button:focus-visible,input:focus-visible { outline: 2px solid #f0c977; outline-offset: 3px; }
+    header { min-height: 72px; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px clamp(16px,3vw,44px); border-bottom: 1px solid #3e5155; background: #0b171bce; }
+    .brand { display: flex; gap: 16px; align-items: center; }
+    .flag { width: 32px; height: 32px; background: repeating-conic-gradient(#e6e1ce 0% 25%,#152a30 0% 50%) 50% / 16px 16px; border: 2px solid #b8a16d; transform: rotate(-8deg); }
+    .brand strong { font: 900 clamp(19px,2.4vw,28px)/1 system-ui; letter-spacing: .13em; }
+    small,.muted { color: #a2b3b3; }
+    .eyebrow { font: 800 11px/1.4 system-ui; letter-spacing: .18em; color: #d8bb80; }
+    .version { color: #9eb2af; font-size: 12px; text-align: right; }
+    .layout { width: min(1550px,100%); margin: 0 auto; padding: 24px; display: grid; grid-template-columns: minmax(0,1fr) 345px; gap: 22px; }
+    .showcase,.sidebar { min-width: 0; border: 1px solid #45585a; border-radius: 15px; background: #111f23c9; box-shadow: 0 18px 65px #0005; overflow: hidden; }
+    .showcase { display: flex; flex-direction: column; }
+    .showcase-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 25px 28px 0; position: relative; z-index: 1; }
+    h1,h2,h3,p { margin: 0; }
+    h1 { font: 900 clamp(24px,4vw,38px)/1.1 system-ui; letter-spacing: .03em; margin-top: 4px; }
+    h2 { font: 800 20px/1.2 system-ui; letter-spacing: .03em; }
+    .stage { position: relative; flex: 1; min-height: min(64vh,640px); overflow: hidden; background: radial-gradient(ellipse at 49% 43%,#283f43 0%,#14262b 46%,#091215 80%); }
+    #garage-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    #garage-canvas:active { cursor: grabbing; }
+    .stage::after { content: ''; pointer-events: none; position: absolute; inset: 0; box-shadow: inset 0 0 70px #050d1299; }
+    .stage-tip { position: absolute; left: 22px; bottom: 20px; pointer-events: none; font-size: 12px; color: #d7ded5; background: #0a171aaa; padding: 7px 11px; border: 1px solid #526768; border-radius: 7px; }
+    .stamp { display: inline-block; border: 1px solid #866d44; border-radius: 5px; padding: 5px 9px; background: #202f2d; color: #e7c885; font: 800 11px system-ui; letter-spacing: .13em; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 15px 21px; flex-wrap: wrap; border-top: 1px solid #43595d; background: #102025; }
+    .button-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .control { border: 1px solid #637376; background: #203439; border-radius: 6px; padding: 8px 11px; font-weight: 700; font-size: 12px; }
+    .control:hover,.control[aria-pressed="true"] { border-color: #e4c883; color: #ffe8b1; background: #3b3b30; }
+    .sidebar { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+    .side-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 11px; border-bottom: 1px solid #425459; }
+    .side-header p { font-size: 12px; color: #a5b6b6; margin-top: 7px; }
+    #parts { display: grid; gap: 10px; }
+    .part { border: 1px solid #4d6366; border-radius: 10px; background: #16282c; padding: 13px; transition: border-color .1s,background .1s; }
+    .part[data-selected="true"] { border-color: #e6bc66; background: #223134; box-shadow: inset 3px 0 #e6bc66; }
+    .part-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .part-name { border: 0; background: none; padding: 0; text-align: left; font-weight: 800; font-size: 14px; }
+    .part-name:hover { color: #f1d08b; }
+    .part-type { font: 700 10px system-ui; letter-spacing: .12em; color: #99b0b1; }
+    .part-variant { display: block; font-size: 12px; color: #c7d1cc; margin: 5px 0 8px; }
+    .part-meter { display: flex; align-items: center; gap: 10px; }
+    .part-meter input { width: 100%; min-width: 20px; accent-color: #dfb36a; cursor: pointer; }
+    .condition { font: 800 13px/1 ui-monospace,monospace; min-width: 38px; text-align: right; }
+    .condition.critical { color: #ff9470; }
+    .condition.broken { color: #ff5555; }
+    .part-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; gap: 8px; }
+    .part-status { text-transform: uppercase; font-size: 10px; font-weight: 900; letter-spacing: .12em; color: #b8c7b8; }
+    .swap { background: transparent; border: 1px solid #5c7477; border-radius: 5px; padding: 4px 9px; color: #e7c885; font-size: 11px; font-weight: 800; }
+    .swap:hover { background: #35413d; }
+    .summary { background: #101b1e; border: 1px solid #344c4f; border-radius: 8px; padding: 13px 14px; font-size: 12px; color: #b2c4c1; }
+    .summary b { color: #e9eae0; }
+    .side-footer { margin-top: auto; padding-top: 13px; border-top: 1px solid #405358; }
+    .primary { width: 100%; background: #e3b66b; color: #172024; border: 1px solid #ffdaa1; padding: 13px; border-radius: 7px; font-weight: 900; letter-spacing: .08em; }
+    .primary:hover { background: #ffd692; }
+    .notice { margin-top: 9px; color: #a3b4b2; font-size: 11px; }
+
+    /* Race briefing is an overlay, not a route. Garage stays mounted behind it. */
+    [hidden] { display: none !important; }
+    body.briefing-active, body.race-preview-active { overflow: hidden; }
+    .briefing {
+      position: fixed; inset: 0; z-index: 30; display: flex; align-items: center;
+      justify-content: flex-end; padding: clamp(14px,3.1vw,50px);
+      background: linear-gradient(90deg,rgba(3,10,12,.22) 0%,rgba(3,10,12,.60) 63%,rgba(3,10,12,.82) 100%);
+      backdrop-filter: blur(1.4px); -webkit-backdrop-filter: blur(1.4px);
+      animation: brief-in .2s ease-out;
+    }
+    body.briefing-active .sidebar { filter: brightness(.52); }
+    .briefing-panel {
+      width: min(580px,100%); max-height: min(91vh,980px); overflow-y: auto; overscroll-behavior: contain;
+      background: linear-gradient(146deg,#1d3539,#102126 72%);
+      border: 1px solid #748b88; border-top: 4px solid #e8bd6e; border-radius: 13px;
+      box-shadow: 0 28px 100px #000b,0 0 0 1px #091315; outline: none;
+    }
+    .briefing-inner { padding: clamp(18px,2.7vw,30px); }
+    .briefing-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .briefing-header h2 { font-size: clamp(25px,2.8vw,36px); font-weight: 950; margin-top: 4px; letter-spacing: -.035em; }
+    .briefing-tag { flex: none; font: 800 10px/1.4 system-ui; letter-spacing: .13em; color: #eacb91; border: 1px solid #906d3c; background: #393b2d; padding: 6px 9px; border-radius: 4px; }
+    .briefing-track-art {
+      position: relative; height: 138px; border: 1px solid #5b7b7a; border-radius: 8px; overflow: hidden;
+      background: linear-gradient(170deg, #506761 0% 38%, #313f43 38% 56%, #1b2d32 56% 100%);
+      isolation: isolate;
+    }
+    .briefing-track-art::before { content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, transparent 0 86px, #192c3055 87px 88px),
+        linear-gradient(125deg,transparent 42%,#738e7c 42% 44%,transparent 44% 57%,#43565a 57% 62%,transparent 62%);
+      opacity: .66;
+    }
+    .road-perspective {
+      position: absolute; left: 13%; right: 13%; bottom: -56px; height: 152px; transform: perspective(290px) rotateX(45deg);
+      background: #28363a; border-left: 8px solid #d1ae6a; border-right: 8px solid #d1ae6a;
+      box-shadow: 0 0 0 19px #284240, 0 0 24px #0009; overflow: hidden;
+    }
+    .road-perspective::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: calc(50% - 3px); width: 6px; background: repeating-linear-gradient(180deg,#d8cfac 0 18px,transparent 18px 37px); }
+    .briefing-track-label { position: absolute; z-index: 1; top: 13px; left: 14px; display: grid; gap: 3px; padding: 8px 11px; background: #0b191cdd; border: 1px solid #71807a; border-radius: 5px; }
+    .briefing-track-label b { font: 900 17px/1.1 system-ui; letter-spacing: .08em; }
+    .briefing-track-label small { font-size: 9px; letter-spacing: .1em; color: #e6bd74; font-weight: 800; }
+    .briefing-facts { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin-top: 12px; }
+    .briefing-fact { padding: 11px 10px; border: 1px solid #506569; border-radius: 7px; background: #172d32; }
+    .briefing-fact span { display: block; color: #9fb6b6; font-size: 10px; font-weight: 800; letter-spacing: .1em; margin-bottom: 4px; }
+    .briefing-fact strong { color: #f5e5bd; font-size: 15px; }
+    .briefing-divider { border: 0; border-top: 1px solid #4d6569; margin: 18px 0 15px; }
+    .briefing-subhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+    .briefing-subhead strong { font: 900 13px system-ui; letter-spacing: .08em; }
+    .briefing-subhead small { font-size: 10px; }
+    .briefing-condition { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px 12px; }
+    .briefing-part { min-width: 0; background: #0c1b1e9c; border: 1px solid #3d5559; border-radius: 6px; padding: 9px 11px; }
+    .briefing-part-head { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .briefing-part-head b { color: #d9e2d8; }
+    .briefing-part-head span { font-weight: 900; color: #e7c587; font-variant-numeric: tabular-nums; }
+    .briefing-part-head span.low { color: #ff9b76; }
+    .briefing-part-head span.zero { color: #ff7777; }
+    .briefing-bar { height: 6px; margin-top: 8px; border-radius: 6px; background: #2b4144; overflow: hidden; }
+    .briefing-bar span { display: block; height: 100%; border-radius: 6px; background: #b7b67c; }
+    .briefing-alert { margin-top: 10px; padding: 10px 12px; background: #58432a8c; border: 1px solid #ad8551; border-radius: 6px; color: #ffe1aa; font-size: 12px; font-weight: 700; }
+    .briefing-alert[data-severity="danger"] { background: #4e2729; border-color: #ba6562; color: #ffd4cc; }
+    .briefing-approach { display: flex; gap: 7px; }
+    .briefing-approach button { flex: 1; border: 1px solid #5a7274; background: #21353a; color: #d5e3d9; border-radius: 6px; padding: 10px 4px; font: 800 11px system-ui; letter-spacing: .05em; }
+    .briefing-approach button[aria-pressed="true"] { background: #494632; border-color: #efc579; color: #ffde9b; box-shadow: inset 0 -3px #d8a754; }
+    .approach-description { font-size: 12px; min-height: 34px; color: #b8cac5; margin-top: 9px; }
+    .briefing-footer { display: flex; gap: 10px; border-top: 1px solid #475f64; padding: 16px clamp(18px,2.7vw,30px) 20px; background: #0a191dcc; }
+    .briefing-footer .control { flex: 1; padding: 12px; }
+    .briefing-footer .primary { flex: 1.2; width: auto; }
+    .briefing-disclaimer { margin-top: 12px; font-size: 10px; color: #9bb2b1; line-height: 1.5; }
+    .race-transition {
+      position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; text-align: center;
+      padding: 20px; background: radial-gradient(circle at 50% 30%,#28464b,#081316 72%);
+      animation: race-in .45s ease-out;
+    }
+    .race-transition-content { width: min(560px,100%); }
+    .race-checkers { height: 16px; background: repeating-conic-gradient(#d8c7a4 0 25%,#192d33 0 50%) 0 0 / 32px 32px; border: 1px solid #a79e7d; margin-bottom: 25px; }
+    .race-transition h2 { font: 950 clamp(38px,8vw,82px)/.95 system-ui; letter-spacing: -.045em; color: #f0d29a; margin: 12px 0 16px; }
+    .race-transition p { color: #b4c7c6; margin-bottom: 28px; }
+    .race-transition .control { min-width: 210px; }
+    @keyframes brief-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes race-in { from { opacity: 0; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
+    @media (max-width: 930px) {
+      .briefing { align-items: center; justify-content: center; padding: 12px; }
+      .briefing-panel { max-height: 94dvh; }
+      .briefing-track-art { height: 115px; }
+    }
+    @media (max-width: 480px) {
+      .briefing-header h2 { font-size: 26px; }
+      .briefing-facts { gap: 5px; }
+      .briefing-fact { padding: 8px 6px; }
+      .briefing-fact strong { font-size: 12px; }
+      .briefing-condition { gap: 7px; }
+      .briefing-footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .briefing,.race-transition { animation: none; }
+    }
+    .hidden { display: none; }
+    #error { margin: 15px auto; max-width: 900px; color: #ffe2c4; background: #5c2b25; padding: 14px; border-radius: 8px; }
+    @media (max-width: 930px) { .layout { grid-template-columns: 1fr; padding: 14px; } .stage { min-height: 450px; } .sidebar { padding: 16px; } #parts { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 560px) { #parts { grid-template-columns: 1fr; } header { padding: 12px 16px; } .stage { min-height: 340px; } .showcase-top { padding: 17px 18px 0; } .stage-tip { display: none; } .version { display: none; } }
+  </style>
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="flag" aria-hidden="true"></div><div><strong>SCRAP PRIX</strong><div class="eyebrow">3D WORKSHOP / FIRST FLIGHT</div></div></div>
+    <div class="version">PROTOTYPE ONLY<br>NO GAMEPLAY / SAVE CHANGES</div>
+  </header>
+  <div id="garage-layout" class="layout">
+    <main class="showcase">
+      <div class="showcase-top"><div><div class="eyebrow">YOUR CURRENT MASTERPIECE</div><h1>THE GARAGE</h1></div><span class="stamp">TEST BUILD 01</span></div>
+      <div class="stage"><canvas id="garage-canvas" aria-label="Interactive 3D prototype vehicle. Drag to rotate, scroll to zoom"></canvas><span class="stage-tip">DRAG TO ROTATE · SCROLL TO ZOOM · SELECT A PART</span></div>
+      <div class="toolbar"><div class="button-row" role="group" aria-label="Camera views"><button class="control" data-view="three-quarter" aria-pressed="true">3/4 VIEW</button><button class="control" data-view="front" aria-pressed="false">FRONT</button><button class="control" data-view="rear" aria-pressed="false">REAR</button><button class="control" data-view="side" aria-pressed="false">SIDE</button></div><button id="auto-rotate" class="control" aria-pressed="false">AUTO ROTATE: OFF</button></div>
+    </main>
+    <aside class="sidebar" aria-label="Equipped parts">
+      <div class="side-header"><div><div class="eyebrow">EQUIPPED COMPONENTS</div><h2>BUILD & INSPECT</h2><p>Durability controls are for visual testing only.</p></div><span class="stamp">4 SLOTS</span></div>
+      <div id="parts"></div>
+      <div class="summary"><b>Prototype rules:</b> Damage is applied to each slot independently. Replacements start clean. The actual game keeps its existing economy, repair rules and four-part gag recipes.</div>
+      <div class="side-footer"><button class="primary" id="go-to-race">GO TO RACE BRIEFING →</button><p class="notice">This first slice is isolated from the live game. Model geometry is placeholder art; the workshop, part slots and damage behaviour are what we're testing.</p></div>
+    </aside>
+  </div>
+  
+  <section id="briefing" class="briefing" role="dialog" aria-modal="true" aria-labelledby="briefing-title" hidden>
+    <div id="briefing-sheet" class="briefing-panel" tabindex="-1">
+      <div class="briefing-inner">
+        <div class="briefing-header">
+          <div><div class="eyebrow">FINAL CHECK / YOUR CAR IS READY?</div><h2 id="briefing-title">RACE BRIEFING</h2></div>
+          <span class="briefing-tag">UI TEST 02</span>
+        </div>
+        <div class="briefing-track-art" role="img" aria-label="Stylised race road and environment placeholder graphic">
+          <div class="road-perspective"></div>
+          <div class="briefing-track-label"><small>UP NEXT / SAMPLE COURSE</small><b>STREET RUN</b></div>
+        </div>
+        <div class="briefing-facts" aria-label="Sample race conditions">
+          <div class="briefing-fact"><span>RACE LENGTH</span><strong>4 LAPS</strong></div>
+          <div class="briefing-fact"><span>WEATHER</span><strong>LIGHT RAIN</strong></div>
+          <div class="briefing-fact"><span>SURFACE</span><strong>WET ROAD</strong></div>
+        </div>
+        <hr class="briefing-divider">
+        <div class="briefing-subhead"><strong>YOUR CURRENT BUILD</strong><small>Live prototype condition</small></div>
+        <div id="briefing-condition" class="briefing-condition" aria-live="polite"></div>
+        <div id="briefing-alert" class="briefing-alert" aria-live="polite"></div>
+        <hr class="briefing-divider">
+        <div class="briefing-subhead"><strong>DRIVING APPROACH</strong><small>Preview selection</small></div>
+        <div class="briefing-approach" role="group" aria-label="Driving approach preview">
+          <button type="button" data-approach="careful" aria-pressed="false">CAREFUL</button>
+          <button type="button" data-approach="balanced" aria-pressed="true">BALANCED</button>
+          <button type="button" data-approach="reckless" aria-pressed="false">RECKLESS</button>
+        </div>
+        <p id="approach-description" class="approach-description">Balanced: the middle ground between pace and part wear.</p>
+        <p class="briefing-disclaimer">DESIGN PREVIEW. Track, weather, laps and approach here are sample UI data. No real race or save is started from this prototype.</p>
+      </div>
+      <div class="briefing-footer">
+        <button id="back-to-garage" type="button" class="control">← BACK TO GARAGE</button>
+        <button id="start-race" type="button" class="primary">START RACE →</button>
+      </div>
+    </div>
+  </section>
+  <section id="race-transition" class="race-transition" role="region" aria-labelledby="race-transition-title" tabindex="-1" hidden>
+    <div class="race-transition-content">
+      <div class="race-checkers" aria-hidden="true"></div>
+      <div class="eyebrow">GARAGE → BRIEFING → RACE</div>
+      <h2 id="race-transition-title">LIGHTS OUT.</h2>
+      <p>This is the end of the prototype transition. The real race scene and your saved car will be connected when this UI is integrated into the main game.</p>
+      <button id="race-return" type="button" class="control">← RETURN TO GARAGE</button>
+    </div>
+  </section>
+  <div id="error" role="alert" hidden></div>
+  <script type="module">
+/* Scrap Prix: isolated 3D garage FIRST FLIGHT. This file is NOT loaded by the
+   playable game. It demonstrates the four-slot model + durability-material API.
+   Replace procedural parts with approved GLBs during the asset pass. */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const SLOT_ORDER = ['engine', 'tyres', 'chassis', 'gadget'];
+const PRESETS = {
+  engine: { names: ['Serviceable Engine', 'Exposed V8'], durability: 72 },
+  tyres: { names: ['Round-ish Tyres', 'Scrap Racer Wheels'], durability: 95 },
+  chassis: { names: ['Salvaged GT', 'Wobble Wagon'], durability: 38 },
+  gadget: { names: ['Desk Fan', 'Rocket Pack'], durability: 12 }
+};
+const state = Object.fromEntries(SLOT_ORDER.map(slot => [slot, { variant: 0, durability: PRESETS[slot].durability }]));
+const groups = {};
+const maps = {};
+let selected = 'chassis';
+const container = document.getElementById('garage-canvas');
+const slotsEl = document.getElementById('parts');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#12252a');
+scene.fog = new THREE.Fog('#12252a', 9, 19);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 35);
+camera.position.set(5.8, 3.4, 6.6);
+const renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.7;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const controls = new OrbitControls(camera, container);
+controls.target.set(0, 0.95, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 3.8;
+controls.maxDistance = 11;
+controls.maxPolarAngle = Math.PI / 2.02;
+controls.autoRotateSpeed = 0.65;
+controls.update();
+
+scene.add(new THREE.HemisphereLight('#c2edf3', '#30251d', 2.2));
+function spotlight(colour, intensity, x, y, z) {
+  const lamp = new THREE.DirectionalLight(colour, intensity);
+  lamp.position.set(x, y, z);
+  lamp.castShadow = x > 0;
+  lamp.shadow.mapSize.set(1024, 1024);
+  lamp.shadow.camera.left = -6; lamp.shadow.camera.right = 6;
+  lamp.shadow.camera.top = 6; lamp.shadow.camera.bottom = -6;
+  scene.add(lamp);
+}
+spotlight('#ffdfa3', 3.3, 4, 8, 5);
+spotlight('#70c6e3', 2.0, -5, 5, -3);
+const stage = new THREE.Group();
+scene.add(stage);
+const floor = new THREE.Mesh(new THREE.CylinderGeometry(3.25, 3.5, 0.22, 72), new THREE.MeshStandardMaterial({ color: '#243338', metalness: 0.6, roughness: 0.45 }));
+floor.position.y = -0.15; floor.receiveShadow = true; stage.add(floor);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(3.25, 0.035, 8, 90), new THREE.MeshBasicMaterial({ color: '#e5b968' }));
+ring.rotation.x = Math.PI / 2; ring.position.y = -0.028; stage.add(ring);
+const line = new THREE.Mesh(new THREE.TorusGeometry(2.98, 0.009, 6, 84), new THREE.MeshBasicMaterial({ color: '#64878a' }));
+line.rotation.x = Math.PI / 2; line.position.y = -0.022; stage.add(line);
+const grid = new THREE.GridHelper(15, 28, '#294950', '#263a40'); grid.position.y = -0.28; scene.add(grid);
+const car = new THREE.Group(); stage.add(car);
+
+function material(colour, slot, { roughness = 0.48, metalness = 0.25, damage = true, emissive = null } = {}) {
+  const m = new THREE.MeshStandardMaterial({ color: colour, roughness, metalness, emissive: emissive || '#000000' });
+  m.userData = { slot, damage, roughness };
+  return m;
+}
+function mesh(group, geometry, colour, slot, pos, options = {}) {
+  const obj = new THREE.Mesh(geometry, material(colour, slot, options));
+  obj.position.set(...pos); obj.castShadow = true; obj.receiveShadow = true;
+  obj.name = slot + '-part-' + String(group.children.length + 1).padStart(3,'0');
+  group.add(obj); return obj;
+}
+function block(group, slot, size, pos, colour, options) {
+  return mesh(group, new THREE.BoxGeometry(...size), colour, slot, pos, options);
+}
+function cylinder(group, slot, radius, height, pos, colour, axis = 'y', sides = 16, options) {
+  const obj = mesh(group, new THREE.CylinderGeometry(radius, radius, height, sides), colour, slot, pos, options);
+  if (axis === 'z') obj.rotation.x = Math.PI / 2;
+  if (axis === 'x') obj.rotation.z = Math.PI / 2;
+  return obj;
+}
+
+/* Mesh-first procedural part library. Local axes: X=front, Y=up, Z=left/right.
+   Slots use a shared origin, so exported parts remain aligned on re-import. */
+function profile(g, slot, points, width, colour, options = {}) {
+  const shape = new THREE.Shape();
+  points.forEach(([x,y],i) => i ? shape.lineTo(x,y) : shape.moveTo(x,y));
+  shape.closePath();
+  const bevel = Math.min(0.045, width / 16);
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: width - bevel * 2, steps: 1, bevelEnabled: true, bevelThickness: bevel,
+    bevelSize: bevel, bevelSegments: 2, curveSegments: 2
+  });
+  geometry.translate(0,0,-(width - bevel * 2)/2);
+  return mesh(g, geometry, colour, slot, [0,0,0], options);
+}
+function inset(g, slot, points, z, colour, options = {}) {
+  const shape = new THREE.Shape();
+  points.forEach(([x,y],i) => i ? shape.lineTo(x,y) : shape.moveTo(x,y));
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape,{depth:0.018,bevelEnabled:false});
+  geometry.translate(0,0,z);
+  const obj = mesh(g,geometry,colour,slot,[0,0,0],options);
+  obj.material.side = THREE.DoubleSide;
+  return obj;
+}
+function beam(g,slot,a,b,r,colour,options={}) {
+  const p = new THREE.Vector3(...a),q = new THREE.Vector3(...b),d=q.clone().sub(p);
+  const obj = mesh(g,new THREE.CylinderGeometry(r,r,d.length(),8),colour,slot,[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],options);
+  obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+  return obj;
+}
+function ringMesh(g,slot,major,minor,pos,colour,options={}) {
+  return mesh(g,new THREE.TorusGeometry(major,minor,8,36),colour,slot,pos,options);
+}
+function frontGlass(g,points,colour) {
+  const v=new Float32Array(points.flat());
+  const geom=new THREE.BufferGeometry();
+  geom.setAttribute('position',new THREE.BufferAttribute(v,3));
+  geom.setIndex([0,1,2,0,2,3]); geom.computeVertexNormals();
+  const result=mesh(g,geom,colour,'chassis',[0,0,0],{metalness:.17,roughness:.11,damage:false});
+  result.material.side=THREE.DoubleSide;
+}
+function body(g, variant) {
+  const paint = variant ? '#a46e52' : '#c69b61';
+  const highlight = variant ? '#d09e75' : '#e5be79';
+  const shade = variant ? '#644c47' : '#655b52';
+  const glass = '#2a535c', trim='#29373a';
+  /* The core is a single chamfered solid instead of a stack of exposed cubes. */
+  profile(g,'chassis',variant ?
+    [[-1.77,.66],[1.72,.66],[1.78,.85],[1.48,1.03],[.70,1.09],[-.43,1.08],[-1.42,.99],[-1.77,.94]] :
+    [[-1.76,.66],[1.72,.66],[1.78,.85],[1.49,1.02],[.66,1.11],[-.56,1.09],[-1.36,.98],[-1.76,.93]],
+    1.66,paint,{metalness:.38,roughness:.42});
+  profile(g,'chassis',variant ?
+    [[-1.03,1.08],[-.92,1.77],[-.66,1.95],[.08,1.94],[.54,1.54],[.65,1.08]] :
+    [[-1.04,1.08],[-.82,1.59],[-.51,1.76],[.07,1.75],[.52,1.44],[.65,1.08]],
+    1.40,paint,{metalness:.35,roughness:.4});
+  /* Longer roof and extra rack make the Wobble Wagon visibly more upright. */
+  profile(g,'chassis',[[-1.03,1.08],[-.95,1.15],[.61,1.15],[.66,1.08]],1.47,highlight);
+  for(const side of [-1,1]) {
+    const z=side*.736;
+    /* Two glass openings and a structural B-pillar on each side. */
+    const rear=variant ?
+      [[-.87,1.19],[-.77,1.70],[-.58,1.80],[-.19,1.80],[-.20,1.19]] :
+      [[-.91,1.19],[-.72,1.52],[-.47,1.64],[-.20,1.64],[-.20,1.19]];
+    const front=variant ?
+      [[-.10,1.19],[-.10,1.80],[.04,1.80],[.42,1.49],[.51,1.19]] :
+      [[-.10,1.19],[-.10,1.64],[.02,1.64],[.42,1.40],[.53,1.19]];
+    inset(g,'chassis',rear,z,glass,{metalness:.17,roughness:.14,damage:false});
+    inset(g,'chassis',front,z,glass,{metalness:.17,roughness:.14,damage:false});
+    beam(g,'chassis',[-.16,1.17,z],[-.16,variant?1.85:1.67,z],.034,trim,{metalness:.58});
+    beam(g,'chassis',[-.97,1.10,z],[.61,1.10,z],.027,shade,{metalness:.6});
+    /* Door inset, handle, mirrored threshold, and riveted wheel arches. */
+    inset(g,'chassis',[[-.49,.77],[.43,.77],[.43,1.03],[-.49,1.03]],side*.853,shade,{roughness:.55});
+    block(g,'chassis',[.19,.045,.055],[.21,1.06,side*.893],'#d5c2a1',{metalness:.85});
+    block(g,'chassis',[1.74,.10,.08],[0,.61,side*.85],trim,{metalness:.6});
+    for(const x of [-1.14,1.14]) {
+      const curve=[];
+      for(let i=0;i<=12;i++){
+        const a=i*Math.PI/12;
+        curve.push(new THREE.Vector3(x+Math.cos(a)*.59,.51+Math.sin(a)*.59,side*.855));
+      }
+      const arch=mesh(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curve),14,.045,6,false),shade,'chassis',[0,0,0],{metalness:.43});
+      arch.name='Wheel-arch-'+(x<0?'rear':'front')+'-'+(side<0?'right':'left');
+    }
+    block(g,'chassis',[.27,.13,.085],[.78,1.25,side*.73],paint);
+    block(g,'chassis',[.17,.08,.095],[.87,1.21,side*.79],trim);
+    for(const x of [-1.44,-.66,.70,1.42]){
+      cylinder(g,'chassis',.036,.016,[x,.79,side*.864],'#aab4ab','z',8,{metalness:.8,damage:false});
+    }
+  }
+  /* Windscreen has a visible rake. */
+  const windshieldBottom=variant?1.17:1.16,windshieldTop=variant?1.79:1.65;
+  frontGlass(g,[[.55,windshieldBottom,-.62],[.55,windshieldBottom,.62],
+    [variant?.10:.11,windshieldTop,.62],[variant?.10:.11,windshieldTop,-.62]],glass);
+  /* Distinctive front grille / lamps / bumper, and warm rear lamps. */
+  block(g,'chassis',[.10,.32,1.17],[1.78,.88,0],trim,{metalness:.62});
+  for(let i=0;i<7;i++)
+    block(g,'chassis',[.023,.19,.025],[1.844,.86,-.47+i*.155],'#b9b4a3',{metalness:.83,damage:false});
+  for(const side of [-1,1]){
+    block(g,'chassis',[.10,.16,.30],[1.812,.88,side*.67],'#fff1bb',{metalness:.19,roughness:.15,damage:false,emissive:'#6b5331'});
+    block(g,'chassis',[.09,.14,.26],[-1.808,.88,side*.68],'#d4523e',{metalness:.24,damage:false,emissive:'#581e16'});
+  }
+  block(g,'chassis',[.17,.16,1.84],[1.83,.58,0],'#b2b9b1',{metalness:.88,damage:false});
+  block(g,'chassis',[.17,.16,1.84],[-1.83,.58,0],'#79827e',{metalness:.85,damage:false});
+  block(g,'chassis',[.25,.09,1.45],[1.00,1.13,0],highlight,{metalness:.4});
+  if(variant){
+    for(const z of [-.58,.58]){
+      beam(g,'chassis',[-.88,2.03,z],[.22,2.03,z],.048,'#74847f',{metalness:.7});
+      for(const x of [-.77,.12])beam(g,'chassis',[x,1.95,z],[x,2.04,z],.038,'#4f6564',{metalness:.7});
+    }
+    for(const x of [-.65,.10]) beam(g,'chassis',[x,2.04,-.61],[x,2.04,.61],.045,'#74847f',{metalness:.7});
+    block(g,'chassis',[1.0,.065,.72],[-.54,1.94,0],'#79594c',{metalness:.32});
+  } else {
+    for(const z of [-.56,.56])
+      beam(g,'chassis',[-.65,1.79,z],[.22,1.79,z],.024,highlight,{metalness:.55});
+  }
+}
+function engine(g, variant) {
+  const chrome='#b6bbb0',dark='#495558',cast='#718681',fins='#8eaaa1';
+  block(g,'engine',[variant?1.13:.92,variant?.47:.40,variant?1.01:.80],[.85,1.27,0],
+    variant?'#5e7177':'#668a85',{metalness:.72,roughness:.36});
+  block(g,'engine',[variant?.66:.56,.11,variant?.83:.67],[.83,1.53,0],cast,{metalness:.78});
+  for(const z of (variant?[-.37,.37]:[-.29,.29])){
+    const count=variant?4:3;
+    for(let i=0;i<count;i++){
+      const x=.45+i*(variant?.245:.29);
+      block(g,'engine',[.16,variant?.29:.20,.19],[x,variant?1.69:1.65,z],chrome,{metalness:.82,roughness:.25});
+      cylinder(g,'engine',variant?.092:.072,.060,[x,variant?1.855:1.77,z],dark,'y',10,{metalness:.73});
+    }
+    block(g,'engine',[variant?.98:.77,.12,.17],[.83,variant?1.56:1.54,z*1.37],fins,{metalness:.74});
+    for(let i=0;i<(variant?4:3);i++) {
+      const x=.44+i*.23;
+      const height=variant?.27:.17;
+      beam(g,'engine',[x,1.56,z*1.55],[x,1.56-height,z*1.78],variant?.053:.037,chrome,{metalness:.88});
+    }
+  }
+  cylinder(g,'engine',.27,.12,[1.39,1.25,0],dark,'x',18,{metalness:.7});
+  ringMesh(g,'engine',.20,.026,[1.464,1.25,0],chrome,{metalness:.9});
+  cylinder(g,'engine',.12,.10,[1.47,1.25,0],chrome,'x',16,{metalness:.88});
+  for(const z of [-.28,.28]) {
+    beam(g,'engine',[1.18,1.34,z],[1.43,1.16,z],.039,'#293d41',{roughness:.88});
+  }
+  if(variant){
+    for(const z of [-.42,.42])
+      cylinder(g,'engine',.085,.66,[.64,1.97,z],chrome,'y',12,{metalness:.84});
+    block(g,'engine',[.44,.14,.41],[.94,1.94,0],'#b4b6a8',{metalness:.78});
+  } else {
+    cylinder(g,'engine',.15,.15,[.97,1.65,0],'#3d5051','y',16,{metalness:.58});
+    for(let i=0;i<5;i++)
+      block(g,'engine',[.07,.13,.08],[.60+i*.14,1.47,-.426],fins,{metalness:.75});
+  }
+}
+function tyres(g, variant) {
+  const rubber='#242b2d',rim=variant?'#b5ad8d':'#9caaa2',accent=variant?'#d4b773':'#546566';
+  for(const x of [-1.14,1.14]) for(const side of [-1,1]){
+    const radius=variant?.52:.47, z=side*.99;
+    const face=z+side*(variant?.21:.175);
+    cylinder(g,'tyres',radius,variant?.42:.35,[x,radius,z],rubber,'z',variant?24:18,{metalness:.04,roughness:.94});
+    cylinder(g,'tyres',radius*.70,.016,[x,radius,face],rubber,'z',24,{metalness:.04,roughness:.92});
+    ringMesh(g,'tyres',radius*.70,.044,[x,radius,face+side*.015],accent,{metalness:.72,roughness:.4});
+    cylinder(g,'tyres',radius*.49,.018,[x,radius,face+side*.018],'#425258','z',24,{metalness:.76});
+    ringMesh(g,'tyres',radius*.48,.026,[x,radius,face+side*.025],rim,{metalness:.88,roughness:.28});
+    const count=variant?10:6;
+    for(let n=0;n<count;n++){
+      const a=n*2*Math.PI/count;
+      const dx=Math.sin(a),dy=Math.cos(a);
+      const spoke=beam(g,'tyres',[x+dx*.105,radius+dy*.105,face+side*.029],
+        [x+dx*radius*.41,radius+dy*radius*.41,face+side*.029],variant?.035:.048,rim,{metalness:.85});
+    }
+    cylinder(g,'tyres',radius*.15,.035,[x,radius,face+side*.05],'#6e7771','z',12,{metalness:.87});
+    for(let n=0;n<6;n++){
+      const a=n*2*Math.PI/6;
+      cylinder(g,'tyres',.027,.02,[x+Math.sin(a)*radius*.26,radius+Math.cos(a)*radius*.26,face+side*.047],
+        '#2c3132','z',8,{metalness:.75,damage:false});
+    }
+    for(let n=0;n<(variant?14:9);n++){
+      const a=n*2*Math.PI/(variant?14:9);
+      const tread=block(g,'tyres',[variant?.20:.16,.075,variant?.47:.37],
+        [x+Math.sin(a)*radius,radius+Math.cos(a)*radius,z],variant?'#39403e':'#333a39',
+        {roughness:.95,metalness:.03});
+      tread.rotation.z=-a;
+    }
+    if(variant)
+      for(let n=0;n<8;n++){
+        const a=n*2*Math.PI/8;
+        const lug=block(g,'tyres',[.095,.04,.045],
+          [x+Math.sin(a)*radius*.82,radius+Math.cos(a)*radius*.82,face+side*.015],
+          '#737b68',{roughness:.82});
+        lug.rotation.z=-a;
+      }
+  }
+}
+function gadget(g, variant) {
+  if(variant){
+    /* Pair of primitive thrusters with recognisable rear nozzles. */
+    block(g,'gadget',[.85,.16,.97],[-1.20,1.08,0],'#77786d',{metalness:.7});
+    for(const z of [-.35,.35]){
+      cylinder(g,'gadget',.235,.72,[-1.38,1.36,z],'#889896','x',20,{metalness:.78});
+      cylinder(g,'gadget',.26,.10,[-1.77,1.36,z],'#a49e86','x',20,{metalness:.8});
+      cylinder(g,'gadget',.18,.02,[-1.833,1.36,z],'#293d46','x',20,{metalness:.47,damage:false});
+      ringMesh(g,'gadget',.15,.035,[-1.852,1.36,z],'#deb56c',{metalness:.32,damage:false,emissive:'#7e3c18'}).rotation.y=Math.PI/2;
+      beam(g,'gadget',[-1.25,1.10,z],[-1.41,1.64,z],.05,'#59615d',{metalness:.74});
+    }
+    for(const z of [-.37,.37]) cylinder(g,'gadget',.10,.25,[-1.10,1.54,z],'#9ea9a2','y',14,{metalness:.76});
+  }else{
+    /* Separate electric fan: mount, rim, visible blades and support struts. */
+    block(g,'gadget',[.55,.09,.48],[-1.28,1.06,0],'#555f5c',{metalness:.6});
+    cylinder(g,'gadget',.08,.52,[-1.27,1.37,0],'#a4aba0','y',10,{metalness:.76});
+    cylinder(g,'gadget',.34,.14,[-1.27,1.79,0],'#7b8b87','x',24,{metalness:.76});
+    const rim=ringMesh(g,'gadget',.355,.030,[-1.365,1.79,0],'#d0c5a9',{metalness:.8,roughness:.32});
+    rim.rotation.y=Math.PI/2;
+    for(let n=0;n<4;n++){
+      const a=n*Math.PI/2;
+      const blade=block(g,'gadget',[.055,.28,.115],
+        [-1.386,1.79+Math.cos(a)*.15,Math.sin(a)*.15],'#d7c08d',{metalness:.52});
+      blade.rotation.x=-a-.28;
+    }
+    cylinder(g,'gadget',.10,.17,[-1.415,1.79,0],'#4f6568','x',14,{metalness:.82});
+    for(let n=0;n<6;n++){
+      const a=n*Math.PI/3;
+      beam(g,'gadget',[-1.40,1.79,0],
+        [-1.40,1.79+Math.cos(a)*.34,Math.sin(a)*.34],.012,'#546e70',{metalness:.74,damage:false});
+    }
+  }
+}
+const builders = { engine, tyres, chassis: body, gadget };
+function remake(slot) {
+  const old = groups[slot];
+  if (old) {
+    car.remove(old);
+    old.traverse(obj => { if (obj.isMesh) { obj.geometry.dispose(); obj.material.dispose(); } });
+  }
+  const group = new THREE.Group(); group.name = 'slot:' + slot; group.userData.slot = slot;
+  builders[slot](group, state[slot].variant);
+  groups[slot] = group; car.add(group);
+  applyWear(slot);
+}
+function seed(slot, stageNumber) {
+  let n = (SLOT_ORDER.indexOf(slot) + 13) * 1376312589 + stageNumber * 104729;
+  return () => { n = (Math.imul(n, 1664525) + 1013904223) >>> 0; return n / 4294967296; };
+}
+function wearMap(slot, durability) {
+  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#f8f7f0'; ctx.fillRect(0, 0, 512, 512);
+  const damage = (100 - durability) / 100;
+  const random = seed(slot, Math.round(durability / 5));
+  const flecks = Math.round(12 + 420 * damage * damage);
+  for (let i = 0; i < flecks; i++) {
+    const x = random() * 512, y = random() * 512, w = 1 + damage * (5 + random() * 22);
+    ctx.fillStyle = random() < 0.48 ? 'rgba(91,61,35,' + (0.12 + damage * 0.68) + ')' : 'rgba(38,45,43,' + (0.08 + damage * 0.6) + ')';
+    ctx.fillRect(x, y, w, 1 + random() * (1 + damage * 5));
+  }
+  const scratches = Math.round(2 + damage * 90);
+  for (let i = 0; i < scratches; i++) {
+    const x = random() * 512, y = random() * 512, length = 8 + random() * (12 + 90 * damage);
+    ctx.strokeStyle = 'rgba(45,45,40,' + (0.12 + damage * 0.76) + ')';
+    ctx.lineWidth = 0.7 + 2.6 * damage * random();
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + length, y + length * (random() - 0.5) * 0.25); ctx.stroke();
+  }
+  if (damage > 0.55) {
+    for (let i = 0; i < Math.round((damage - 0.5) * 60); i++) {
+      const x = random() * 512, y = random() * 512;
+      ctx.fillStyle = 'rgba(77,37,20,' + (0.25 + damage * 0.5) + ')';
+      ctx.beginPath(); ctx.ellipse(x, y, 5 + random() * 22, 2 + random() * 13, random() * 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  if (durability === 0) {
+    for (let i = 0; i < 22; i++) {
+      let x = random() * 512, y = random() * 512;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (let j = 0; j < 5; j++) { x += 7 + random() * 20; y += (random() - 0.5) * 30; ctx.lineTo(x, y); }
+      ctx.strokeStyle = '#1b1d1a'; ctx.lineWidth = 2 + random() * 3; ctx.stroke();
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+function applyWear(slot) {
+  const previous = maps[slot];
+  const value = state[slot].durability;
+  const textureStep = Math.round(value / 5) * 5;
+  if (!previous || previous.userData.textureStep !== textureStep) {
+    maps[slot] = wearMap(slot, textureStep);
+    maps[slot].userData.textureStep = textureStep;
+  }
+  groups[slot].traverse(obj => {
+    if (!obj.isMesh) return;
+    const m = obj.material;
+    if (m.userData.damage) {
+      m.map = maps[slot];
+      m.roughness = Math.min(1, m.userData.roughness + (100 - value) / 190);
+      m.needsUpdate = true;
+    }
+    m.emissive.set(slot === selected ? '#68481c' : '#000000');
+    m.emissiveIntensity = slot === selected ? 0.19 : 0;
+  });
+  if (previous && previous !== maps[slot]) previous.dispose();
+}
+function status(value) { return value === 0 ? 'BROKEN' : value <= 25 ? 'CRITICAL' : value <= 60 ? 'DAMAGED' : value <= 85 ? 'WORN' : 'SERVICEABLE'; }
+function buildPartPanel() {
+  slotsEl.textContent = '';
+  for (const slot of SLOT_ORDER) {
+    const d = state[slot], article = document.createElement('section');
+    article.className = 'part'; article.dataset.slot = slot;
+    article.innerHTML = '<div class="part-top"><button type="button" class="part-name"></button><span class="part-type"></span></div>' +
+      '<span class="part-variant"></span><div class="part-meter"><input type="range" min="0" max="100" step="1" aria-label="' + slot + ' durability"/><b class="condition"></b></div>' +
+      '<div class="part-bottom"><span class="part-status"></span><button class="swap" type="button">SWAP TEST PART</button></div>';
+    const name = article.querySelector('.part-name');
+    name.textContent = PRESETS[slot].names[d.variant];
+    article.querySelector('.part-type').textContent = slot.toUpperCase();
+    article.querySelector('.part-variant').textContent = d.variant ? 'Alternate prototype' : 'Starting equipment';
+    const slider = article.querySelector('input'); slider.value = String(d.durability);
+    slider.addEventListener('input', () => { d.durability = Number(slider.value); applyWear(slot); select(slot); refreshParts(); });
+    name.addEventListener('click', () => select(slot));
+    article.querySelector('.swap').addEventListener('click', () => {
+      d.variant = (d.variant + 1) % PRESETS[slot].names.length;
+      d.durability = 100; remake(slot); select(slot); refreshParts();
+    });
+    slotsEl.appendChild(article);
+  }
+  refreshParts();
+}
+function refreshParts() {
+  for (const article of slotsEl.children) {
+    const slot = article.dataset.slot, d = state[slot];
+    article.dataset.selected = String(selected === slot);
+    article.querySelector('.part-name').textContent = PRESETS[slot].names[d.variant];
+    article.querySelector('.part-variant').textContent = d.variant ? 'Alternate prototype' : 'Starting equipment';
+    article.querySelector('input').value = String(d.durability);
+    const condition = article.querySelector('.condition');
+    condition.textContent = d.durability + '%'; condition.className = 'condition' + (d.durability === 0 ? ' broken' : d.durability <= 25 ? ' critical' : '');
+    article.querySelector('.part-status').textContent = status(d.durability);
+    article.querySelector('.part-name').setAttribute('aria-pressed', String(selected === slot));
+  }
+}
+function select(slot) { selected = slot; SLOT_ORDER.forEach(s => applyHighlight(s)); refreshParts(); }
+function applyHighlight(slot) {
+  groups[slot].traverse(obj => {
+    if (!obj.isMesh) return;
+    obj.material.emissive.set(slot === selected ? '#68481c' : '#000000');
+    obj.material.emissiveIntensity = slot === selected ? 0.19 : 0;
+  });
+}
+function setView(name) {
+  const positions = {
+    'three-quarter': [5.8, 3.4, 6.6],
+    front: [7.2, 2.7, 0.01],
+    rear: [-7.2, 2.7, 0.01],
+    side: [0.01, 2.7, 7.2]
+  };
+  camera.position.set(...positions[name]); controls.target.set(0, 0.95, 0); controls.update();
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+}
+for (const slot of SLOT_ORDER) remake(slot);
+buildPartPanel();
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+const rotateButton = document.getElementById('auto-rotate');
+rotateButton.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  rotateButton.setAttribute('aria-pressed', String(controls.autoRotate));
+  rotateButton.textContent = 'AUTO ROTATE: ' + (controls.autoRotate ? 'ON' : 'OFF');
+});
+container.addEventListener('pointerdown', () => {
+  controls.autoRotate = false;
+  rotateButton.setAttribute('aria-pressed', 'false'); rotateButton.textContent = 'AUTO ROTATE: OFF';
+});
+
+/* Visual-only race briefing. The engine and saved-run state are deliberately untouched. */
+const briefing = document.getElementById('briefing');
+const sheet = document.getElementById('briefing-sheet');
+const garageLayout = document.getElementById('garage-layout');
+const transition = document.getElementById('race-transition');
+const goToRace = document.getElementById('go-to-race');
+const approachDescriptions = {
+  careful: 'Careful: less pace, less wear. Safer when your car is barely holding together.',
+  balanced: 'Balanced: the middle ground between pace and part wear.',
+  reckless: 'Reckless: more pace and more wear. Your mechanic objects.'
+};
+let chosenApproach = 'balanced';
+let previousFocus = null;
+function updateBriefing() {
+  const summary = document.getElementById('briefing-condition');
+  summary.replaceChildren();
+  for (const slot of SLOT_ORDER) {
+    const d = state[slot];
+    const row = document.createElement('div');
+    row.className = 'briefing-part';
+    const name = document.createElement('div');
+    name.className = 'briefing-part-head';
+    const label = document.createElement('b');
+    label.textContent = slot;
+    const value = document.createElement('span');
+    value.textContent = d.durability + '%';
+    value.className = d.durability === 0 ? 'zero' : d.durability <= 25 ? 'low' : '';
+    name.append(label,value);
+    const bar = document.createElement('div');
+    bar.className = 'briefing-bar';
+    const fill = document.createElement('span');
+    fill.style.width = d.durability + '%';
+    fill.style.background = d.durability === 0 ? '#b84c4c' : d.durability <= 25 ? '#d9795b' : d.durability <= 60 ? '#e0b06c' : '#8fb89a';
+    bar.append(fill);
+    row.append(name,bar);
+    summary.append(row);
+  }
+  const alert = document.getElementById('briefing-alert');
+  const noStart = ['engine','tyres'].filter(slot => state[slot].durability === 0);
+  const damaged = SLOT_ORDER.filter(slot => state[slot].durability <= 25 && state[slot].durability !== 0);
+  if (noStart.length) {
+    alert.textContent = 'WON’T START: ' + noStart.join(' + ').toUpperCase() + ' at 0%. The real game treats a start attempt as a no-start strike.';
+    alert.dataset.severity = 'danger';
+  } else if (state.chassis.durability === 0) {
+    alert.textContent = 'CHASSIS BROKEN: this part gives no performance and the car is at serious risk.';
+    alert.dataset.severity = 'danger';
+  } else if (damaged.length) {
+    alert.textContent = 'CAUTION: ' + damaged.join(' + ').toUpperCase() + ' critically worn. Review your build before racing.';
+    alert.dataset.severity = 'warning';
+  } else if (state.gadget.durability === 0) {
+    alert.textContent = 'GADGET BROKEN: still equipped, but inactive at 0%.';
+    alert.dataset.severity = 'warning';
+  } else {
+    alert.textContent = 'BUILD CHECK: no critical conditions detected. This preview does not calculate race readiness.';
+    alert.dataset.severity = 'warning';
+  }
+}
+function openBriefing() {
+  previousFocus = document.activeElement;
+  updateBriefing();
+  briefing.hidden = false;
+  garageLayout.inert = true;
+  document.body.classList.add('briefing-active');
+  sheet.focus();
+}
+function closeBriefing(restoreFocus = true) {
+  briefing.hidden = true;
+  garageLayout.inert = false;
+  document.body.classList.remove('briefing-active');
+  if (restoreFocus && previousFocus && previousFocus.isConnected) previousFocus.focus();
+}
+goToRace.addEventListener('click', openBriefing);
+document.getElementById('back-to-garage').addEventListener('click', () => closeBriefing());
+briefing.addEventListener('click', event => {
+  if (event.target === briefing) closeBriefing();
+});
+briefing.addEventListener('keydown', event => {
+  if (event.key === 'Escape') { event.preventDefault(); closeBriefing(); return; }
+  if (event.key !== 'Tab') return;
+  const focusable = [...sheet.querySelectorAll('button:not([disabled])')];
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || document.activeElement === sheet)) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+document.querySelectorAll('[data-approach]').forEach(button => {
+  button.addEventListener('click', () => {
+    chosenApproach = button.dataset.approach;
+    document.querySelectorAll('[data-approach]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.approach === chosenApproach)));
+    document.getElementById('approach-description').textContent = approachDescriptions[chosenApproach];
+  });
+});
+document.getElementById('start-race').addEventListener('click', () => {
+  closeBriefing(false);
+  transition.hidden = false;
+  garageLayout.inert = true;
+  document.body.classList.add('race-preview-active');
+  transition.focus();
+});
+document.getElementById('race-return').addEventListener('click', () => {
+  transition.hidden = true;
+  garageLayout.inert = false;
+  document.body.classList.remove('race-preview-active');
+  goToRace.focus();
+});
+function resize() {
+  const rect = container.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect.width)), height = Math.max(1, Math.round(rect.height));
+  if (container.width !== width || container.height !== height) {
+    camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
+  }
+}
+const observer = new ResizeObserver(resize); observer.observe(container);
+let active = true;
+document.addEventListener('visibilitychange', () => { active = !document.hidden; });
+function animate() {
+  requestAnimationFrame(animate);
+  if (!active) return;
+  resize(); controls.update(); renderer.render(scene, camera);
+}
+animate();
+
+  </script>
+</body>
+</html>
