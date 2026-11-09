@@ -884,3 +884,44 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 .bounty-board .bounty-warning{margin:0;background:#563b32;border-left:3px solid #e2b180}
 @media(max-width:650px){.bounty-board-main{padding:7px}.bounty-board{padding:8px}.bounty-board-head{gap:7px}.bounty-board-head h3{font-size:18px}.bounty-board-head p{font-size:10px}.bounty-board-rail{grid-template-columns:repeat(4,minmax(208px,1fr));min-width:875px}.bounty-sheet{min-height:370px}.garage-shop-tabs{padding:8px 8px 0}.garage-shop-tabs button{font-size:10px;padding:7px}}
 @media(prefers-reduced-motion:reduce){.bounty-sheet:nth-child(even),.bounty-sheet:nth-child(odd){transform:none}}
+
+/* Permanent Encyclopaedia: earned entries only, main-menu screen. */
+.pedia-screen{display:flex;flex-direction:column;gap:11px;flex:1;min-height:0}
+.pedia-screen .screen-heading{flex:none}.pedia-screen .screen-heading .quiet{min-width:116px}
+.pedia-tabs{display:flex;align-items:stretch;gap:6px;min-width:0;overflow-x:auto;scrollbar-color:var(--mid) var(--ink);padding:3px 2px 7px}
+.pedia-tabs button{flex:0 0 auto;min-height:39px;box-shadow:none;border:2px solid #607981;background:#2d444d;color:#bfcfd0;padding:8px 12px;font-size:11px}
+.pedia-tabs button[aria-pressed=true]{background:var(--light);color:var(--ink);border-color:#d4e1df}
+.pedia-body{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(265px,.85fr);gap:12px;min-height:0;flex:1}
+.pedia-list{display:flex;flex-direction:column;gap:17px;background:#263840;border:2px solid #6f8890;padding:17px;box-shadow:inset 0 0 0 3px #15272d}
+.pedia-group{display:flex;flex-direction:column;gap:9px}
+.pedia-group h3{font-size:12px;letter-spacing:.12em;color:#e2ebdf;border-bottom:1px solid #637b81;padding-bottom:7px}
+.pedia-entries{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:9px}
+.pedia-entry{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:135px;background:#627981;border:2px solid #a7bcbb;box-shadow:2px 3px 0 #10222a;padding:9px;color:#e8f0ed;text-align:center;min-width:0;text-transform:none}
+.pedia-entry:hover:not(:disabled){background:#7f999a}.pedia-entry[aria-pressed=true]{outline:2px solid #f1d28b;outline-offset:2px}
+.pedia-entry.pedia-unknown{background:#0c131a;border-color:#3d5057;color:#88999e}.pedia-entry.pedia-unknown:hover{background:#1b2e37}
+.pedia-entry.pedia-spotted{background:#718388;border-style:dashed;border-color:#cedbd0;color:#e2eeea}
+.pedia-entry-label{font-size:11px;line-height:1.3;overflow-wrap:anywhere;font-weight:900}
+.pedia-entry small{font-size:9px;line-height:1.3;color:#ebd29f}
+.pedia-question{font-size:52px;font-weight:900;color:#89969b;line-height:1}
+.pedia-entry-mark .icon{width:43px;height:43px}
+.pedia-part-art{display:block;width:min(100%,130px);height:75px;object-fit:contain}
+.pedia-entry.pedia-spotted .pedia-part-art{filter:brightness(0);opacity:.92}
+.pedia-detail{display:flex;flex-direction:column;gap:14px;min-height:0;padding:21px;background:linear-gradient(165deg,#d8e3df,#b4c6c5)}
+.pedia-detail-top{display:flex;flex-direction:column;gap:10px;border-bottom:2px solid #708c90;padding-bottom:16px}
+.pedia-detail-top>small{font-size:10px;letter-spacing:.08em;font-weight:900;color:#536e73}
+.pedia-detail-top h2{font-size:clamp(24px,3vw,37px);overflow-wrap:anywhere}
+.pedia-detail-top p,.pedia-empty-detail p{font-size:13px;line-height:1.65;color:#405a5d}
+.pedia-records{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pedia-records>div{border:2px solid #668186;padding:11px;min-width:0}
+.pedia-records small{display:block;font-size:9px;color:#547179;line-height:1.4}
+.pedia-records strong{display:block;font-size:23px;margin-top:6px}
+.pedia-records .pedia-record-small{font-size:11px;line-height:1.5}
+.pedia-recipe{display:flex;flex-direction:column;gap:8px}.pedia-recipe h3{border-bottom:1px solid #809a9c;padding-bottom:9px}
+.pedia-recipe p{display:flex;justify-content:space-between;gap:10px;font-size:11px;border-bottom:1px dashed #829899;padding:5px 0}
+.pedia-recipe p span{text-align:right}
+.pedia-milestone{border:2px solid #68897d;background:#c0d3c5;padding:12px;color:#214d37;font-size:12px;font-weight:900}
+.pedia-no-records{padding:36px 20px;border:2px dashed #718d95;font-size:19px;text-align:center;font-weight:900}
+.pedia-no-records p{font-size:11px;line-height:1.7;margin-top:9px;font-weight:normal}
+.pedia-empty-detail h2{font-size:24px;margin-bottom:14px}
+.pedia-footnote{font-size:10px;line-height:1.45;color:var(--mid);text-align:center;flex:none}
+@media(max-width:760px){.pedia-body{grid-template-columns:1fr;grid-template-rows:minmax(150px,1fr) minmax(150px,.8fr)}.pedia-list{padding:10px;gap:11px}.pedia-entries{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}.pedia-entry{min-height:95px;padding:6px}.pedia-entry .icon{width:28px;height:28px}.pedia-entry .pedia-question{font-size:36px}.pedia-detail{padding:12px}.pedia-records strong{font-size:17px}}
