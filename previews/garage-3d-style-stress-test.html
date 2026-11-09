@@ -991,7 +991,7 @@ function buildPartPanel() {
     const name = article.querySelector('.part-name');
     name.textContent = PRESETS[slot].names[d.variant];
     article.querySelector('.part-type').textContent = slot.toUpperCase();
-    article.querySelector('.part-variant').textContent = d.variant ? 'Alternate prototype' : 'Starting equipment';
+    article.querySelector('.part-variant').textContent = d.variant ? 'Procedural part study '+(d.variant+1) : 'Starting equipment';
     const slider = article.querySelector('input'); slider.value = String(d.durability);
     slider.addEventListener('input', () => { d.durability = Number(slider.value); applyWear(slot); select(slot); refreshParts(); });
     name.addEventListener('click', () => select(slot));
@@ -1008,13 +1008,14 @@ function refreshParts() {
     const slot = article.dataset.slot, d = state[slot];
     article.dataset.selected = String(selected === slot);
     article.querySelector('.part-name').textContent = PRESETS[slot].names[d.variant];
-    article.querySelector('.part-variant').textContent = d.variant ? 'Alternate prototype' : 'Starting equipment';
+    article.querySelector('.part-variant').textContent = d.variant ? 'Procedural part study '+(d.variant+1) : 'Starting equipment';
     article.querySelector('input').value = String(d.durability);
     const condition = article.querySelector('.condition');
     condition.textContent = d.durability + '%'; condition.className = 'condition' + (d.durability === 0 ? ' broken' : d.durability <= 25 ? ' critical' : '');
     article.querySelector('.part-status').textContent = status(d.durability);
     article.querySelector('.part-name').setAttribute('aria-pressed', String(selected === slot));
   }
+  syncStyleButtons();
 }
 function select(slot) { selected = slot; SLOT_ORDER.forEach(s => applyHighlight(s)); refreshParts(); }
 function applyHighlight(slot) {
@@ -1107,6 +1108,84 @@ function setView(name) {
   camera.position.set(...positions[name]); controls.target.set(0, 0.95, 0); controls.update();
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
 }
+
+/* Shared procedural parts with five review-only combinations.
+   The fifth preset deliberately stresses the silhouette/attachment system. */
+const STYLE_BUILDS = Object.freeze({
+  gt: { label:'SALVAGED GT', note:'Baseline: cohesive small road car. Inspect arches, glass and bumper proportions.', parts:[0,0,0,0] },
+  wagon: { label:'WOBBLE WAGON', note:'Taller utility shell: test the bulkier cabin with a V8 and all-round wheels.', parts:[1,1,1,0] },
+  soapbox: { label:'SOAPBOX', note:'Thin racer: exposed suspension and open frame must stay readable.', parts:[2,2,2,2] },
+  hauler: { label:'HAULER', note:'Heavy truck: test tall cab, oversized tyres, diesel and broad plough.', parts:[3,3,3,3] },
+  mismatch: { label:'MISFIT', note:'Intentionally clumsy: tiny Soapbox carrying heavy diesel, monster tyres and plough. Look for collisions or lost identity.', parts:[3,3,2,3] }
+});
+function activeStyleId() {
+  const parts=SLOT_ORDER.map(slot=>state[slot].variant);
+  return Object.keys(STYLE_BUILDS).find(key=>STYLE_BUILDS[key].parts.every((n,i)=>n===parts[i]))||null;
+}
+function syncStyleButtons() {
+  const id=activeStyleId();
+  document.querySelectorAll('[data-build]').forEach(button=>
+    button.setAttribute('aria-pressed',String(button.dataset.build===id)));
+  document.getElementById('style-test-hint').textContent=id?
+    STYLE_BUILDS[id].label+' · '+STYLE_BUILDS[id].note:
+    'CUSTOM MIX: try combining parts from different chassis and inspect the attachment points.';
+}
+function loadStyleBuild(id) {
+  const preset=STYLE_BUILDS[id];
+  if(!preset)return;
+  SLOT_ORDER.forEach((slot,i)=>{
+    state[slot].variant=preset.parts[i];
+    state[slot].durability=100;
+    remake(slot);
+  });
+  select('chassis');
+  setView('three-quarter');
+  syncStyleButtons();
+  document.getElementById('model-feedback').textContent='Loaded '+preset.label+'. Art-only selection, no save or race change.';
+}
+document.querySelectorAll('[data-build]').forEach(button=>
+  button.addEventListener('click',()=>loadStyleBuild(button.dataset.build)));
+const pins=[];
+function renderPinned() {
+  const root=document.getElementById('style-compare-cards');
+  root.replaceChildren();
+  if(!pins.length) {
+    const empty=document.createElement('p');
+    empty.className='style-compare-empty';
+    empty.textContent='Pin up to three builds from the same angle to compare their shapes.';
+    root.append(empty);
+  }
+  pins.forEach(pin=>{
+    const card=document.createElement('figure');
+    card.className='style-compare-card';
+    const img=document.createElement('img');
+    img.src=pin.image;
+    img.alt=pin.label+' from the selected garage camera view';
+    const caption=document.createElement('figcaption');
+    caption.textContent=pin.label;
+    card.append(img,caption);
+    root.append(card);
+  });
+}
+document.getElementById('pin-view').addEventListener('click',()=>{
+  /* Preserve the current orbit angle and capture immediately after rendering. */
+  renderer.render(scene,camera);
+  try{
+    const image=renderer.domElement.toDataURL('image/png');
+    if(image==='data:,')throw Error('No pixels available from WebGL.');
+    const label=activeStyleId() ? STYLE_BUILDS[activeStyleId()].label : 'CUSTOM MIX';
+    pins.push({label,image});
+    if(pins.length>3)pins.shift();
+    renderPinned();
+  }catch(error){
+    document.getElementById('model-feedback').textContent='Could not pin WebGL view: '+error.message;
+  }
+});
+document.getElementById('clear-pins').addEventListener('click',()=>{
+  pins.splice(0,pins.length);
+  renderPinned();
+});
+
 for (const slot of SLOT_ORDER) remake(slot);
 buildPartPanel();
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
