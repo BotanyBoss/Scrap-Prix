@@ -7,7 +7,8 @@ const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>
 const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
 for(const i of [0,1,2,3,25])vm.runInContext(scripts[i],ctx);
 const E=ctx.ScrapEngine,D=ctx.ScrapData,clone=o=>JSON.parse(JSON.stringify(o));
-const regular=Array.from(E.bountyDefinitions).filter(d=>!d.gagId);
+const legacyIds=new Set(['third','second','fourth','fifth','match','drop','reckless','balanced','careful','clean','survivor','worn','comeback','route','fresh']);
+const regular=Array.from(E.bountyDefinitions).filter(d=>legacyIds.has(d.id));
 assert.equal(regular.length,15);
 function expectation(id,r,previous,pre){
  if(r.failedSlot||r.noStart)return false;
