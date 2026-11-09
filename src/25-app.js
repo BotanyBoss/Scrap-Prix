@@ -519,7 +519,7 @@
         case 'seed':{const raw=$('seed-input').value.trim();if(!/^\d+$/.test(raw)||Number(raw)>4294967295)throw Error('Seed must be an integer from 0 to 4294967295.');askNew(Number(raw));break;}
         case 'continue-title':if(hasRun)changeScreen(state.phase==='garage'?'garage':'result');break;
         case 'menu':changeScreen('title');notify('Run saved. Continue whenever you are ready.');break;
-        case 'garage-3d':if(screen==='garage'){garageThreeEnabled=!garageThreeEnabled;render(false);notify(garageThreeEnabled?'Experimental 3D garage enabled. Current gameplay and part stats are unchanged.':'Original 2D garage restored.');}break;
+        case 'garage-3d':if(screen==='garage'){garageThreeEnabled=!garageThreeEnabled;if(garageThreeEnabled)garageDialogue=null;render(false);notify(garageThreeEnabled?'Experimental 3D garage enabled. Current gameplay and part stats are unchanged.':'Original 2D garage restored.');}break;
         case 'preview-garage-dialogue':if(screen==='garage'){setGarageDialogue('start');const node=document.getElementById('garage-dialogue');if(node){node.outerHTML=Dialogue.markup(garageDialogue,'garage');}}break;
         case 'dismiss-dialogue':{if(screen==='garage'){garageDialogue=null;const node=document.getElementById('garage-dialogue');if(node){node.hidden=true;node.innerHTML='';}}else if(screen==='race'){const node=document.getElementById('race-dialogue');if(node){node.hidden=true;node.innerHTML='';}}break;}
         case 'records':changeScreen('records');break;
