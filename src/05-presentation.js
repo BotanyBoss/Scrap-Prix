@@ -51,7 +51,7 @@
             label:effect.kind==='signature'?'SIGNATURE HAZARD':choice?'ROUTE CHOICE':effect.kind==='chain'?'ONGOING EVENT':effect.kind==='anomaly'?'RARE EVENT':effect.key==='opening'?'OPENING EVENT':'LATE EVENT',
             duration:effect.kind==='signature'?4800:choice?5200:3400,title:flourish.headline||def.title.toUpperCase(),
             copy,choice,resolvedChoice:effect.choice||null,outcome:effect.outcome||null,
-            event:visualOverrides[effect.id]||def.visual||effect.id,weatherId:shownWeather,sourceId:effect.id,
+            event:visualOverrides[effect.id]||def.visual||effect.id,weatherId:shownWeather,sourceId:effect.id,sourceKind:effect.kind,
             rareText:flourish.rareText,rareVisual:flourish.rareVisual,jumpScare:!!def.jumpScare});
         }
       }
