@@ -24,6 +24,7 @@ jobs:
       - run: node tests/bounty-new-contracts.cjs
       - run: node tests/encyclopaedia.cjs
       - run: node tests/dialogue-ui.cjs
+      - run: node tests/three-garage.cjs
       - run: node tests/event-content-audit.cjs
       - run: node tests/gag-buildability.cjs
       - run: node tests/gag-perks.cjs
