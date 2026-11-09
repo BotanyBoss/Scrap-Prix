@@ -10,13 +10,14 @@
   const page='file://'+path.join(root,'dist','index.html');
   (async()=>{
     const profile=fs.mkdtempSync(path.join(os.tmpdir(),'scrap-dialogue-capture-'));
-    const port=9850+Math.floor(Math.random()*450);
-    const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-gpu','--hide-scrollbars',`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,'--window-size=1440,900','about:blank'],{stdio:'ignore'});
+    const port=9800+Math.floor(Math.random()*4000);
+    const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars',`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,'--window-size=1440,900','about:blank'],{stdio:['ignore','ignore','pipe']});
+    let chromeError='';chrome.stderr.on('data',data=>{chromeError=(chromeError+String(data)).slice(-1600);});
     let ws=null;
     try{
       let target=null;
-      for(let i=0;i<50&&!target;i++){try{target=(await (await fetch(`http://127.0.0.1:${port}/json`)).json()).find(t=>t.type==='page');}catch(e){await sleep(160);}}
-      assert(target,'Could not reach Chromium debugger');
+      for(let i=0;i<110&&!target;i++){try{target=(await (await fetch(`http://127.0.0.1:${port}/json`)).json()).find(t=>t.type==='page');}catch(e){if(chrome.exitCode!==null)break;await sleep(200);}}
+      assert(target,'Could not reach Chromium debugger. Exit '+chrome.exitCode+'; stderr: '+chromeError.slice(-1000));
       ws=new WebSocket(target.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{ws.onopen=resolve;ws.onerror=reject});
       let seq=0;const pending=new Map(),errors=[];
       ws.onmessage=ev=>{const msg=JSON.parse(ev.data);if(msg.id&&pending.has(msg.id)){pending.get(msg.id)(msg);pending.delete(msg.id);return;}if(msg.method==='Runtime.exceptionThrown')errors.push(msg.params.exceptionDetails.text);};
