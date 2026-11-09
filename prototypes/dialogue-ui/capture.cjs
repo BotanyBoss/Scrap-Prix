@@ -64,7 +64,7 @@
     }finally{
       if(ws)ws.close();chrome.kill();
       await new Promise(resolve=>{chrome.once('exit',resolve);setTimeout(resolve,2000);});
-      fs.rmSync(profile,{recursive:true,force:true,maxRetries:3,retryDelay:150});
+      try{fs.rmSync(profile,{recursive:true,force:true,maxRetries:10,retryDelay:250});}catch(err){console.warn('Nonfatal Chromium profile cleanup:',err.code||err.message);}
     }
   })().catch(err=>{console.error('DIALOGUE CAPTURE FAILED:',err.stack||err);process.exitCode=1;});
 })();
