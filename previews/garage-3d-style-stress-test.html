@@ -691,7 +691,81 @@ function body(g, variant) {
       beam(g,'chassis',[-.65,1.79,z],[.22,1.79,z],.024,highlight,{metalness:.55});
   }
 }
+
+function engineTwin(g){
+  const q='engine';
+  block(g,q,[.92,.28,.61],[.91,1.20,0],'#718782',{metalness:.74});
+  for(const z of [-.22,.22]) {
+    cylinder(g,q,.18,.48,[.93,1.58,z],'#afaca0','y',14,{metalness:.79});
+    for(let i=0;i<5;i++) cylinder(g,q,.19,.02,[.93,1.41+i*.080,z],'#849b98','y',14,{metalness:.8});
+    cylinder(g,q,.12,.06,[.93,1.87,z],'#3b4f53','y',12,{metalness:.7});
+    beam(g,q,[1.10,1.64,z],[1.43,1.26,z*1.4],.04,'#c4bdac',{metalness:.72});
+  }
+  cylinder(g,q,.24,.12,[1.44,1.26,0],'#3f5558','x',14,{metalness:.8});
+  ringMesh(g,q,.22,.025,[1.51,1.26,0],'#bdc4b8',{metalness:.85});
+}
+function engineDiesel(g){
+  const q='engine';
+  block(g,q,[1.27,.57,1.12],[1.01,1.34,0],'#596d69',{metalness:.75});
+  block(g,q,[1.13,.11,1.18],[1.01,1.68,0],'#a0aaa1',{metalness:.78});
+  for(const z of [-.45,.45]){
+    for(let i=0;i<6;i++)
+      block(g,q,[.05,.26,.07],[.42+i*.20,1.38,z*1.3],'#abb5a9',{metalness:.78});
+    cylinder(g,q,.10,.59,[.52,2.00,z],'#b3b8ab','y',14,{metalness:.82});
+    cylinder(g,q,.12,.08,[.52,2.31,z],'#323f40','y',14,{metalness:.70});
+  }
+  cylinder(g,q,.32,.13,[1.68,1.25,0],'#3e4a4a','x',16,{metalness:.67});
+  block(g,q,[.53,.18,.81],[1.00,1.82,0],'#727e7a',{metalness:.71});
+}
+function tyresExtended(g,variant){
+  const q='tyres',heavy=variant===3;
+  const radius=heavy?.62:.49,width=heavy?.53:.19,zbase=heavy?1.06:1.01;
+  for(const x of [-1.14,1.14]) for(const side of [-1,1]){
+    const z=side*zbase,face=z+side*(width/2+.014);
+    cylinder(g,q,radius,width,[x,radius,z],'#252c2c','z',heavy?22:24,{roughness:.96,metalness:.04});
+    cylinder(g,q,radius*.77,.026,[x,radius,face],'#3b4848','z',22,{roughness:.88});
+    ringMesh(g,q,radius*.67,.029,[x,radius,face+side*.018],heavy?'#89998e':'#bfc6b8',{metalness:.78});
+    cylinder(g,q,radius*.18,.045,[x,radius,face+side*.035],'#899a93','z',12,{metalness:.81});
+    for(let n=0;n<(heavy?8:12);n++){
+      const a=n*2*Math.PI/(heavy?8:12);
+      beam(g,q,[x+Math.sin(a)*radius*.19,radius+Math.cos(a)*radius*.19,face+side*.030],
+        [x+Math.sin(a)*radius*.58,radius+Math.cos(a)*radius*.58,face+side*.030],
+        heavy?.041:.022,'#bbc4b5',{metalness:.79});
+    }
+    for(let n=0;n<(heavy?12:6);n++){
+      const a=n*2*Math.PI/(heavy?12:6);
+      const lug=block(g,q,heavy?[.27,.12,.57]:[.10,.05,.15],
+        [x+Math.sin(a)*radius,radius+Math.cos(a)*radius,z],'#3c4340',{roughness:.96});
+      lug.rotation.z=-a;
+    }
+  }
+}
+function gadgetAero(g){
+  const q='gadget';
+  block(g,q,[.63,.13,.82],[-1.45,1.01,0],'#55696a',{metalness:.57});
+  for(const z of [-.69,.69]){
+    beam(g,q,[-1.51,1.04,z],[-1.55,1.76,z],.05,'#889993',{metalness:.76});
+    beam(g,q,[-1.27,1.10,z],[-1.55,1.71,z],.04,'#a3ada7',{metalness:.71});
+  }
+  block(g,q,[.61,.10,2.16],[-1.55,1.76,0],'#b6a477',{finish:'paint',metalness:.32});
+  block(g,q,[.19,.11,2.29],[-1.75,1.79,0],'#354b51',{metalness:.42});
+  for(const z of [-1.07,1.07])block(g,q,[.40,.22,.08],[-1.58,1.76,z],'#d2bd8b',{finish:'paint'});
+}
+function gadgetPlough(g){
+  const q='gadget';
+  for(const z of [-.75,.75]){
+    beam(g,q,[1.73,.79,z],[2.38,.69,z*1.22],.10,'#87948b',{metalness:.67});
+    beam(g,q,[1.73,.60,z],[2.39,.54,z*1.25],.08,'#7f8d88',{metalness:.72});
+  }
+  profile(g,q,[[2.18,.29],[2.26,.94],[2.49,1.07],[2.55,.93],[2.50,.30]],2.27,
+    '#8d9a8b',{metalness:.65,roughness:.53});
+  block(g,q,[.13,.12,2.36],[2.51,.30,0],'#cbb382',{metalness:.58});
+  for(let i=0;i<7;i++)cylinder(g,q,.045,.03,[2.57,.81,-.98+i*.33],'#c2bdb1','x',8,{metalness:.79,damage:false});
+}
+
 function engine(g, variant) {
+  if(variant===2)return engineTwin(g);
+  if(variant===3)return engineDiesel(g);
   const chrome='#b6bbb0',dark='#495558',cast='#718681',fins='#8eaaa1';
   block(g,'engine',[variant?1.13:.92,variant?.47:.40,variant?1.01:.80],[.85,1.27,0],
     variant?'#5e7177':'#668a85',{metalness:.72,roughness:.36});
@@ -727,6 +801,7 @@ function engine(g, variant) {
   }
 }
 function tyres(g, variant) {
+  if(variant>=2)return tyresExtended(g,variant);
   const rubber='#242b2d',rim=variant?'#b5ad8d':'#9caaa2',accent=variant?'#d4b773':'#546566';
   for(const x of [-1.14,1.14]) for(const side of [-1,1]){
     const radius=variant?.52:.47, z=side*.99;
@@ -767,6 +842,8 @@ function tyres(g, variant) {
   }
 }
 function gadget(g, variant) {
+  if(variant===2)return gadgetAero(g);
+  if(variant===3)return gadgetPlough(g);
   if(variant){
     /* Pair of primitive thrusters with recognisable rear nozzles. */
     block(g,'gadget',[.85,.16,.97],[-1.20,1.08,0],'#77786d',{metalness:.7});
