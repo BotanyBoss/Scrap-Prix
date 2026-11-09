@@ -97,6 +97,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     assert(await click('confirm-ok'));
     assert(await click('close-modal'));
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
+    const garageRadioPosition=await evaluate("(()=>{const dock=document.getElementById('garage-dialogue'),stats=document.querySelector('.garage-art .stat-strip'),a=dock?.getBoundingClientRect(),b=stats?.getBoundingClientRect();return{visible:!!a&&a.width>0&&a.height>0,aboveStats:!!a&&!!b&&a.bottom<=b.top-2,bottom:a?.bottom,statsTop:b?.top}})()");
+    assert(garageRadioPosition.visible&&garageRadioPosition.aboveStats,'Mobile garage dialogue must not cover equipment stats: '+JSON.stringify(garageRadioPosition));
     for(const approach of ['careful','balanced','reckless']){
       await evaluate(`document.querySelector('[data-action="approach"][data-id="${approach}"]').click()`);
       const layout=await evaluate(`(()=>{const panel=document.querySelector('.next-race').getBoundingClientRect(),note=document.querySelector('.approach-info').getBoundingClientRect(),next=document.querySelector('.garage-top').nextElementSibling.getBoundingClientRect();return {panelBottom:panel.bottom,noteBottom:note.bottom,nextTop:next.top}})()`);
@@ -128,6 +130,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     await click('next-phase');
     assert((await evaluate(`document.getElementById('race-progress').value`))>before,'Next should advance the manual replay');
     await advanceToChoice();
+    assert(await evaluate("document.getElementById('race-dialogue').hidden"),'Route choices take priority and hide radio chatter');
     await click('skip');
     assert(await evaluate(`document.getElementById('confirm-modal').open&&document.getElementById('confirm-content').textContent.includes('safe route')`),'First skip should explain safe routes');
     await click('confirm-cancel');
