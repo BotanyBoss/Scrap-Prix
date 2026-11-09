@@ -668,6 +668,66 @@ function applyHighlight(slot) {
     obj.material.emissiveIntensity = slot === selected ? 0.19 : 0;
   });
 }
+
+/* GLB export enables a code-built model to become a real reusable 3D asset.
+   Keep X=front, Y=up, Z=left/right across all exported part slots. */
+const exportStatus = document.getElementById('model-feedback');
+const exporter = new GLTFExporter();
+let exporting = false;
+function safeFilePart(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+async function exportGeometry(mode) {
+  if (exporting) return;
+  exporting = true;
+  const buttons = [document.getElementById('export-part'), document.getElementById('export-car')];
+  buttons.forEach(button => button.disabled = true);
+  const slots = mode === 'part' ? [selected] : SLOT_ORDER;
+  exportStatus.textContent = 'Preparing ' + (mode === 'part' ? selected.toUpperCase() : 'CAR') + ' .GLB...';
+  let root = null;
+  try {
+    root = new THREE.Group();
+    root.name = mode === 'car' ? 'ScrapPrix_Procedural_Car' : 'ScrapPrix_Part_' + selected;
+    root.userData = {
+      source: 'Scrap Prix procedural 3D art study',
+      axisConvention: 'X=front, Y=up, Z=left-right',
+      slotNames: slots,
+      modelNames: Object.fromEntries(slots.map(slot => [slot, PRESETS[slot].names[state[slot].variant]])),
+      durabilityPercent: Object.fromEntries(slots.map(slot => [slot, state[slot].durability]))
+    };
+    for (const slot of slots) {
+      const group = groups[slot].clone(true);
+      group.name = slot + '__' + safeFilePart(PRESETS[slot].names[state[slot].variant]);
+      group.traverse(node => {
+        if (!node.isMesh) return;
+        node.material = node.material.clone();
+        /* An exported car should not permanently glow because a part was highlighted. */
+        node.material.emissive.set('#000000');
+        node.material.emissiveIntensity = 0;
+      });
+      root.add(group);
+    }
+    const data = await exporter.parseAsync(root, { binary: true, onlyVisible: true, maxTextureSize: 1024, trs: true });
+    if (!(data instanceof ArrayBuffer)) throw new Error('Exporter returned no GLB data.');
+    const blob = new Blob([data], { type: 'model/gltf-binary' });
+    const filename = mode === 'car' ? 'scrap-prix-procedural-car.glb' :
+      'scrap-prix-' + selected + '-' + safeFilePart(PRESETS[selected].names[state[selected].variant]) + '.glb';
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename; link.href = url;
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    exportStatus.textContent = 'Exported ' + filename + ' (' + (blob.size/1024).toFixed(0) + ' KB).';
+  } catch (error) {
+    console.error('3D export failed:', error);
+    exportStatus.textContent = 'Export failed: ' + (error?.message || 'Check browser console.');
+  } finally {
+    if (root) root.traverse(node => { if (node.isMesh) node.material.dispose(); });
+    exporting = false;
+    buttons.forEach(button => button.disabled = false);
+  }
+}
+document.getElementById('export-part').addEventListener('click', () => exportGeometry('part'));
+document.getElementById('export-car').addEventListener('click', () => exportGeometry('car'));
+
 function setView(name) {
   const positions = {
     'three-quarter': [5.8, 3.4, 6.6],
