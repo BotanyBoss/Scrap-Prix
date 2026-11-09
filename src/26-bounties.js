@@ -295,6 +295,46 @@
       <button data-action="accept-bounty" data-id="${offer.id}" ${full||already?'disabled':''}>${already?'ALREADY ACCEPTED THIS RACE':full?'ALL SLOTS FULL':'ACCEPT BOUNTY'}</button>
     </section>`;
   }
+  function bountyBoardMarkup(s){
+    const owned=active(s),offer=bountyOffer(s),full=owned.length>=3,already=s.bountyAcceptedAt===s.raceIndex;
+    const p=penalties(s);
+    const warnings=[
+      p.repairLock>0?`NORMAL REPAIRS BLOCKED · ${p.repairLock} GARAGE(S)`:null,
+      p.shopOne>0?'PARTS SHOP LIMITED TO ONE OFFER':null,
+      p.extraEvent>0?'NEXT STARTED RACE INCLUDES EXTRA BAD EVENT':null
+    ].filter(Boolean);
+    const offerView=offer?visibleBounty(s,{id:offer.id,remaining:offer.races}):null;
+    const offerSheet=offerView?`<article class="bounty-sheet bounty-sheet-offer" aria-label="New bounty offer">
+        <div class="bounty-sheet-head"><span class="bounty-sheet-clip" aria-hidden="true"></span><b>NEW OFFER</b><small>01 / ROTATES EACH RACE</small></div>
+        <div class="bounty-sheet-type">${offer.gagId?'CLASSIFIED REQUEST':'OPEN CONTRACT'}</div>
+        <h3>${esc(offerView.title)}</h3><p class="bounty-sheet-goal">${esc(offerView.goal)}</p>
+        <div class="bounty-sheet-meta"><span>DEADLINE</span><strong>${offer.races} RACE${offer.races===1?'':'S'}</strong></div>
+        <div class="bounty-sheet-terms"><div><strong>SUCCESS</strong><p>${esc(offerView.reward)}</p></div><div class="bounty-sheet-failure"><strong>FAILURE / CANCELLATION</strong><p>${esc(offerView.failure)}</p></div></div>
+        <button class="bounty-sheet-action" data-action="accept-bounty" data-id="${offer.id}" ${full||already?'disabled':''}>${already?'OFFER ACCEPTED':full?'FULL · CANCEL TO MAKE ROOM':'ACCEPT CONTRACT'}</button>
+        </article>`:'<article class="bounty-sheet bounty-sheet-empty">NO CONTRACT OFFER AVAILABLE</article>';
+    const sheets=[0,1,2].map(i=>{
+      const entry=owned[i];
+      if(!entry)return `<article class="bounty-sheet bounty-sheet-empty" aria-label="Empty bounty slot ${i+1}"><span class="bounty-sheet-clip" aria-hidden="true"></span><b>ACTIVE SLOT 0${i+1}</b><span class="bounty-sheet-empty-mark">+</span><p>EMPTY CONTRACT SLOT</p></article>`;
+      const d=visibleBounty(s,entry);
+      return `<article class="bounty-sheet bounty-sheet-active" aria-label="Active bounty ${i+1}">
+        <div class="bounty-sheet-head"><span class="bounty-sheet-clip" aria-hidden="true"></span><b>ACTIVE 0${i+1}</b><small>${d.gagId?'CLASSIFIED':'IN PROGRESS'}</small></div>
+        <div class="bounty-sheet-type">${d.remaining} RACE${d.remaining===1?'':'S'} REMAINING</div>
+        <h3>${esc(d.title)}</h3><p class="bounty-sheet-goal">${esc(d.goal)}</p>
+        ${d.progress?`<p class="bounty-sheet-progress">PROGRESS · ${d.progress}</p>`:''}
+        <div class="bounty-sheet-terms"><div><strong>SUCCESS</strong><p>${esc(d.reward)}</p></div><div class="bounty-sheet-failure"><strong>FAILURE / CANCELLATION</strong><p>${esc(d.failure)}</p></div></div>
+        <button class="bounty-sheet-action" data-action="cancel-bounty" data-id="${d.id}">CANCEL · ACCEPT FAILURE</button>
+        </article>`;
+    }).join('');
+    return `<section class="bounty-board" aria-label="Garage bounty board">
+      <header class="bounty-board-head"><div><small>SCRAP PRIX // GARAGE NOTICEBOARD</small><h3>BOUNTY BOARD</h3><p>One new offer every race. Three contracts can be active at once.</p></div><div class="bounty-board-count"><b>${owned.length}<span> / 3</span></b><small>ACTIVE</small></div></header>
+      ${warnings.map(t=>`<p class="bounty-warning">${esc(t)}</p>`).join('')}
+      <div class="bounty-board-scroll" tabindex="0" role="region" aria-label="Four horizontal bounty sheets; scroll to see all">
+        <div class="bounty-board-rail">${offerSheet}${sheets}</div>
+      </div>
+      <p class="bounty-board-footnote">NEW OFFER ALWAYS VISIBLE · CANCEL AN ACTIVE CONTRACT TO FREE A SLOT · CANCELLING APPLIES ITS FULL FAILURE PENALTY</p>
+    </section>`;
+  }
+  E.bountyBoardMarkup=bountyBoardMarkup;
   E.activeBountyMarkup=activeBountyMarkup;
   E.shopBountyMarkup=shopBountyMarkup;
   E.bountyDefinitions=types;
