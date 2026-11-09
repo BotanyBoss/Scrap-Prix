@@ -34,6 +34,13 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     assert.equal(await screen(),'title','Game should open on the title screen');
     const click=action=>evaluate(`(()=>{const b=document.querySelector('[data-action="${action}"]');if(!b)return false;b.click();return true;})()`);
 
+    // The Encyclopaedia is on the MAIN MENU, independent of any run.
+    assert(await click('encyclopaedia'),'Main menu should open the permanent Encyclopaedia');
+    assert.equal(await screen(),'pedia','Archive opens outside the run');
+    assert.equal(await evaluate("document.querySelectorAll('.pedia-tabs [data-action=pedia-tab]').length"),6,'Initial tabs: Events, Weather, Shortcuts, Tracks, Parts and Bounties');
+    assert.equal(await evaluate("document.querySelectorAll('.pedia-entry').length"),0,'No fabricated, pre-filled discovery slots');
+    assert(await click('menu'),'Back to main menu');
+    assert.equal(await screen(),'title');
     assert(await click('new'),'No "new run" button on the title screen');
     await sleep(800);
     if(await evaluate(`!!document.querySelector('[data-action="confirm-ok"]')&&document.getElementById('confirm-modal').open`))await click('confirm-ok'),await sleep(800);
