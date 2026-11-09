@@ -22,6 +22,7 @@ jobs:
       - run: node tests/recovery-stress.cjs
       - run: node tests/bounty.cjs
       - run: node tests/bounty-new-contracts.cjs
+      - run: node tests/encyclopaedia.cjs
       - run: node tests/event-content-audit.cjs
       - run: node tests/gag-buildability.cjs
       - run: node tests/gag-perks.cjs
