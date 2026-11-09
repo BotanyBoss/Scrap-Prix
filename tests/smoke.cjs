@@ -56,6 +56,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     assert(await evaluate("(()=>{const m=window.ScrapThreeGarage;window.__3dOriginalMount=m.mount;window.__3dOriginalDispose=m.dispose;m.mount=async(c,loadout,update)=>{window.__3dParts=loadout;update('3D TEST · MOCK SCENE');return true;};m.dispose=()=>{};return true;})()"));
     assert(await click('garage-3d'),'Garage must expose 3D toggle');
     await sleep(120);
+    assert(await evaluate("document.getElementById('garage-dialogue').hidden"),'Entering the 3D inspection view should clear the temporary character placeholder');
     assert.equal(await evaluate("document.querySelector('.garage-art').dataset.visual"),'three','3D should mount as a preview, not replace the game');
     assert(await evaluate("document.querySelector('[data-action=garage-3d]').getAttribute('aria-pressed')==='true'"));
     assert(await evaluate("JSON.stringify(window.__3dParts)===JSON.stringify(JSON.parse(localStorage.getItem('scrap-prix-v0400-systems-run-v21')).loadout)"),'Use real equipped loadout');
