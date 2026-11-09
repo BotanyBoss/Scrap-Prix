@@ -434,7 +434,8 @@
           if(!entry)throw Error('Contract no longer active.');
           const d=E.bountyDisplay(state,entry);
           ask('ABANDON CONTRACT?',`<p><b>${esc(d.title)}</b> immediately fails.</p><p>The following consequence applies now: <b>${esc(d.failure)}</b>.</p><p>This frees the contract slot. There is no additional cancellation cost.</p>`,()=>{
-             mutate(E.cancelBounty(state,id),`Contract abandoned: ${d.failure}.`);
+             const next=E.cancelBounty(state,id);
+             mutate(next,`Contract abandoned: ${d.failure}.${next.bountyLastCancel?.riskReward?' Risk/Reward complete: +2 wrenches.':''}`);
              if(modalKind==='shop')renderModal();
           },'ACCEPT FAILURE');break;
         }
