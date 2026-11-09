@@ -38,24 +38,29 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     await sleep(800);
     if(await evaluate(`!!document.querySelector('[data-action="confirm-ok"]')&&document.getElementById('confirm-modal').open`))await click('confirm-ok'),await sleep(800);
     assert.equal(await screen(),'garage','New run should land in the garage');
-    // Bounty Board smoke: an offer appears in the shop, acceptance fills one slot,
-    // and voluntary cancellation applies failure and frees that slot.
+    // Garage noticeboard: separate tab, one rotating offer + three owned sheets.
     assert(await click('shop'),'Shop should open from garage');
-    await sleep(200);
-    assert(await evaluate("!!document.querySelector('[data-action=accept-bounty]')"),'One bounty offer should appear in the shop');
+    await sleep(160);
+    assert(await click('shop-tab'),'Bounty tab switch exists');
+    // First tab is PARTS; switch deliberately to the bounty board.
+    await evaluate("document.querySelector('[data-action=shop-tab][data-id=bounties]').click()");
+    await sleep(160);
+    assert.equal(await evaluate("document.querySelectorAll('.bounty-board-rail .bounty-sheet').length"),4,'Bounty board has exactly four sideways sheets');
+    assert.equal(await evaluate("document.querySelectorAll('.bounty-sheet-empty').length"),3,'Three owned slots begin empty');
+    assert(await evaluate("!!document.querySelector('.bounty-sheet-offer [data-action=accept-bounty]')"),'One offer remains available while slots are empty');
     assert(await click('accept-bounty'),'Accept bounty button should work');
     assert(await evaluate("document.getElementById('confirm-modal').open"),'Bounty acceptance requires confirmation');
     assert(await click('confirm-ok'),'Must be able to confirm bounty');
-    await sleep(200);
-    assert.equal(await evaluate("document.querySelector('[data-action=accept-bounty]').disabled"),true,'Only one new bounty may be accepted per race');
-    assert(await click('close-modal'),'Shop should close');
-    await sleep(130);
-    assert.equal(await evaluate("document.querySelectorAll('.bounty-slot:not(.empty)').length"),1,'Accepted contract appears in owned slots');
+    await sleep(180);
+    assert.equal(await evaluate("document.querySelector('.bounty-sheet-offer [data-action=accept-bounty]').disabled"),true,'Only one new bounty may be accepted per race');
+    assert.equal(await evaluate("document.querySelectorAll('.bounty-sheet-active').length"),1,'Accepted contract appears on the noticeboard');
     assert(await click('cancel-bounty'),'Active contract can be abandoned');
     assert(await evaluate("document.getElementById('confirm-modal').open"),'Cancellation must warn about automatic failure');
     assert(await click('confirm-ok'),'Cancel confirmation should work');
-    await sleep(120);
-    assert.equal(await evaluate("document.querySelectorAll('.bounty-slot:not(.empty)').length"),0,'Abandoning frees the slot');
+    await sleep(130);
+    assert.equal(await evaluate("document.querySelectorAll('.bounty-sheet-active').length"),0,'Abandoning frees the slot immediately');
+    assert.equal(await evaluate("document.querySelectorAll('.bounty-sheet-empty').length"),3);
+    assert(await click('close-modal'),'Shop / Bounties should close');
 
 
     const startSeed=async()=>{
