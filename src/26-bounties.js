@@ -353,7 +353,7 @@
     const offerView=offer?visibleBounty(s,{id:offer.id,remaining:offer.races}):null;
     const offerSheet=offerView?`<article class="bounty-sheet bounty-sheet-offer" aria-label="New bounty offer">
         <div class="bounty-sheet-head"><span class="bounty-sheet-clip" aria-hidden="true"></span><b>NEW OFFER</b><small>01 / ROTATES EACH RACE</small></div>
-        <div class="bounty-sheet-type">${offer.gagId?'CLASSIFIED REQUEST':'OPEN CONTRACT'}</div>
+        <div class="bounty-sheet-type">${esc(offerView.rarity.toUpperCase())} · ${offer.gagId?'CLASSIFIED REQUEST':'OPEN CONTRACT'}</div><small class="bounty-sheet-category">${esc(offerView.category)}</small>
         <h3>${esc(offerView.title)}</h3><p class="bounty-sheet-goal">${esc(offerView.goal)}</p>
         <div class="bounty-sheet-meta"><span>DEADLINE</span><strong>${offer.races} RACE${offer.races===1?'':'S'}</strong></div>
         <div class="bounty-sheet-terms"><div><strong>SUCCESS</strong><p>${esc(offerView.reward)}</p></div><div class="bounty-sheet-failure"><strong>FAILURE / CANCELLATION</strong><p>${esc(offerView.failure)}</p></div></div>
@@ -365,7 +365,7 @@
       const d=visibleBounty(s,entry);
       return `<article class="bounty-sheet bounty-sheet-active" aria-label="Active bounty ${i+1}">
         <div class="bounty-sheet-head"><span class="bounty-sheet-clip" aria-hidden="true"></span><b>ACTIVE 0${i+1}</b><small>${d.gagId?'CLASSIFIED':'IN PROGRESS'}</small></div>
-        <div class="bounty-sheet-type">${d.remaining} RACE${d.remaining===1?'':'S'} REMAINING</div>
+        <div class="bounty-sheet-type">${esc(d.rarity.toUpperCase())} · ${d.remaining} RACE${d.remaining===1?'':'S'} REMAINING</div><small class="bounty-sheet-category">${esc(d.category)}</small>
         <h3>${esc(d.title)}</h3><p class="bounty-sheet-goal">${esc(d.goal)}</p>
         ${d.progress?`<p class="bounty-sheet-progress">PROGRESS · ${d.progress}</p>`:''}
         <div class="bounty-sheet-terms"><div><strong>SUCCESS</strong><p>${esc(d.reward)}</p></div><div class="bounty-sheet-failure"><strong>FAILURE / CANCELLATION</strong><p>${esc(d.failure)}</p></div></div>
