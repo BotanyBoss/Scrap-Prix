@@ -3,7 +3,7 @@
   const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
   const html=fs.readFileSync(path.join(__dirname,'..','dist','dev.html'),'utf8');
   const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
-  assert.equal(scripts.length,29);
+  assert.equal(scripts.length,30);
   const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
   vm.runInContext(scripts[27],ctx);
   const UI=ctx.ScrapDialogueUI;
