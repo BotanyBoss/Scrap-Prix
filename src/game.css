@@ -925,3 +925,20 @@ h1,h2,h3,.brand,.menu-buttons button,.big-actions button,.offer h3,.result-place
 .pedia-empty-detail h2{font-size:24px;margin-bottom:14px}
 .pedia-footnote{font-size:10px;line-height:1.45;color:var(--mid);text-align:center;flex:none}
 @media(max-width:760px){.pedia-body{grid-template-columns:1fr;grid-template-rows:minmax(150px,1fr) minmax(150px,.8fr)}.pedia-list{padding:10px;gap:11px}.pedia-entries{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}.pedia-entry{min-height:95px;padding:6px}.pedia-entry .icon{width:28px;height:28px}.pedia-entry .pedia-question{font-size:36px}.pedia-detail{padding:12px}.pedia-records strong{font-size:17px}}
+
+/* In-race contract page browser uses the same clipped-metal job sheets as the garage. */
+.race-bounty-trigger{background:#dac391!important;color:#1f3438!important;border:2px solid #8a764f!important;font-weight:900}
+.race-bounty-dialog{width:min(700px,calc(100vw - 30px))}
+.race-bounty-modal-body{background:linear-gradient(160deg,#253740,#16272e);color:#dcebe9;padding:16px;display:flex;flex-direction:column;align-items:center}
+.race-bounty-browser{width:min(100%,480px);display:flex;flex-direction:column;gap:12px}
+.race-bounty-status{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px;color:#f0dfb0;padding:0 8px}
+.race-bounty-status small{font-size:9px;color:#adc3c6}
+.race-bounty-sheet{width:100%;min-height:320px;transform:none!important;margin:6px 0 0;box-shadow:4px 6px 0 #071b20}
+.race-bounty-sheet .bounty-sheet-head{font-size:12px}.race-bounty-sheet h3{font-size:25px}
+.race-bounty-sheet .bounty-sheet-goal{font-size:14px;line-height:1.6}
+.race-bounty-pages{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.race-bounty-pages button{min-width:117px;box-shadow:none;font-size:11px;min-height:37px;padding:6px 12px}
+.race-bounty-pages span{font-size:16px;letter-spacing:.12em;color:#edd29a}
+.race-bounty-note{font-size:10px;line-height:1.6;color:#bacbcd;text-align:center}
+.race-bounty-empty{font-size:13px;letter-spacing:.08em;padding:32px;color:#c3d6d6}
+@media(max-width:620px){.race-bounty-trigger{font-size:9px!important;padding:6px!important}.race-bounty-modal-body{padding:9px}.race-bounty-sheet{min-height:280px}.race-bounty-sheet h3{font-size:19px}.race-bounty-status{font-size:10px}.race-bounty-pages button{min-width:82px;font-size:9px}.race-bounty-pages span{font-size:11px}}
