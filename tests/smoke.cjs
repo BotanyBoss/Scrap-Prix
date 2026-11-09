@@ -85,6 +85,12 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     };
     const savedChoice=()=>evaluate(`JSON.parse(localStorage.getItem('scrap-prix-v0400-systems-run-v21')).history.at(-1).laps.flatMap(l=>l.effects).find(e=>e.choiceEvent)?.choice`);
     await startSeed();
+    // Accept one normal offer before racing so the in-race read-only bounty browser is available.
+    assert(await click('shop'));
+    await evaluate("document.querySelector('[data-action=shop-tab][data-id=bounties]').click()");
+    assert(await click('accept-bounty'));
+    assert(await click('confirm-ok'));
+    assert(await click('close-modal'));
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
     for(const approach of ['careful','balanced','reckless']){
       await evaluate(`document.querySelector('[data-action="approach"][data-id="${approach}"]').click()`);
@@ -97,6 +103,13 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     assert(await click('race'),'No race button in the garage');
     await sleep(500);
     assert.equal(await screen(),'race','Race should open');
+    assert(await click('race-bounties'),'Race HUD should open active bounty pages');
+    assert(await evaluate("document.getElementById('modal').open"));
+    assert(await evaluate("!!document.querySelector('.race-bounty-sheet')"),'Read-only contract sheet should render');
+    assert(await evaluate("document.querySelectorAll('.race-bounty-sheet [data-action=cancel-bounty]').length===0"),'Cannot cancel during the race');
+    assert(await evaluate("document.getElementById('race-wrap').dataset.paused==='true'"),'Opening bounties pauses playback');
+    await click('close-modal');
+    assert.equal(await evaluate("document.getElementById('modal').open"),false);
     const visible=await evaluate(`(()=>{const r=document.querySelector('[data-action="next-phase"]').getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth})()`);
     assert(visible,'Manual replay Next button should be visible on mobile');
     await send('Emulation.setDeviceMetricsOverride',{width:1280,height:720,deviceScaleFactor:1,mobile:false});
