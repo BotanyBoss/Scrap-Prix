@@ -37,3 +37,17 @@ Clean baseline retains mismatched scavenged plating and a little workshop wear, 
 ## Gate
 
 The user must select and approve a visual direction. No gameplay, performance, economy, save or part-recipe changes. Earlier attempts following Hauler art repeated Hauler imagery despite changing to 08; **all those images are rejected as incorrect Armoured Tub designs**. Future concept attempts must use an isolated fresh image context, not Hauler examples.
+
+## Structural refinement test — 11 November 2026
+
+A separate native-geometry **wheel-free Armoured Tub shell** was built and rendered from one 3D source in front, side, elevated-rear and top views. This is **not approved concept artwork**.
+
+- Continuous, thick enclosing sidewalls with four empty wheel arch cutouts. No equipped wheels, engine, gadgets, permanent lighting, exhaust, tow kit or cargo.
+- Broad blunt angled **wedge** front rather than Hauler's upright truck grille; low overall profile.
+- Deep open-top driver well; protected by tall (relative to seated occupant), heavy contiguous sidewalls, with no upright Hauler-style cab or tall roll cage.
+- Substantial flat-armour rear bulkhead with deliberately empty central equipment recess, clearly different from Hauler's open stepped rear.
+- Distinctive sideplate and repair-panel boundaries can later receive the established Scrap Prix material treatment without heavy damage on the pristine master.
+- The draft native-geometry study was exported locally as `armoured_tub_08_structural.glb` and rendered as `armoured_tub_08_refined.jpg` in this conversation. These **have not been archived in GitHub or approved for game integration**.
+- Next create a polished material/concept pass respecting this chassis silhouette and all four empty mounting points; seek explicit owner visual approval.
+
+**Status: structural refinement test completed; polished visual refinement and owner approval remain pending.**

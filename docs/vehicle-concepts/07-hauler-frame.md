@@ -50,3 +50,16 @@ The artwork can differ radically from earlier 2D art; retain the *gameplay ident
 ## Generation issue
 
 Attempts in the 10 November 2026 conversation unexpectedly repeated Wobble Wagon or produced rear race scenes. Those outputs are rejected and **must not be used as Hauler reference images**.
+
+## Structural refinement test — 11 November 2026
+
+A consistent native-geometry **chassis-only** study was built and rendered from the same 3D model in front, side, elevated-rear and top views. This is a **geometry/clearance study, not the final polished concept image and NOT visual approval**.
+
+- Four empty wheel locations; no fitted wheels, engine, gadgets, roof lights, toolbox, cargo, chimney or exhausts.
+- Shortened industrial grille/nose, thick waist-high protective cockpit side walls and cab uprights, visible seat position.
+- Rear is a **three-tier open stepped frame** with heavy crossmembers, wide rear uprights and empty central gadget region.
+- Important silhouette distinction: Hauler's heavy ladder rails and open rear frame versus Armoured Tub's continuous enclosing armour shell.
+- Procedural concept geometry was exported locally as `hauler_frame_07_structural.glb` and a rendered multi-angle study `hauler_frame_07_refined.jpg` in this conversation. These **have not been archived in GitHub or evaluated as production GLBs**.
+- After reviewing the structural study, create one polished **equipment-free** concept preserving its proven geometry and selected industrial-art finish, then request owner sign-off.
+
+**Status: structural refinement test completed; polished visual refinement and owner approval remain pending.**

@@ -12,8 +12,8 @@ Snapshot: **11 November 2026**. Derived from the actual ten-item chassis catalog
 | 04 | `boilerplate` | Boilerplate Chassis | **Visual direction APPROVED 2026-11-11** | Open cylindrical structural ribs around interchangeable engine; engineering, modular fitting and 3D master pending |
 | 05 | `wobble-wagon` | Wobble Wagon | **Parked** | Demonstrate real *left/right* height asymmetry; roll about longitudinal axis |
 | 06 | `longbody` | Longbody Frame | **Visual direction APPROVED 2026-11-11** | Keep shortened six-wheel silhouette: two front, four rear; engineering, modular fitting and 3D master pending |
-| 07 | `hauler` | Hauler Frame | **Needs structural refinement** | Remove fixed equipment; correct compact nose, cockpit, stepped rear |
-| 08 | `armoured-tub` | Armoured Tub | **Promising; refine** | Enclosing low tub, distinctly non-Hauler cockpit and rear |
+| 07 | `hauler` | Hauler Frame | **Structural study done; visual approval PENDING** | Wheel-free 3D test of short nose, protected cockpit and three-step rear completed; polish concept and obtain sign-off |
+| 08 | `armoured-tub` | Armoured Tub | **Structural study done; visual approval PENDING** | Continuous low armoured shell, empty wheel cutouts and rear recess tested; polish concept and obtain sign-off |
 | 09 | `aero-pod` | Aero Pod Frame | **Visual direction APPROVED 2026-11-11** | Smooth low/wide aero body, optional fin/gadget clearances; engineering, modular fitting and 3D master pending |
 | 10 | `carbon-lite` | Carbon-Lite Monocoque | **Visual direction APPROVED 2026-11-11** | Latest F1-style open-wheel concept, not earlier Aero Pod-like model; engineering, modular fitting and 3D master pending |
 
