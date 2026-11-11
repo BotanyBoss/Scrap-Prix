@@ -2,20 +2,24 @@
 
 Snapshot: **11 November 2026**. Derived from the actual ten-item chassis catalogue and explicit user concept reviews. Approval labels rendered *inside generated images* are not authoritative.
 
-**Progress:** 10/10 explored; 2 visually approved outright (Salvaged GT, Soapbox); 1 accepted direction (Needle); 4 strong concepts awaiting final visual sign-off; 2 require structural refinement; 1 parked. **No production chassis GLBs approved or integrated.**
+**Progress (11 November 2026):** 10/10 explored; **6 visually approved** (Salvaged GT, Soapbox, Boilerplate, Longbody, Aero Pod, Carbon-Lite); 1 direction accepted but not visually final (Needle); 2 need structural refinement (Hauler, Armoured Tub); 1 parked (Wobble Wagon). **No production chassis GLBs approved or integrated.**
 
 | # | Catalogue ID | Name | Visual decision | Next gate |
 |---|---|---|---|---|
 | 01 | `stock-chassis` | Salvaged GT | **Approved** | Clean master, modular mounts, rear camera |
 | 02 | `soapbox` | Soapbox Frame | **Approved** | Preserve substantial bonnet/wooden seat; clean master |
 | 03 | `needle-frame` | Needle Frame | **Direction accepted** | Reconcile inconsistent concept angles in one mesh |
-| 04 | `boilerplate` | Boilerplate Chassis | **Selected; final sign-off** | Open cylindrical structural ribs around interchangeable engine |
+| 04 | `boilerplate` | Boilerplate Chassis | **Visual direction APPROVED 2026-11-11** | Open cylindrical structural ribs around interchangeable engine; engineering, modular fitting and 3D master pending |
 | 05 | `wobble-wagon` | Wobble Wagon | **Parked** | Demonstrate real *left/right* height asymmetry; roll about longitudinal axis |
-| 06 | `longbody` | Longbody Frame | **Selected; final sign-off** | Keep shortened six-wheel silhouette: two front, four rear |
+| 06 | `longbody` | Longbody Frame | **Visual direction APPROVED 2026-11-11** | Keep shortened six-wheel silhouette: two front, four rear; engineering, modular fitting and 3D master pending |
 | 07 | `hauler` | Hauler Frame | **Needs structural refinement** | Remove fixed equipment; correct compact nose, cockpit, stepped rear |
 | 08 | `armoured-tub` | Armoured Tub | **Promising; refine** | Enclosing low tub, distinctly non-Hauler cockpit and rear |
-| 09 | `aero-pod` | Aero Pod Frame | **Selected; final sign-off** | Smooth low/wide aero body, optional fin/gadget clearances |
-| 10 | `carbon-lite` | Carbon-Lite Monocoque | **Selected; final sign-off** | Latest F1-style open-wheel concept, not earlier Aero Pod-like model |
+| 09 | `aero-pod` | Aero Pod Frame | **Visual direction APPROVED 2026-11-11** | Smooth low/wide aero body, optional fin/gadget clearances; engineering, modular fitting and 3D master pending |
+| 10 | `carbon-lite` | Carbon-Lite Monocoque | **Visual direction APPROVED 2026-11-11** | Latest F1-style open-wheel concept, not earlier Aero Pod-like model; engineering, modular fitting and 3D master pending |
+
+## Explicit visual approvals (11 November 2026)
+
+The owner explicitly approved **Boilerplate Chassis 04**, **Longbody Frame 06**, **Aero Pod Frame 09**, and **Carbon-Lite Monocoque 10** in this conversation. These decisions approve the **existing selected concept-art visual directions only**. They do **not** approve engineered dimensions, wheel/engine/gadget attachment standards, final equipment-free `.glb` masters, durability implementation, race-camera QA or game integration. The two previously approved designs (Salvaged GT 01 and Soapbox 02) remain approved. Needle 03 is still direction-accepted rather than finally approved. Unresolved chassis 05, 07 and 08 retain their previous states.
 
 ## Actual source images
 

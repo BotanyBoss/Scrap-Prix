@@ -11,14 +11,14 @@ The strongest currently selected visual reference for **each of the ten real cha
 - **02 Soapbox Frame: approved.** Open cockpit, wooden seat, hoop, patchwork wood and metal, comparatively substantial bonnet deliberately retained. Do not redesign bonnet because engine equipment varies.
 - **03 Needle Frame: direction accepted, not engineering approved.** Long narrow nose and tubular single-seater. AI views contradict one another: the final 3D model must become the geometric authority.
 
-## B — Strong concepts recommended for visual sign-off (no new mass-gallery pass)
+## B — Visual directions approved by owner on 11 November 2026
 
-1. **04 Boilerplate.** Owner-selected industrial hot rod with **open riveted cylinder ribs**, exposing the installed engine. Keep the heavier protected cockpit; cylinder is a structural cage, **not** a permanently fitted steam boiler. Reject older enclosed-cylinder variant. **Recommended: accept the overall shape**; solve engine clearance and removable chimney/exhaust in modelling.
-2. **06 Longbody.** Latest **shortened six-wheel** workhorse-like racer: **one front axle + two rear axles**, with the tandem rear wheels visible from the elevated rear camera. No fixed cargo or top clutter; not a normal four-wheeled GT and not an oversized hauler. **Recommended: accept this shape**, then verify 3 openings per side and rear view.
-3. **09 Aero Pod.** Low, wide, broad-shouldered aerodynamic pod with curved salvage panels, recessed cockpit and side intakes. Differentiate from Carbon-Lite F1: less exposed racing suspension, more sculpted pod bodywork. **Recommended: accept shape**, leaving fin/gadget clearance and lighter baseline wear to 3D engineering.
-4. **10 Carbon-Lite.** **Latest F1-style design** with narrow central monocoque, open-wheel stations, shaped sidepods, low nose and race-car cockpit, not earlier smooth open pod. The F1 silhouette is the accepted direction; front/rear wing components must be cleanly separable from optional equipment. **Recommended: accept the F1-shaped direction** and specify clean monocoque master.
+1. **04 Boilerplate.** Owner-selected industrial hot rod with **open riveted cylinder ribs**, exposing the installed engine. Keep the heavier protected cockpit; cylinder is a structural cage, **not** a permanently fitted steam boiler. Reject older enclosed-cylinder variant. **VISUAL DIRECTION APPROVED by owner (11 November 2026)**; engine clearance and removable chimney/exhaust remain engineering tasks.
+2. **06 Longbody.** Latest **shortened six-wheel** workhorse-like racer: **one front axle + two rear axles**, with the tandem rear wheels visible from the elevated rear camera. No fixed cargo or top clutter; not a normal four-wheeled GT and not an oversized hauler. **VISUAL DIRECTION APPROVED by owner (11 November 2026)**; verify 3 openings per side and rear view during engineering.
+3. **09 Aero Pod.** Low, wide, broad-shouldered aerodynamic pod with curved salvage panels, recessed cockpit and side intakes. Differentiate from Carbon-Lite F1: less exposed racing suspension, more sculpted pod bodywork. **VISUAL DIRECTION APPROVED by owner (11 November 2026)**; fin/gadget clearance and lighter baseline wear remain 3D engineering tasks.
+4. **10 Carbon-Lite.** **Latest F1-style design** with narrow central monocoque, open-wheel stations, shaped sidepods, low nose and race-car cockpit, not earlier smooth open pod. The F1 silhouette is the accepted direction; front/rear wing components must be cleanly separable from optional equipment. **VISUAL DIRECTION APPROVED by owner (11 November 2026)**; the clean monocoque master and optional aero equipment separation remain engineering tasks.
 
-For these four, seek explicit owner visual sign-off. Do not label them final in their records until sign-off is given.
+**All four received explicit owner visual approval on 11 November 2026.** Preserve the selected designs. This approval is **visual only**, and none is a finished production asset.
 
 ## C — Targeted fix queue, no broad redesigns
 
@@ -41,4 +41,4 @@ See [Master Approval Register](./00-chassis-approval-register.md) for the ten ex
 
 ## Current decision
 
-**No new visual approvals were granted automatically in this consolidation.** The four recommended B-group concepts are ready for an explicit owner review; C-group designs remain engineering/design problems. No production assets or gameplay were changed.
+**Four new visual approvals were explicitly granted by the owner on 11 November 2026:** Boilerplate 04, Longbody 06, Aero Pod 09 and Carbon-Lite 10. They join the previously approved Salvaged GT 01 and Soapbox 02. Needle 03 remains direction-accepted; the remaining C-group designs are still unresolved. **Engineering, modular compatibility, production 3D modelling, game integration and clean GLB export are all pending.** No production assets or gameplay were changed.
