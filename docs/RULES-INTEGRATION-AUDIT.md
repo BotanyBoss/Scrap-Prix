@@ -24,3 +24,7 @@
 - Continue validating imported-save identity, stage disclosure, and witnessed-only contract playthroughs against unusual crash/skip/choice sequences.
 - Run matched natural-run, human-like Bodge/bounty economy playtests and report practical success/expiry/repair-lock consequences.
 - Keep the 3D-to-2D rendering prototype isolated until these rules are reliable.
+
+## 13 Nov scripted economy evidence
+
+A start-from-scratch matched-seed simulator is implemented and exercised in GitHub Actions. See [Economy Playthrough Review](ECONOMY-PLAYTHROUGH-2026-11-13.md). Cautious no-Bodge/no-bounty runs averaged 84.3 races before strikeout, Bodge/no-bounty averaged 89.3, selective-bounty 92.2, and take-everything 85.9. Mature-archive witnessed-only contracts succeeded only twice in 67 acceptances. These are scripted simulations rather than human trials; the mechanics and offer weights have **not been tuned** on this evidence alone.

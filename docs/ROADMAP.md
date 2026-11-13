@@ -121,3 +121,7 @@ Additional 36-environment idea shelf, additional legendary takeovers and detaile
 5. Prototype acceptance test/script for Studio Playground, then the visual experiment when assets are available.
 
 **Conclusion:** Lock the creative direction, not an untested render technique. Ship working milestones, not just longer feature lists.
+
+## 13 Nov 2026 | Scripted natural-run economy gate
+
+[Full review](ECONOMY-PLAYTHROUGH-2026-11-13.md) documents 24 matched start-from-scratch seeds across seven policies through race 120, with a separate unlocked-archive long-shot sensitivity test. All cohorts naturally struck out before 120; cautious Bodge extended average survival by ~5 races, selective bounties were less punishing than accepting everything, and the most extreme long shots had vanishingly low success rates. **No balance values changed.** Human playtesting and a swapping-only controlled comparison remain release gates. The full simulator is run manually; CI now uses `--quick` to avoid making every change rerun the full study.

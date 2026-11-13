@@ -40,4 +40,4 @@ jobs:
       - run: node tests/bounty-balance.cjs
       - run: node tests/bounty-result-browser.cjs
       - run: node tests/smoke.cjs
-      - run: node scripts/economy-playthrough.cjs
+      - run: node scripts/economy-playthrough.cjs --quick

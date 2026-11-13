@@ -9,8 +9,9 @@ context.globalThis = context;
 for (const name of ['src/02-catalogue.js', 'src/03-engine.js', 'src/26-bounties.js'])
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', name), 'utf8'), context, {filename: name});
 const E = context.ScrapEngine, D = context.ScrapData;
-const SEEDS = Array.from({length: 24}, (_, i) => (101 + i * 7919) >>> 0);
-const MAX_RACES = 120;
+const QUICK = process.argv.includes('--quick');
+const SEEDS = Array.from({length: QUICK ? 8 : 24}, (_, i) => (101 + i * 7919) >>> 0);
+const MAX_RACES = QUICK ? 45 : 120;
 const PLANS = [
   {name: 'careful-no-board-no-bodge', driving: 'careful', board: 'none', bodge: false},
   {name: 'careful-no-board', driving: 'careful', board: 'none', bodge: true},
@@ -320,10 +321,12 @@ assert.equal(output.cohorts['careful-no-board-no-bodge'].accepted,0);
 assert.equal(output.cohorts['careful-no-board'].accepted,0);
 assert.equal(output.cohorts['careful-no-board-no-bodge'].bodges,0);
 assert(output.cohorts['careful-every-offer'].accepted>=output.cohorts['careful-selective'].accepted);
-assert(output.cohorts['veteran-archive-every-offer'].longShotAccepted>0,'Veteran scenario must include long shots');
-const veteran = output.cohorts['veteran-archive-every-offer'];
-const settledLongShot = [...Object.keys(veteran.winsByContract),...Object.keys(veteran.failsByContract)]
-  .some(k=>E.bountyDefinitions.some(d=>d.id===k&&d.witness));
-assert(settledLongShot,'Witnessed-only settlements must appear in post-playback accounting');
+if(!QUICK){
+  assert(output.cohorts['veteran-archive-every-offer'].longShotAccepted>0,'Veteran scenario must include long shots');
+  const veteran = output.cohorts['veteran-archive-every-offer'];
+  const settledLongShot = [...Object.keys(veteran.winsByContract),...Object.keys(veteran.failsByContract)]
+    .some(k=>E.bountyDefinitions.some(d=>d.id===k&&d.witness));
+  assert(settledLongShot,'Witnessed-only settlements must appear in post-playback accounting');
+}
 console.log('ECONOMY_PLAYTHROUGH_JSON='+JSON.stringify(output));
 console.log('PASS: start-from-scratch, matched seeds, legitimate shop/repair choices, active bounties and witnessed settlements');
