@@ -7,3 +7,9 @@ The branch adds the November 13 creative roadmap and audit, a read-only Race Man
 The manifest is **not loaded into the playable game's HTML** and deliberately **does not invent intermediate standings or change the race outcome**. The 2D theatrical rendering pipeline is NOT implemented yet.
 
 Next: verify CI, audit conflicting save/witness/choice semantics, then prove a three-chassis modular shot system in Studio Playground. Preserve original PR branches and main.
+
+## 13 November correctness pass: archive recovery
+
+The race engine labels ordinary rolled events `optional`, whereas the permanent Encyclopaedia previously accepted only `wildcard`. This caused normal witnessed events and shortcuts to vanish from the archive. `src/27-encyclopaedia.js` now normalises both to stable `wildcard:<id>` entries. Recovered `phase=result` saves and normal race finalisation reconcile only engine-resolved effects as missed while preserving previously seen discoveries; bounty result recording remains idempotent across reload. Regression: `tests/encyclopaedia-recovery.cjs`.
+
+This is a documentation and bug-fix pass, not completion of rare-weather/Legendary contracts, Bodge balance review, dialogue, animated races, or live deployment.

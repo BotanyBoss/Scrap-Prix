@@ -10,7 +10,10 @@
   const plain=o=>o&&typeof o==='object'&&!Array.isArray(o);
   const capped=(n,max=100000)=>Number.isInteger(n)&&n>=0&&n<=max?n:0;
   const matching=(list,id)=>list.find(x=>x.id===id);
+  // The race engine calls rolled wildcards 'optional'; use a single stable key.
+  const canonicalEventKind=kind=>kind==='optional'?'wildcard':kind;
   const eventDefinition=(kind,id)=>{
+    kind=canonicalEventKind(kind);
     if(kind==='pass')return matching(D.PASS_EVENTS||[],id);
     if(kind==='fake')return matching(D.FAKE_PASS_EVENTS||[],id);
     if(!['signature','wildcard','anomaly','chain'].includes(kind))return null;
@@ -84,6 +87,7 @@
     persist();
   };
   const markEvent=(kind,id,seen)=>{
+    kind=canonicalEventKind(kind);
     if(!eventDefinition(kind,id))return false;
     const key=kind+':'+id,tab=isShortcut(kind,id)?'shortcuts':'events';
     const old=data.entries[tab][key];
@@ -93,6 +97,21 @@
   };
   const recordEventSeen=(kind,id)=>markEvent(kind,id,true);
   const recordEventMissed=(kind,id)=>markEvent(kind,id,false);
+  // A saved result survives a closed/reloaded browser even though its replay
+  // doesn't. Only actual engine-resolved effects become unwitnessed entries.
+  const recordUnwitnessedResult=result=>{
+    if(!result||!Array.isArray(result.laps))return false;
+    let changed=false;
+    for(const lap of result.laps)for(const e of lap.effects||[]){
+      if(!e||e.kind==='wear'||!e.id)continue;
+      changed=recordEventMissed(e.kind,e.id)||changed;
+    }
+    for(const e of result.passEvents||[])if(e?.id)
+      changed=recordEventMissed('pass',e.id)||changed;
+    for(const e of result.fakePassEvents||[])if(e?.id)
+      changed=recordEventMissed('fake',e.id)||changed;
+    return changed;
+  };
   const recordWeather=id=>{
     if(!valid('weather',id)||data.entries.weather[id])return false;
     data.entries.weather[id]={state:'experienced'};persist();return true;
@@ -196,7 +215,7 @@
     });
   };
   const tabs=()=>TABS.filter(t=>t!=='gags'||hasGagTab());
-  window.ScrapEncyclopaedia={KEY,snapshot,startRun,recordEventSeen,recordEventMissed,recordWeather,
+  window.ScrapEncyclopaedia={KEY,snapshot,startRun,recordEventSeen,recordEventMissed,recordUnwitnessedResult,recordWeather,
     recordTrack,recordPartSpotted,recordPartEquipped,recordPartTuned,recordBountyOffered,
     recordBountyCompleted,recordGag,isGagKnown,hasGagTab,recordResult,list,tabs,details};
 })();

@@ -67,6 +67,9 @@
     // A race is saved at replay start, but its records normally settle at
     // the results screen. Recover that score if the browser closed mid-replay.
     if(state.phase==='result'&&state.history.length){
+      // Recover the unseen event archive after a mid-race browser close.
+      Enc.recordUnwitnessedResult(state.history.at(-1));
+      Enc.recordResult(state.history.at(-1));
       const oldRaces=records.bestRaces,oldPoints=records.bestPoints;
       updateRecords();
       if(records.bestRaces!==oldRaces||records.bestPoints!==oldPoints){
@@ -391,7 +394,10 @@
         if(!raceWitnessed.has('fake:'+fake.id))Enc.recordEventMissed('fake',fake.id);
       }
     }
-    if(state.history.length)Enc.recordResult(state.history.at(-1));
+    if(state.history.length){
+      Enc.recordUnwitnessedResult(state.history.at(-1));
+      Enc.recordResult(state.history.at(-1));
+    }
   }
   function showResult(){finalizeEncyclopaediaRace();replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
   function updateRecords(){records.bestRaces=Math.max(records.bestRaces,survived(state));records.bestPoints=Math.max(records.bestPoints,state.points);}
