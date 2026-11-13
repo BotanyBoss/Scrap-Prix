@@ -309,11 +309,11 @@
         Enc.recordEventSeen('fake',fake.id);raceWitnessed.add('fake:'+fake.id);
         $('event-label').textContent='RIVAL COMEBACK';$('event-title').textContent=fake.title;$('event-copy').textContent=fake.text;$('event-box').className='race-event compact fake-pass';actions.hidden=true;actions.innerHTML='';
       }else if(unresolvedChoice){
-        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
         $('event-label').textContent='ROUTE CHOICE';$('event-title').textContent=f.step.title;$('event-copy').textContent=`${f.step.choice.prompt} Build fit: ${f.step.choice.riskRating}.`;$('event-box').className='race-event has-choice';
         actions.hidden=false;actions.innerHTML=`<button data-action="event-choice" data-id="safe"><b>${esc(f.step.choice.safeLabel)}</b><small>Safer route</small></button><button class="primary" data-action="event-choice" data-id="risk"><b>${esc(f.step.choice.riskLabel)}</b><small>${esc(f.step.choice.riskRating)} build fit</small></button>`;requestAnimationFrame(()=>paintChoiceEvent(f));
       }else{
-        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
         $('event-label').textContent=f.step.label;$('event-title').textContent=f.step.title;$('event-copy').textContent=f.step.copy;$('event-box').className='race-event'+(f.step.id==='opening'?' compact':'')+(f.step.jumpScare?' jump-scare':'');actions.hidden=true;actions.innerHTML='';
       }
       $('stage-counter').textContent=fin?'END':replay.result.noStart?'GRID':`${f.step.lap||Math.min(3,f.index+1)} / ${replay.result.lapCount||3}`;$('phase-label').textContent=special?'SPECIAL OVERTAKE':fake?'RIVAL COMEBACK':f.step.label;$('race-weather-label').textContent=E.weather(f.step.weatherId||replay.result.weatherId).name+' · '+E.surface(replay.result.surfaceId).name+' · '+D.APPROACHES[replay.result.approach].name;header();Enc.recordWeather(f.step.weatherId||replay.result.weatherId);

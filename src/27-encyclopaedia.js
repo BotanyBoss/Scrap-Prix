@@ -5,8 +5,8 @@
   const D=window.ScrapData,E=window.ScrapEngine;
   const KEY='scrap-prix-encyclopaedia-v1';
   const TABS=['events','weather','shortcuts','tracks','parts','bounties','gags'];
-  const RARITY_ORDER=['Common','Uncommon','Rare','Legendary','Classified'];
-  const blank=()=>({version:1,entries:Object.fromEntries(TABS.map(k=>[k,{}])),session:{id:'',tunes:{}},recorded:[],recordedThrough:{}});
+  const RARITY_ORDER=['Common','Uncommon','Rare','Epic','Legendary','Classified'];
+  const blank=()=>({version:1,entries:Object.fromEntries(TABS.map(k=>[k,{}])),session:{id:'',tunes:{}},recorded:[],recordedThrough:{},eventStages:{}});
   const plain=o=>o&&typeof o==='object'&&!Array.isArray(o);
   const capped=(n,max=100000)=>Number.isInteger(n)&&n>=0&&n<=max?n:0;
   const matching=(list,id)=>list.find(x=>x.id===id);
@@ -73,6 +73,10 @@
         }
       }
       next.recorded=Array.isArray(raw.recorded)?raw.recorded.filter(x=>typeof x==='string'&&x.length<=110).slice(-200):[];
+      if(plain(raw.eventStages))for(const [id,n] of Object.entries(raw.eventStages)){
+        if(D.ANOMALIES.some(a=>a.id===id)&&Number.isInteger(n)&&n>=1&&n<=8)
+          next.eventStages[id]=n;
+      }
       if(plain(raw.recordedThrough))for(const [id,n] of Object.entries(raw.recordedThrough)){
         if(/^[-a-zA-Z0-9_]{1,80}$/.test(id)&&Number.isInteger(n)&&n>=0&&n<=9999999)
           next.recordedThrough[id]=n;
@@ -106,17 +110,34 @@
     };
     return 'legacy-'+hash(2166136261)+hash(1483203911);
   };
-  const markEvent=(kind,id,seen)=>{
+  const markEvent=(kind,id,seen,stage=null)=>{
     kind=canonicalEventKind(kind);
     if(!eventDefinition(kind,id))return false;
     const key=kind+':'+id,tab=isShortcut(kind,id)?'shortcuts':'events';
-    const old=data.entries[tab][key];
-    const state=seen?'discovered':'missed';
-    if(old&&(old.state==='discovered'||old.state===state))return false;
+    const old=data.entries[tab][key],state=seen?'discovered':'missed';
+    // An anomaly/chain can be seen several times at different stages. Never
+    // infer the finale merely from a generic chain discovery.
+    const staged=seen&&['anomaly','chain'].includes(kind)&&Number.isInteger(stage)&&stage>=1&&stage<=8;
+    const newStage=staged&&stage>(data.eventStages[id]||0);
+    if(newStage)data.eventStages[id]=stage;
+    if(old&&(old.state==='discovered'||old.state===state)){
+      if(newStage)persist();
+      return !!newStage;
+    }
     data.entries[tab][key]={state};persist();return true;
   };
-  const recordEventSeen=(kind,id)=>markEvent(kind,id,true);
+  const recordEventSeen=(kind,id,stage=null)=>markEvent(kind,id,true,stage);
   const recordEventMissed=(kind,id)=>markEvent(kind,id,false);
+  const hasSeenEvent=(kind,id,stage=null)=>{
+    kind=canonicalEventKind(kind);
+    if(!eventDefinition(kind,id))return false;
+    const tab=isShortcut(kind,id)?'shortcuts':'events';
+    if(data.entries[tab][kind+':'+id]?.state!=='discovered')return false;
+    return !Number.isInteger(stage)||stage<1||(data.eventStages[id]||0)>=stage;
+  };
+  const hasSeenWeather=id=>data.entries.weather[id]?.state==='experienced';
+  const hasSeenLegendary=()=>D.ANOMALIES.some(def=>
+    def.tags?.includes('legendary')&&hasSeenEvent('anomaly',def.id));
   // A saved result survives a closed/reloaded browser even though its replay
   // doesn't. Only actual engine-resolved effects become unwitnessed entries.
   const recordUnwitnessedResult=result=>{
@@ -236,7 +257,7 @@
     });
   };
   const tabs=()=>TABS.filter(t=>t!=='gags'||hasGagTab());
-  window.ScrapEncyclopaedia={KEY,snapshot,startRun,currentRunId,legacyRunId,recordEventSeen,recordEventMissed,recordUnwitnessedResult,recordWeather,
+  window.ScrapEncyclopaedia={KEY,snapshot,startRun,currentRunId,legacyRunId,recordEventSeen,recordEventMissed,hasSeenEvent,hasSeenWeather,hasSeenLegendary,recordUnwitnessedResult,recordWeather,
     recordTrack,recordPartSpotted,recordPartEquipped,recordPartTuned,recordBountyOffered,
     recordBountyCompleted,recordGag,isGagKnown,hasGagTab,recordResult,list,tabs,details};
 })();
