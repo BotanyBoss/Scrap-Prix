@@ -1,5 +1,7 @@
 # Current project status
 
+> **Direction update 13 November 2026:** The Street-first notes below are a historical 4 November snapshot. Current development direction is interactive 3D garage plus procedurally directed 2D animated races. See [the updated roadmap](ROADMAP.md) and [impact audit](DIRECTION-IMPACT-AUDIT.md). The production animation pipeline is not yet proven or integrated.
+
 Snapshot: 2026-11-04. Imported from the latest Street working build, not from an older review snapshot. The inherited UI still contains older v0.7.23p/n labels; they are not a new upstream version claim.
 
 ## Active work
