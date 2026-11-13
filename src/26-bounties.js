@@ -277,6 +277,13 @@
   };
   E.validateSave=function(input){
     const output=original.validateSave(input);
+    // Optional stable archive identity. Not part of seeded race decisions; preserves
+    // compatibility with all existing v21 saves that have no identifier.
+    if(input.archiveRunId!==undefined){
+      if(typeof input.archiveRunId!=='string'||!/^[-a-zA-Z0-9_]{1,80}$/.test(input.archiveRunId))
+        throw Error('Invalid permanent run identity.');
+      output.archiveRunId=input.archiveRunId;
+    }
     if(input.bounties!==undefined){
       if(!Array.isArray(input.bounties)||input.bounties.length>3)throw Error('Invalid bounty slots.');
       const taken=new Set();

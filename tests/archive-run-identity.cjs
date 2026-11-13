@@ -1,0 +1,43 @@
+// An imported source run must not borrow another run's permanent result identity.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const code=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
+const stored=new Map(),storage={getItem:k=>stored.get(k)||null,setItem:(k,v)=>stored.set(k,String(v))};
+const load=()=>{
+ const ctx=vm.createContext({localStorage:storage});ctx.window=ctx;ctx.globalThis=ctx;
+ for(const f of ['src/02-catalogue.js','src/03-engine.js','src/26-bounties.js','src/27-encyclopaedia.js'])
+   vm.runInContext(code(f),ctx,{filename:f});
+ return ctx;
+};
+const {ScrapEngine:E,ScrapEncyclopaedia:A}=load();
+const runA=E.newRun(101),runB=E.newRun(102);
+const resultA=E.race(runA).history.at(-1),resultB=E.race(runB).history.at(-1);
+const choice={id:'fourth',success:true};
+resultA.bountyResults=[choice];resultB.bountyResults=[choice];
+const idA=A.startRun();runA.archiveRunId=idA;
+const importedB=A.legacyRunId(runB);
+assert.notEqual(importedB,idA);
+assert.equal(A.recordResult(resultA),true);
+A.startRun(importedB);
+assert.equal(A.recordResult(resultB),true,'Different imported race 1 must count');
+assert.equal(A.recordResult(resultB),false,'Same import must not duplicate');
+A.startRun(idA);
+assert.equal(A.recordResult(resultA),false,'Old run still dedupes after switching runs');
+assert.equal(A.list('bounties').find(x=>x.key==='fourth').count,2);
+const savedRun=E.decodeSave(E.encodeSave(runA));
+assert.equal(savedRun.archiveRunId,idA,'New save persists its source ID');
+const legacy=E.decodeSave(E.encodeSave(E.newRun(777)));
+assert.equal(legacy.archiveRunId,undefined,'Old saves stay valid');
+const importedId=A.legacyRunId(legacy);
+assert.equal(importedId,A.legacyRunId(E.decodeSave(E.encodeSave(legacy))));
+assert.throws(()=>E.validateSave({...runA,archiveRunId:'not:valid'}));
+const reopened=load().ScrapEncyclopaedia;
+reopened.startRun(importedB);
+assert.equal(reopened.recordResult(resultB),false,'Saved archive ledger persists across reload');
+reopened.startRun(idA);
+assert.equal(reopened.recordResult(resultA),false,'Original run not double-counted');
+const runC=E.newRun(101),idC=reopened.startRun();
+assert.notEqual(idC,idA,'A fresh run of the same seed is a new source');
+runC.archiveRunId=idC;
+assert.equal(reopened.recordResult(E.race(runC).history.at(-1)),true);
+assert.equal(reopened.list('bounties').find(x=>x.key==='fourth').count,2);
+console.log('PASS: stable source identities, legacy imports, distinct equal-number races, reload dedupe, old save support');

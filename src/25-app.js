@@ -64,6 +64,10 @@
   try {records=readRecords(localStorage.getItem(RECORDS));}catch(_){}
   try {const v=localStorage.getItem(KEY);if(v){
     state=E.decodeSave(v);hasRun=true;storageNotice='SAVE LOADED';
+    // Existing autosaves use the current archive session if no source ID was
+    // stored, preserving past result deduplication during migration.
+    state.archiveRunId=state.archiveRunId||Enc.currentRunId()||Enc.legacyRunId(state);
+    Enc.startRun(state.archiveRunId);
     // A race is saved at replay start, but its records normally settle at
     // the results screen. Recover that score if the browser closed mid-replay.
     if(state.phase==='result'&&state.history.length){
@@ -405,7 +409,7 @@
   function changeScreen(next){closeAll();if(next!=='race')replay=null;screen=next;render();}
   function mutate(next,text){const previous=state;state=next;actionDialogue(previous,next);recordEquipmentTransition(previous,next);hasRun=true;persist();render(false);notify(text);}
   function freshSeed(){if(window.crypto?.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0];}return Math.floor(Math.random()*4294967296);}
-  function newRun(seed){state=E.newRun(seed);setGarageDialogue('start');Enc.startRun();recordEquipmentTransition(null,state);resultTab='finish';hasRun=true;blocked=false;replay=null;persist();changeScreen('garage');notify('New run started. Restored events and modular animations are active.');}
+  function newRun(seed){state=E.newRun(seed);setGarageDialogue('start');state.archiveRunId=Enc.startRun();recordEquipmentTransition(null,state);resultTab='finish';hasRun=true;blocked=false;replay=null;persist();changeScreen('garage');notify('New run started. Restored events and modular animations are active.');}
   function ask(title,html,callback,label='CONFIRM'){
     if($('confirm-modal').open)return;
     pendingConfirm=callback;$('confirm-content').innerHTML=`<h2 id="confirm-title">${esc(title)}</h2>${html}<div class="confirm-actions"><button data-action="confirm-cancel" autofocus>CANCEL</button><button class="primary" data-action="confirm-ok">${esc(label)}</button></div>`;$('confirm-modal').showModal();
@@ -635,7 +639,14 @@
   });
   $('save-file').addEventListener('change',async e=>{
     const file=e.target.files[0];if(!file)return;
-    try{if(file.size>400000)throw Error('Save exceeds 400 KB.');const loaded=E.decodeSave(await file.text());ask('IMPORT THIS RUN?',`<p>Seed <b>${loaded.seed}</b>, ${survived(loaded)} completed races, ${money(loaded.points)} points.</p><p>This replaces the run in this experimental build only. Other builds and their saves are untouched.</p>`,()=>{state=loaded;hasRun=true;blocked=false;replay=null;updateRecords();persist();changeScreen(state.phase==='garage'?'garage':'result');notify('Compatible run imported.');},'IMPORT RUN');}
+    try{if(file.size>400000)throw Error('Save exceeds 400 KB.');const loaded=E.decodeSave(await file.text());
+      loaded.archiveRunId=loaded.archiveRunId||Enc.legacyRunId(loaded);
+      ask('IMPORT THIS RUN?',`<p>Seed <b>${loaded.seed}</b>, ${survived(loaded)} completed races, ${money(loaded.points)} points.</p><p>This replaces the run in this experimental build only. Other builds and their saves are untouched.</p>`,()=>{state=loaded;hasRun=true;blocked=false;replay=null;
+      Enc.startRun(loaded.archiveRunId);
+      if(state.phase==='result'&&state.history.length)
+        Enc.recordUnwitnessedResult(state.history.at(-1));
+      updateRecords();persist();changeScreen(state.phase==='garage'?'garage':'result');
+      notify('Compatible run imported.');},'IMPORT RUN');}
     catch(error){notify(error.message||'Unable to import this save.',true);}
     finally{e.target.value='';}
   });

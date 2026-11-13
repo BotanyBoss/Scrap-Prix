@@ -6,7 +6,7 @@
   const KEY='scrap-prix-encyclopaedia-v1';
   const TABS=['events','weather','shortcuts','tracks','parts','bounties','gags'];
   const RARITY_ORDER=['Common','Uncommon','Rare','Legendary','Classified'];
-  const blank=()=>({version:1,entries:Object.fromEntries(TABS.map(k=>[k,{}])),session:{id:'',tunes:{}},recorded:[]});
+  const blank=()=>({version:1,entries:Object.fromEntries(TABS.map(k=>[k,{}])),session:{id:'',tunes:{}},recorded:[],recordedThrough:{}});
   const plain=o=>o&&typeof o==='object'&&!Array.isArray(o);
   const capped=(n,max=100000)=>Number.isInteger(n)&&n>=0&&n<=max?n:0;
   const matching=(list,id)=>list.find(x=>x.id===id);
@@ -73,6 +73,10 @@
         }
       }
       next.recorded=Array.isArray(raw.recorded)?raw.recorded.filter(x=>typeof x==='string'&&x.length<=110).slice(-200):[];
+      if(plain(raw.recordedThrough))for(const [id,n] of Object.entries(raw.recordedThrough)){
+        if(/^[-a-zA-Z0-9_]{1,80}$/.test(id)&&Number.isInteger(n)&&n>=0&&n<=9999999)
+          next.recordedThrough[id]=n;
+      }
     }catch(_){}
     return next;
   };
@@ -81,10 +85,26 @@
     try{localStorage.setItem(KEY,JSON.stringify(data));return true;}catch(_){return false;}
   };
   const snapshot=()=>JSON.parse(JSON.stringify(data));
-  const startRun=()=>{
-    data.session={id:Date.now().toString(36)+'-'+Math.floor(Math.random()*1e8).toString(36),tunes:{}};
-    data.recorded=[];
-    persist();
+  // A source run ID lives in the run save. Re-importing or switching between
+  // runs must not clear the permanent result ledger or count rewards twice.
+  const startRun=id=>{
+    const selected=typeof id==='string'&&/^[-a-zA-Z0-9_]{1,80}$/.test(id)
+      ?id:'run-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1e9).toString(36);
+    if(data.session.id!==selected){data.session={id:selected,tunes:{}};persist();}
+    return selected;
+  };
+  const currentRunId=()=>data.session.id;
+  // Old exports have no ID. Identical legacy exports map to the same source;
+  // once imported, all subsequent exports retain this ID.
+  const legacyRunId=run=>{
+    const value=JSON.stringify({seed:run.seed,raceIndex:run.raceIndex,
+      history:run.history||[],loadout:run.loadout||{},points:run.points});
+    const hash=offset=>{
+      let h=offset>>>0;
+      for(let i=0;i<value.length;i++)h=Math.imul(h^value.charCodeAt(i),16777619)>>>0;
+      return h.toString(16).padStart(8,'0');
+    };
+    return 'legacy-'+hash(2166136261)+hash(1483203911);
   };
   const markEvent=(kind,id,seen)=>{
     kind=canonicalEventKind(kind);
@@ -162,8 +182,9 @@
     if(!result||!Number.isInteger(result.race))return false;
     if(!data.session.id)startRun();
     const key=data.session.id+':'+result.race;
-    if(data.recorded.includes(key))return false;
+    if(data.recorded.includes(key)||(data.recordedThrough[data.session.id]||0)>=result.race)return false;
     data.recorded.push(key);if(data.recorded.length>200)data.recorded.shift();
+    data.recordedThrough[data.session.id]=Math.max(data.recordedThrough[data.session.id]||0,result.race);
     if(!result.noStart)recordTrack(result.trackId,result.place===1&&!result.failedSlot);
     for(const x of result.bountyResults||[])if(x.success)recordBountyCompleted(x.id);
     if(result.gagId)recordGag(result.gagId);
@@ -215,7 +236,7 @@
     });
   };
   const tabs=()=>TABS.filter(t=>t!=='gags'||hasGagTab());
-  window.ScrapEncyclopaedia={KEY,snapshot,startRun,recordEventSeen,recordEventMissed,recordUnwitnessedResult,recordWeather,
+  window.ScrapEncyclopaedia={KEY,snapshot,startRun,currentRunId,legacyRunId,recordEventSeen,recordEventMissed,recordUnwitnessedResult,recordWeather,
     recordTrack,recordPartSpotted,recordPartEquipped,recordPartTuned,recordBountyOffered,
     recordBountyCompleted,recordGag,isGagKnown,hasGagTab,recordResult,list,tabs,details};
 })();

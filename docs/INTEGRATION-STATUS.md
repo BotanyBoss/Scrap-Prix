@@ -13,3 +13,7 @@ Next: verify CI, audit conflicting save/witness/choice semantics, then prove a t
 The race engine labels ordinary rolled events `optional`, whereas the permanent Encyclopaedia previously accepted only `wildcard`. This caused normal witnessed events and shortcuts to vanish from the archive. `src/27-encyclopaedia.js` now normalises both to stable `wildcard:<id>` entries. Recovered `phase=result` saves and normal race finalisation reconcile only engine-resolved effects as missed while preserving previously seen discoveries; bounty result recording remains idempotent across reload. Regression: `tests/encyclopaedia-recovery.cjs`.
 
 This is a documentation and bug-fix pass, not completion of rare-weather/Legendary contracts, Bodge balance review, dialogue, animated races, or live deployment.
+
+## Run identity migration (13 Nov)
+
+New UI runs receive a stable `archiveRunId` preserved through existing optional-field save validation; importing a save switches the Encyclopaedia to that source ID. Previous standalone saves lacking an ID get a deterministic legacy fingerprint (identical old files dedupe; genuinely different old continuations without native IDs cannot always be proven to be the same source). The permanent result ledger is no longer cleared by `startRun` and now keeps a per-source last recorded race counter, preventing repeat imports of older races. No race odds, rewards, or engine determinism changed. Tests: `tests/archive-run-identity.cjs`.

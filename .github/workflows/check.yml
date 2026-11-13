@@ -27,6 +27,7 @@ jobs:
       - run: node tests/choice-bounty-recalculation.cjs
       - run: node tests/encyclopaedia.cjs
       - run: node tests/encyclopaedia-recovery.cjs
+      - run: node tests/archive-run-identity.cjs
       - run: node tests/dialogue-ui.cjs
       - run: node tests/three-garage.cjs
       - run: node tests/event-content-audit.cjs
