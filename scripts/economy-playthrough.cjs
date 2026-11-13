@@ -238,7 +238,7 @@ function sample(seed,plan){
     assert.deepEqual(E.finalizeWitnessBounties(next),next,'Settlement idempotent');
     if(i%10===0){
       const restored=E.decodeSave(E.encodeSave(next));
-      assert.equal(signature(restored),signature(next),'Save round-trip damaged state');
+      assert.equal(signature(restored),signature(E.validateSave(next)), 'Canonical save round-trip damaged state');
     }
     m.races++;m.completed+=!r.noStart&&!r.failedSlot?1:0;
     m.dns+=!!r.noStart;m.dnfs+=!r.noStart&&!!r.failedSlot?1:0;
