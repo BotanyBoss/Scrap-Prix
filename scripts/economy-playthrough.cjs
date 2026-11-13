@@ -256,7 +256,10 @@ function sample(seed,plan){
     m.grossPrize+=r.grossPrize??r.prize;
     m.netPrize+=r.prize;
     m.bodgeRepay+=r.bodgeRepayment||0;
-    for(const x of r.bountyResults||[]){
+    // Deferred witnessed-only outcomes live on the POST-finalization copy.
+    // The pre-playback race result above is intentionally not authoritative.
+    const finalResult=next.history.at(-1);
+    for(const x of finalResult.bountyResults||[]){
       if(x.success){m.success++;m.awards[x.id]=(m.awards[x.id]||0)+1;
         if(E.bountyDefinitions.find(d=>d.id===x.id)?.witness)m.longShotWins++;
       } else {m.fail++;m.fails[x.id]=(m.fails[x.id]||0)+1;}
@@ -317,5 +320,10 @@ assert.equal(output.cohorts['careful-no-board-no-bodge'].accepted,0);
 assert.equal(output.cohorts['careful-no-board'].accepted,0);
 assert.equal(output.cohorts['careful-no-board-no-bodge'].bodges,0);
 assert(output.cohorts['careful-every-offer'].accepted>=output.cohorts['careful-selective'].accepted);
+assert(output.cohorts['veteran-archive-every-offer'].longShotAccepted>0,'Veteran scenario must include long shots');
+const veteran = output.cohorts['veteran-archive-every-offer'];
+const settledLongShot = [...Object.keys(veteran.winsByContract),...Object.keys(veteran.failsByContract)]
+  .some(k=>E.bountyDefinitions.some(d=>d.id===k&&d.witness));
+assert(settledLongShot,'Witnessed-only settlements must appear in post-playback accounting');
 console.log('ECONOMY_PLAYTHROUGH_JSON='+JSON.stringify(output));
 console.log('PASS: start-from-scratch, matched seeds, legitimate shop/repair choices, active bounties and witnessed settlements');
