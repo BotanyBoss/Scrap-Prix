@@ -6,7 +6,9 @@ const proof=process.env.RACE_CAPTURE_DIR;
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,headless:true});
   try{
-    for(const seed of [2,3,18,71]){
+    const cases=proof?['original',2,3,18,71]:[2,3,18,71];
+    for(const fixture of cases){
+      const original=fixture==='original',seed=original?2:fixture;
       const page=await browser.newPage({viewport:seed===71?{width:540,height:820}:{width:960,height:660}});
       const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
@@ -15,7 +17,7 @@ const proof=process.env.RACE_CAPTURE_DIR;
       const button=(action,id)=>page.locator('[data-action="'+action+'"]'+(id?'[data-id="'+id+'"]':'')).filter({visible:true}).first();
       await button('settings').click();
       assert.equal(await page.locator('#setting-film').isChecked(),false);
-      await page.locator('#setting-film').check();
+      if(!original)await page.locator('#setting-film').check();
       await page.locator('#seed-input').fill(String(seed));
       await button('seed').click();
       await button('approach','balanced').click();
@@ -28,19 +30,30 @@ const proof=process.env.RACE_CAPTURE_DIR;
         const E=ScrapEngine,s=E.decodeSave(localStorage.getItem('scrap-prix-v0400-systems-run-v21'));
         return E.race(s,seed===3?{late:'risk'}:{}).history.at(-1);
       },seed);
-      const folder=proof&&seed<=3?path.join(proof,String(seed)):null;
+      const folder=proof&&seed<=3?path.join(proof,String(fixture)):null;
       if(folder)fs.mkdirSync(folder,{recursive:true});
-      let count=0;const timestamps=[];
-      async function capture(){if(!folder)return; timestamps.push(Date.now());await page.screenshot({path:path.join(folder,String(count++).padStart(4,'0')+'.jpg'),type:'jpeg',quality:70});}
+      let count=0;const timestamps=[],samples=[];
+      async function capture(){
+        if(!folder)return;
+        timestamps.push(Date.now());
+        samples.push(await page.evaluate(()=>({
+          camera:document.querySelector('#race-wrap')?.dataset.camera,
+          family:document.querySelector('#race-wrap')?.dataset.shot,
+          progress:document.querySelector('#race-progress')?.value,
+          screen:document.querySelector('#game').dataset.screen
+        })));
+        await page.screenshot({path:path.join(folder,String(count++).padStart(4,'0')+'.jpg'),type:'jpeg',quality:80});
+      }
       await capture();
       await button('race').click();
+      await capture();
       await button('pause').click();
-      assert.deepEqual(await page.locator('#race-canvas').evaluate(c=>[c.width,c.height]),[480,270]);
+      if(!original)assert.deepEqual(await page.locator('#race-canvas').evaluate(c=>[c.width,c.height]),[480,270]);
       const frozen=await page.locator('#race-canvas').evaluate(c=>c.toDataURL());
       await page.waitForTimeout(180);
       assert.equal(await page.locator('#race-canvas').evaluate(c=>c.toDataURL()),frozen);
       await button('pause').click();
-      await button('speed',folder?'2':'4').click();
+      await button('speed',folder?'1':'4').press('Enter');
       const laps=new Set(),shots=new Set();
       let chose=false;
       const deadline=Date.now()+100000;
@@ -54,21 +67,28 @@ const proof=process.env.RACE_CAPTURE_DIR;
           const p=await page.locator('#race-progress').getAttribute('value');
           await page.waitForTimeout(320);await capture();
           assert.equal(await page.locator('#race-progress').getAttribute('value'),p);
-          await button('event-choice',seed===3?'risk':'safe').click();chose=true;
+          const lapBefore=await page.locator('#stage-counter').textContent();
+          await button('event-choice',seed===3?'risk':'safe').click();
+          assert.equal(await page.locator('#stage-counter').textContent(),lapBefore);
+          assert.equal(await page.locator('#race-wrap').getAttribute('data-shot'),'event');
+          chose=true;
         }
         await page.waitForTimeout(folder?85:50);
       }
       await button('continue').waitFor();
       await capture();
       const actual=await page.evaluate(()=>ScrapEngine.decodeSave(localStorage.getItem('scrap-prix-v0400-systems-run-v21')).history.at(-1));
+      if(folder&&seed===2&&!original){
+        assert.deepEqual([...new Set(samples.map(s=>s.camera).filter(Boolean))].sort(),['front','rear','side']);
+      }
       for(const key of ['laps','standings','prize','pointsEarned','damageBySlot','loadoutBefore'])assert.deepEqual(actual[key],expected[key],key);
       for(const lap of actual.laps)assert(laps.has(lap.lap+' / '+actual.lapCount),'missing lap '+lap.lap);
-      assert(shots.has('event')&&shots.has('consequence')&&shots.has('finish'));
+      if(!original)assert(shots.has('event')&&shots.has('consequence')&&shots.has('finish'));
       assert.equal(chose,seed===3||expected.laps.some(l=>l.effects.some(e=>e.choiceEvent)));
       await button('continue').click();await button('race').waitFor();await capture();
       assert.deepEqual(errors,[]);
-      console.log('PASS',seed,Array.from(laps),Array.from(shots),count,'capture frames');
-      if(folder)fs.writeFileSync(path.join(folder,'frames.json'),JSON.stringify({count,timestamps}));
+      console.log('PASS',fixture,Array.from(laps),Array.from(shots),count,'capture frames');
+      if(folder)fs.writeFileSync(path.join(folder,'frames.json'),JSON.stringify({count,timestamps,samples}));
       await page.close();
     }
     for(const mode of ['skip','interrupt','dnf','dns']){

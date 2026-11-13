@@ -25,7 +25,13 @@ function verify(before,choices={}){
 }
 for(const [seed,laps,ids] of [[2,3,['heatwave']],[18,5,['debris','deep-sand']],
   [71,7,['debris','lucky-gap']],[3,3,['dune-shortcut']]]){
-  const {facts,events}=verify(E.newRun(seed));assert.equal(facts.plannedLaps,laps);
+  const {facts,events,story}=verify(E.newRun(seed));
+  if(seed===2)assert.equal(new Set(story.shots.map(s=>s.camera)).size,3);
+  for(const shot of story.shots.filter(s=>s.family==='approach')){
+    const event=D.sample(story,shot.endMs).shot;
+    assert.equal(event.family,'event');assert.equal(event.source,shot.source);
+  }
+  assert.equal(facts.plannedLaps,laps);
   for(const id of ids)assert(events.some(e=>e.id===id));
 }
 for(const choice of ['safe','risk']){

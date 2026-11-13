@@ -4,3 +4,25 @@
 body:has(.race-wrap[data-shot]) > a[href="FOSSIL-TEST-DRIVE.html"],
 .race-wrap[data-shot] #race-dialogue {display:none}
 .race-wrap[data-shot] #race-canvas {image-rendering:pixelated}
+
+/* Keep the subject and the vanishing point clear. Route decisions keep their
+   interactive panel and full prompt; ordinary beats use a broadcast caption. */
+#game[data-screen="race"] .race-wrap[data-camera] #event-box:not(.has-choice) {
+  left:12px;right:auto;top:66px;bottom:auto;transform:none;width:fit-content;
+  max-width:min(420px,64%);padding:0;background:#102a32ed;color:#fff4d4;
+  border:0;border-left:3px solid #e6b953;border-radius:0;box-shadow:none;
+}
+#game .race-wrap[data-camera] #event-box:not(.has-choice) .event-copy-wrap {
+  padding:5px 9px;gap:2px;background:transparent;
+}
+#game .race-wrap[data-camera] #event-box:not(.has-choice) #event-title {
+  color:#fff3d4;font-size:clamp(11px,1.4vw,16px);line-height:1.1;
+}
+#game .race-wrap[data-camera] #event-box:not(.has-choice) #event-copy {
+  color:#e3e9df;font-size:11px;line-height:1.25;margin:0;
+}
+#game .race-wrap[data-camera] #event-box:not(.has-choice) #event-label,
+#game .race-wrap:is([data-shot="grid"],[data-shot="drive"]) #event-copy {display:none}
+@media(max-width:620px){
+  #game[data-screen="race"] .race-wrap[data-camera] #event-box:not(.has-choice){top:54px;left:6px;max-width:74%}
+}

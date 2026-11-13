@@ -31,16 +31,19 @@
       else if(step.choice&&!Object.hasOwn(choices,step.choice.key)){
         add('decision','rear',step.duration,{choice:step.choice});
       }else if(effect){
-        const cut=Math.round(step.duration*.67);
-        add('event','rear',cut);
+        const approach=Math.min(1400,Math.round(step.duration*.22));
+        const cut=Math.round(step.duration*.69);
+        // Play the resolved route immediately after its interactive hold.
+        if(!step.choice)add('approach','front',approach);
+        add('event','rear',step.choice?cut:cut-approach);
         for(const [slot,n] of Object.entries(effect.damageBySlot))condition[slot]-=n;
         add('consequence','side',step.duration-cut);
       }else if(step.presentationPass)add('event','rear',step.duration);
       else if(step.id==='opening'){
-        const cut=Math.round(step.duration*.45);
-        add('grid','front',cut);
-        add('drive','rear',step.duration-cut);
-      }else add('drive',step.lap%2?'rear':'side',step.duration);
+        const cut=Math.round(step.duration*.56);
+        add('grid','side',cut);
+        add('drive','front',step.duration-cut);
+      }else add('drive',step.lap%2?'front':'rear',step.duration);
     }
     return {version:1,setting:manifest.setting,vehicle:manifest.vehicle,shots,totalMs:startMs};
   }
