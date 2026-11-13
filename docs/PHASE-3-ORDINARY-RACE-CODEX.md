@@ -1,22 +1,22 @@
 # Scrap Prix: Phase 3A | First complete ordinary theatrical race
 
 **Status:** Codex implementation brief, not an implemented feature.  
-**Review branch:** \`codex/ordinary-race-integration-first-flight\` based on \`edd3dc7b44eb7db8747fcdd3e982d47d3c01685d\` on \`codex/modular-vehicle-pipeline\`.  
+**Review branch:** `codex/ordinary-race-integration-first-flight` based on `edd3dc7b44eb7db8747fcdd3e982d47d3c01685d` on `codex/modular-vehicle-pipeline`.  
 **Purpose:** Build one genuinely playable end-to-end ordinary race using real saved garage state, real seeded game outcomes, the working race director and the modular vehicle-frame pipeline. Show a race, not another isolated tech demo.
 
 ## Must-read context
 
-Read \`AGENTS.md\`, \`docs/ROADMAP.md\`, \`docs/RACE-PRESENTATION-DIRECTION.md\`, \`docs/ECONOMY-PLAYTHROUGH-2026-11-13.md\` and both POC READMEs.
+Read `AGENTS.md`, `docs/ROADMAP.md`, `docs/RACE-PRESENTATION-DIRECTION.md`, `docs/ECONOMY-PLAYTHROUGH-2026-11-13.md` and both POC READMEs.
 
 Trace the actual code before editing:
-- \`src/02-catalogue.js\` and \`src/03-engine.js\`: immutable authority over event selection, race mechanics, choices, damage, finishing positions and rewards.
-- \`src/05-presentation.js\`, \`src/12-event-director.js\`, \`src/25-app.js\`: existing replay state, choice re-anchor, skip, speed, HUD, garage/results/continue.
-- \`src/26-bounties.js\`, \`src/27-encyclopaedia.js\`: deferred witness settlement and discovery.
-- \`src/30-race-manifest.js\`: read-only facts.
-- \`src/31-race-director.js\`: a **Broken Bridge-only** shot planner, not a general race timeline. **Do not stretch the 24.3s bridge sequence across an entire race.**
-- \`previews/first-flight/\`: completed, owner-accepted mechanical POC. **Do not polish or rebuild it.**
-- \`previews/vehicle-pipeline/\`: shared geometry and two rendering paths, three supported chassis, nine other component choices, 164×113 transparent camera frames and bounded LRU. Temporary donor geometry, not approved production art.
-- \`src/09-vehicle-art.js\`: existing supported fallback that preserves actual equipment identities.
+- `src/02-catalogue.js` and `src/03-engine.js`: immutable authority over event selection, race mechanics, choices, damage, finishing positions and rewards.
+- `src/05-presentation.js`, `src/12-event-director.js`, `src/25-app.js`: existing replay state, choice re-anchor, skip, speed, HUD, garage/results/continue.
+- `src/26-bounties.js`, `src/27-encyclopaedia.js`: deferred witness settlement and discovery.
+- `src/30-race-manifest.js`: read-only facts.
+- `src/31-race-director.js`: a **Broken Bridge-only** shot planner, not a general race timeline. **Do not stretch the 24.3s bridge sequence across an entire race.**
+- `previews/first-flight/`: completed, owner-accepted mechanical POC. **Do not polish or rebuild it.**
+- `previews/vehicle-pipeline/`: shared geometry and two rendering paths, three supported chassis, nine other component choices, 164×113 transparent camera frames and bounded LRU. Temporary donor geometry, not approved production art.
+- `src/09-vehicle-art.js`: existing supported fallback that preserves actual equipment identities.
 
 ## The end-to-end acceptance goal
 
@@ -30,7 +30,7 @@ It should run in a **clearly opt-in experimental theatrical mode in the dev buil
 
 ### A. General Race Timeline adapter (first commit)
 
-Implement a small, serialisable, deterministic *general ordinary race* shot timeline from a resolved \`ScrapRaceManifest\` and the existing replay/event-timing data. Keep \`src/31-race-director.js\`'s Broken Bridge contract working unchanged; add a separate reusable adapter if necessary.
+Implement a small, serialisable, deterministic *general ordinary race* shot timeline from a resolved `ScrapRaceManifest` and the existing replay/event-timing data. Keep `src/31-race-director.js`'s Broken Bridge contract working unchanged; add a separate reusable adapter if necessary.
 
 Required reusable shot families:
 1. Establishing/grid + track/weather reveal.
@@ -42,13 +42,13 @@ Required reusable shot families:
 
 Use only real engine-resolved laps and effects (not scheduled future events after a DNF). Preserve event occurrence keys so repeated occurrences cannot be confused. No fabricated rival overtakes, mid-lap rankings, eliminations or dramatic damages: the engine does not currently record a complete intermediate position history. If a cinematic category has no specific art, use a generic truthful shot and existing event text rather than silently omitting it. Do not introduce event outcomes or extra simulation.
 
-Use a **single authoritative visual clock**, deterministic absolute-time sampling and an explicit player-choice pause; support re-planning/re-anchoring after the existing \`E.race(before, choices)\` calculation. Rebuild only the necessary scene/frame cache when a player's chosen branch changes.
+Use a **single authoritative visual clock**, deterministic absolute-time sampling and an explicit player-choice pause; support re-planning/re-anchoring after the existing `E.race(before, choices)` calculation. Rebuild only the necessary scene/frame cache when a player's chosen branch changes.
 
 ### B. Reuse modular frames in a real moving race (second commit)
 
-Make a small race-frame provider around \`previews/vehicle-pipeline/assembly.js\` and \`render.js\`; reuse its source geometry, camera convention, materials and on-demand cached captures where possible, rather than copy-pasting a new approximation.
+Make a small race-frame provider around `previews/vehicle-pipeline/assembly.js` and `render.js`; reuse its source geometry, camera convention, materials and on-demand cached captures where possible, rather than copy-pasting a new approximation.
 
-Supported geometry at this proof stage: Salvaged GT (\`stock-chassis\`), Needle (\`needle-frame\`) and real six-wheel Longbody (\`longbody\`) with available component combinations. Use source-grounded rig/slot combinations, retaining wheel count, scale and gear identity in side/rear/front views. **Do not fake missing parts as similar donor parts.** When the current garage loadout is unsupported, choose the real existing \`ScrapVehicleArt\` renderer (or display a clear unavailable message with working fallback); never render a different build while claiming it is the player's car.
+Supported geometry at this proof stage: Salvaged GT (`stock-chassis`), Needle (`needle-frame`) and real six-wheel Longbody (`longbody`) with available component combinations. Use source-grounded rig/slot combinations, retaining wheel count, scale and gear identity in side/rear/front views. **Do not fake missing parts as similar donor parts.** When the current garage loadout is unsupported, choose the real existing `ScrapVehicleArt` renderer (or display a clear unavailable message with working fallback); never render a different build while claiming it is the player's car.
 
 Use clean bounds and cache invalidation when equipment changes; do not generate all possible combinations in advance. Keep 480×270 as the canonical race viewport. Shared 3D/2D geometry is an asset source, **not** a demand for real-time 3D driving physics.
 
@@ -72,11 +72,11 @@ Inspect and use these **real first-race seeded fixtures**. They have been checke
 
 | Seed | Real first-race state | Specific gate |
 | --- | --- | --- |
-| \`2\` | 3 laps, signature \`heatwave\` on lap 2 | Minimum-length ordinary race |
-| \`18\` | 5 laps, signature \`debris\`, optional \`deep-sand\` | Multiple actual events over longer race |
-| \`71\` | 7 laps, \`lucky-gap\` plus signature \`debris\` | Maximum-length ordinary race |
-| \`3\` | 3 laps, \`dune-shortcut\` choice at occurrence \`late\` | Real branching choice and re-anchor |
-| \`76\` and \`385\` | Existing Broken Bridge safe/fail/success cases | Regression; **do not polish old POC** |
+| `2` | 3 laps, signature `heatwave` on lap 2 | Minimum-length ordinary race |
+| `18` | 5 laps, signature `debris`, optional `deep-sand` | Multiple actual events over longer race |
+| `71` | 7 laps, `lucky-gap` plus signature `debris` | Maximum-length ordinary race |
+| `3` | 3 laps, `dune-shortcut` choice at occurrence `late` | Real branching choice and re-anchor |
+| `76` and `385` | Existing Broken Bridge safe/fail/success cases | Regression; **do not polish old POC** |
 
 Also verify a real DNF and no-start, and test the exact 3 supported chassis with available parts. Do not force particular results in a live race by modifying its game state or RNG; tests may use explicitly labelled, legal setup fixtures.
 
@@ -99,6 +99,6 @@ Run existing build/check, deterministic, Race Manifest, First Flight, reward/bou
 
 Do **not** touch balancing, event frequencies, the 47-bounty library, Epic/Legendary takeovers, audio production, multi-stage spectacle art, unusual gag transformations, new vehicle models, the 10-second CLICK alternate-art event, catastrophic animation-quality RNG, overhaul UI styling or polish the Broken Bridge/vehicle pipeline POCs.
 
-Do not create another separate racing app or duplicate the engine. Avoid broad infrastructure / microservice refactors. Do not merge into \`main\`, close existing stacked PRs or deploy. Preserve the two verified POC commits.
+Do not create another separate racing app or duplicate the engine. Avoid broad infrastructure / microservice refactors. Do not merge into `main`, close existing stacked PRs or deploy. Preserve the two verified POC commits.
 
 **Stop after the real ordinary race is playable and browser-tested.** The user's next checkpoint is to judge whether an actual full-length race is entertaining, not to rate how polished the placeholder drawings are.
