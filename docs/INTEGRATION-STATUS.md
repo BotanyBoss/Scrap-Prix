@@ -17,3 +17,7 @@ This is a documentation and bug-fix pass, not completion of rare-weather/Legenda
 ## Run identity migration (13 Nov)
 
 New UI runs receive a stable `archiveRunId` preserved through existing optional-field save validation; importing a save switches the Encyclopaedia to that source ID. Previous standalone saves lacking an ID get a deterministic legacy fingerprint (identical old files dedupe; genuinely different old continuations without native IDs cannot always be proven to be the same source). The permanent result ledger is no longer cleared by `startRun` and now keeps a per-source last recorded race counter, preventing repeat imports of older races. No race odds, rewards, or engine determinism changed. Tests: `tests/archive-run-identity.cjs`.
+
+## Six witnessed-only long-shot bounties (13 Nov)
+
+Two rare-weather, three rare-event (including a four-stage finale), and one Legendary Special Order are implemented on this isolated integration branch. Offers are locked behind *previous witnessed discovery* and new contracts settle only after the current race's actual presentation has recorded event/weather receipts. Skipping the scene cannot pay; expired contracts still apply their advertised failure penalties. All other bounty outcomes remain pre-resolved. `tests/witness-bounties.cjs` checks real seeded Blizzard and First Contact runs, save/reload, deadlines and idempotence. Offer weights and rewards remain **provisional pending balance review**.

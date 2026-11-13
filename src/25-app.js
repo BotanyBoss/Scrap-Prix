@@ -58,6 +58,12 @@
   }
   const survived=s=>Math.max(0,s.raceIndex-(s.noStartStrikes||0)-(s.finished==='wrecked'?1:0));
   function notify(text,error=false){$('status').textContent=text;$('status').dataset.error=error?'true':'false';}
+  // Only actual playback can create an event witness receipt. The race engine
+  // verifies each token against the resolved result before storing it.
+  function witnessForBounty(token){
+    const next=E.markBountyWitness?.(state,token);
+    if(next&&next!==state){state=next;persist();}
+  }
   function readRecords(raw){try{const v=JSON.parse(raw);if(Number.isInteger(v?.bestRaces)&&Number.isInteger(v?.bestPoints)&&v.bestRaces>=0&&v.bestRaces<=9999999&&v.bestPoints>=0&&v.bestPoints<=1000000000)return {bestRaces:v.bestRaces,bestPoints:v.bestPoints};}catch(_){}return {bestRaces:0,bestPoints:0};}
   // High scores live under a separate storage key. A corrupt run must not
   // prevent their loading (or cause the next new run to overwrite them with 0).
@@ -68,6 +74,10 @@
     // stored, preserving past result deduplication during migration.
     state.archiveRunId=state.archiveRunId||Enc.currentRunId()||Enc.legacyRunId(state);
     Enc.startRun(state.archiveRunId);
+    // Results were precomputed before their cartoon played. A closed tab does
+    // not create unseen event receipts or make a witnessed-only bounty win.
+    if(state.phase==='result')state=E.finalizeWitnessBounties(state);
+    try{localStorage.setItem(KEY,E.encodeSave(state));}catch(_){}
     // A race is saved at replay start, but its records normally settle at
     // the results screen. Recover that score if the browser closed mid-replay.
     if(state.phase==='result'&&state.history.length){
@@ -303,20 +313,20 @@
       const actions=$('event-choice-actions'),choiceVisual=$('event-choice-visual');
       if(choiceVisual)choiceVisual.hidden=!unresolvedChoice;
       if(special){
-        Enc.recordEventSeen('pass',special.id);raceWitnessed.add('pass:'+special.id);
+        Enc.recordEventSeen('pass',special.id);raceWitnessed.add('pass:'+special.id);witnessForBounty('p:'+special.id);
         $('event-label').textContent=special.motion==='shortcut'?'GAG SHORTCUT PASS':'SPECIAL OVERTAKE';$('event-title').textContent=special.title;$('event-copy').textContent=special.text;$('event-box').className='race-event compact';actions.hidden=true;actions.innerHTML='';
       }else if(fake){
-        Enc.recordEventSeen('fake',fake.id);raceWitnessed.add('fake:'+fake.id);
+        Enc.recordEventSeen('fake',fake.id);raceWitnessed.add('fake:'+fake.id);witnessForBounty('f:'+fake.id);
         $('event-label').textContent='RIVAL COMEBACK';$('event-title').textContent=fake.title;$('event-copy').textContent=fake.text;$('event-box').className='race-event compact fake-pass';actions.hidden=true;actions.innerHTML='';
       }else if(unresolvedChoice){
-        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);witnessForBounty('e:'+f.step.sourceKind+':'+f.step.sourceId+':'+(f.step.stage||0));}
         $('event-label').textContent='ROUTE CHOICE';$('event-title').textContent=f.step.title;$('event-copy').textContent=`${f.step.choice.prompt} Build fit: ${f.step.choice.riskRating}.`;$('event-box').className='race-event has-choice';
         actions.hidden=false;actions.innerHTML=`<button data-action="event-choice" data-id="safe"><b>${esc(f.step.choice.safeLabel)}</b><small>Safer route</small></button><button class="primary" data-action="event-choice" data-id="risk"><b>${esc(f.step.choice.riskLabel)}</b><small>${esc(f.step.choice.riskRating)} build fit</small></button>`;requestAnimationFrame(()=>paintChoiceEvent(f));
       }else{
-        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);}
+        if(f.step.sourceKind&&f.step.sourceId){Enc.recordEventSeen(f.step.sourceKind,f.step.sourceId,f.step.stage);raceWitnessed.add(f.step.sourceKind+':'+f.step.sourceId);witnessForBounty('e:'+f.step.sourceKind+':'+f.step.sourceId+':'+(f.step.stage||0));}
         $('event-label').textContent=f.step.label;$('event-title').textContent=f.step.title;$('event-copy').textContent=f.step.copy;$('event-box').className='race-event'+(f.step.id==='opening'?' compact':'')+(f.step.jumpScare?' jump-scare':'');actions.hidden=true;actions.innerHTML='';
       }
-      $('stage-counter').textContent=fin?'END':replay.result.noStart?'GRID':`${f.step.lap||Math.min(3,f.index+1)} / ${replay.result.lapCount||3}`;$('phase-label').textContent=special?'SPECIAL OVERTAKE':fake?'RIVAL COMEBACK':f.step.label;$('race-weather-label').textContent=E.weather(f.step.weatherId||replay.result.weatherId).name+' · '+E.surface(replay.result.surfaceId).name+' · '+D.APPROACHES[replay.result.approach].name;header();Enc.recordWeather(f.step.weatherId||replay.result.weatherId);
+      $('stage-counter').textContent=fin?'END':replay.result.noStart?'GRID':`${f.step.lap||Math.min(3,f.index+1)} / ${replay.result.lapCount||3}`;$('phase-label').textContent=special?'SPECIAL OVERTAKE':fake?'RIVAL COMEBACK':f.step.label;$('race-weather-label').textContent=E.weather(f.step.weatherId||replay.result.weatherId).name+' · '+E.surface(replay.result.surfaceId).name+' · '+D.APPROACHES[replay.result.approach].name;header();Enc.recordWeather(f.step.weatherId||replay.result.weatherId);witnessForBounty('w:'+(f.step.weatherId||replay.result.weatherId));
     }
     // Never show the usual event card/HUD across an actual transformation movie.
     // Race controls (pause, speed and skip) remain visible and fully functional.
@@ -398,12 +408,12 @@
         if(!raceWitnessed.has('fake:'+fake.id))Enc.recordEventMissed('fake',fake.id);
       }
     }
-    if(state.history.length){
-      Enc.recordUnwitnessedResult(state.history.at(-1));
-      Enc.recordResult(state.history.at(-1));
-    }
+    if(state.history.length)Enc.recordUnwitnessedResult(state.history.at(-1));
   }
-  function showResult(){finalizeEncyclopaediaRace();replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
+  function showResult(){finalizeEncyclopaediaRace();
+    state=E.finalizeWitnessBounties(state);
+    if(state.history.length)Enc.recordResult(state.history.at(-1));
+    replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
   function updateRecords(){records.bestRaces=Math.max(records.bestRaces,survived(state));records.bestPoints=Math.max(records.bestPoints,state.points);}
   function closeAll(){if($('confirm-modal').open){pendingConfirm=null;$('confirm-modal').close();}if($('modal').open)$('modal').close();modalKind=null;}
   function changeScreen(next){closeAll();if(next!=='race')replay=null;screen=next;render();}
@@ -603,10 +613,14 @@
           },'TAKE THE BODGE');break;
         }
         case 'approach':mutate(E.setApproach(state,id),D.APPROACHES[id].note);document.querySelector(`[data-action="approach"][data-id="${id}"]`).focus();break;
-        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart){Enc.recordResult(next.history.at(-1));replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);raceWitnessed=new Set();Enc.recordWeather(next.history.at(-1).weatherId);if(next.history.at(-1).gagId)Enc.recordGag(next.history.at(-1).gagId);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
+        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart){state=E.finalizeWitnessBounties(state);Enc.recordResult(state.history.at(-1));replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);raceWitnessed=new Set();if(next.history.at(-1).gagId)Enc.recordGag(next.history.at(-1).gagId);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
         case 'event-choice':{
           if(!replay||!raceBefore)return;const f=P.frame(replay,replay.elapsed),choice=f.step.choice;if(!choice||Object.hasOwn(raceChoices,choice.key)||!['safe','risk'].includes(id))return;
-          const elapsedInScene=f.local*f.step.duration,sceneId=f.step.id;raceChoices[choice.key]=id;const next=E.race(raceBefore,raceChoices);state=next;persist();replay=paceShortcutReplay(P.createReplay(raceBefore,next),raceChoices);replay.elapsed=window.ScrapEventTiming.reanchorScene(replay,sceneId,elapsedInScene);replay.paused=false;lastRaceDisplay='';lastTick=null;updateRace();notify(id==='risk'?'Risky route committed. Whatever happens next was technically your idea.':'Safe route chosen. Sensible behaviour has been documented.');break;
+          const elapsedInScene=f.local*f.step.duration,sceneId=f.step.id;raceChoices[choice.key]=id;
+          const previousReceipts=state.bountyWitnessed||[];
+          let next=E.race(raceBefore,raceChoices);
+          for(const token of previousReceipts)next=E.markBountyWitness(next,token);
+          state=next;persist();replay=paceShortcutReplay(P.createReplay(raceBefore,next),raceChoices);replay.elapsed=window.ScrapEventTiming.reanchorScene(replay,sceneId,elapsedInScene);replay.paused=false;lastRaceDisplay='';lastTick=null;updateRace();notify(id==='risk'?'Risky route committed. Whatever happens next was technically your idea.':'Safe route chosen. Sensible behaviour has been documented.');break;
         }
         case 'pause':if(replay){const f=P.frame(replay,replay.elapsed);if(f.step.choice&&!Object.hasOwn(raceChoices,f.step.choice.key)){notify('Choose a route before continuing.',true);return;}replay.paused=!replay.paused;updateRace();}break;
         case 'next-phase':if(replay){const f=P.frame(replay,replay.elapsed);if(f.step.choice&&!Object.hasOwn(raceChoices,f.step.choice.key)){notify('Choose a route before continuing.',true);return;}replay.elapsed=P.nextTime(replay,replay.elapsed);if(replay.elapsed>=replay.total)showResult();else updateRace();}break;
@@ -643,8 +657,10 @@
       loaded.archiveRunId=loaded.archiveRunId||Enc.legacyRunId(loaded);
       ask('IMPORT THIS RUN?',`<p>Seed <b>${loaded.seed}</b>, ${survived(loaded)} completed races, ${money(loaded.points)} points.</p><p>This replaces the run in this experimental build only. Other builds and their saves are untouched.</p>`,()=>{state=loaded;hasRun=true;blocked=false;replay=null;
       Enc.startRun(loaded.archiveRunId);
-      if(state.phase==='result'&&state.history.length)
+      if(state.phase==='result'&&state.history.length){
+        state=E.finalizeWitnessBounties(state);
         Enc.recordUnwitnessedResult(state.history.at(-1));
+      }
       updateRecords();persist();changeScreen(state.phase==='garage'?'garage':'result');
       notify('Compatible run imported.');},'IMPORT RUN');}
     catch(error){notify(error.message||'Unable to import this save.',true);}
