@@ -100,6 +100,10 @@ assert.throws(()=>E.validateSave({...seen,bountyWitnessPending:['not-a-contract'
 let stageBefore,stageAfter;
 for(let seed=1;seed<80;seed++){
  const s=E.newRun(seed);
+ // Controlled stage timing fixture: a high-level legitimate catalogue loadout
+ // makes a podium finish likely, without trying to discover a rare finale here.
+ s.loadout={engine:'v8',tyres:'monster-treads',chassis:'boilerplate',gadget:'cooling-fan'};
+ s.levels={engine:10,tyres:10,chassis:10,gadget:10};
  s.bounties=[{id:'lights-finale',remaining:1,progress:0},{id:'legendary-special-order',remaining:1,progress:0}];
  const a=E.race(s),r=a.history.at(-1);
  if(!r.failedSlot&&!r.noStart&&r.place<=3){stageBefore=s;stageAfter=a;break;}
