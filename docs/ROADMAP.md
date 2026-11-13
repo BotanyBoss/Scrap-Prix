@@ -75,8 +75,8 @@ Use Studio Playground as a completely isolated test surface:
 ## Phase 4 | Complete the non-art gameplay/content foundation (P0/P1)
 
 - Safely integrate the optional Bodge/bounty/Encyclopaedia chain only after approval and playtesting.
-- 41 bounty contracts already exist on the latest feature branch: 15 basic + 9 expanded + 17 classified gag contracts. Preserve one new offer per garage, three active slots, deadlines, cancellation as failure, penalties and limited vouchers.
-- Finish the missing rare-weather, rare-event long-shot and Legendary Special Order contracts. Finalise their eligibility, rewards, deadlines, hidden requirements and true witnessed-vs-skipped completion rules. The Encyclopaedia's permanent witnessed-only discovery is required to avoid spoiling secret outcomes.
+- The original feature stack had 41 bounty contracts (15 basic + 9 expanded + 17 classified gag contracts). The isolated theatrical integration branch now adds six witnessed-only long shots for **47 total**. Preserve one offer per garage, three active slots, deadlines, cancellation as failure, penalties and limited vouchers.
+- **Implemented on review branch:** two weather long shots, three rare-event long shots (including a fourth-stage finale) and a Legendary Special Order. Prerequisite discoveries and post-playback witnessed-vs-skipped settlement are covered by seeded and controlled-stage tests. **Still pending:** human-run economy, offer-frequency and reward/penalty balance approval, plus production integration.
 - Add Epic to event/outcome metadata and Encyclopaedia sorting only after auditing current weights: event tier is not damage severity and a normal Epic encounter can have a Legendary ending.
 - Improve event copy, result clarity, shop/repair/bounty feedback and new-player onboarding.
 - Stress the economy and Bodge with realistic seeded playthroughs, not only synthetic high-resource tests. Verify all gag recipes can be assembled with legal shop actions, and separately investigate normal-run attainability.
@@ -116,7 +116,7 @@ Additional 36-environment idea shelf, additional legendary takeovers and detaile
 
 1. Branch-integration inventory and safe merge plan.
 2. Race Manifest / Shot Plan specification + deterministic choices/skip tests.
-3. Bounty gap matrix: 41 existing plus rare weather/event and Special Order proposals, with witness rules and economy checks.
+3. Playtest the 47-contract review catalogue: rare weather/event availability, Special Order odds, completion/deadline frequency, voucher economy and player comprehension.
 4. Event clarity and feedback correctness, grounded in existing race effects.
 5. Prototype acceptance test/script for Studio Playground, then the visual experiment when assets are available.
 

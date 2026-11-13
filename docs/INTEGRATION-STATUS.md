@@ -21,3 +21,7 @@ New UI runs receive a stable `archiveRunId` preserved through existing optional-
 ## Six witnessed-only long-shot bounties (13 Nov)
 
 Two rare-weather, three rare-event (including a four-stage finale), and one Legendary Special Order are implemented on this isolated integration branch. Offers are locked behind *previous witnessed discovery* and new contracts settle only after the current race's actual presentation has recorded event/weather receipts. Skipping the scene cannot pay; expired contracts still apply their advertised failure penalties. All other bounty outcomes remain pre-resolved. `tests/witness-bounties.cjs` checks real seeded Blizzard and First Contact runs, save/reload, deadlines and idempotence. Offer weights and rewards remain **provisional pending balance review**.
+
+## Latest reliability gate (13 Nov)
+
+The isolated integration branch now carries 47 bounty types, including six rare-weather/event and Legendary Special Order contracts locked behind previous observed discoveries. Viewing receipts are validated against the current engine result; only playback can award witnessed-only contracts. The race menu exit and continue-to-garage paths now close or block unfinished settlement, and tests cover natural Blizzard/First Contact outcomes plus controlled late-stage and Legendary receipts. No production merge or final balance approval.

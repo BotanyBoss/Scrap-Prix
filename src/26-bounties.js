@@ -241,7 +241,7 @@
   }
   const original={
     race:E.race,repair:E.repair,repairQuote:E.repairQuote,shopOffers:E.shopOffers,
-    buy:E.buy,validateSave:E.validateSave,encodeSave:E.encodeSave,decodeSave:E.decodeSave
+    buy:E.buy,continueRun:E.continueRun,validateSave:E.validateSave,encodeSave:E.encodeSave,decodeSave:E.decodeSave
   };
   E.race=function(s,choices={}){
     const next=original.race(s,choices);
@@ -345,6 +345,11 @@
     return next;
   };
 
+  E.continueRun=function(s){
+    if(s?.bountyWitnessPending?.length)
+      throw Error('Settle the current race before starting another garage.');
+    return original.continueRun(s);
+  };
   E.repairQuote=function(s,slot){
     const q=original.repairQuote(s,slot);
     return penalties(s).repairLock>0?{...q,locked:true,reason:'Normal repairs suspended by bounty failure'}:q;

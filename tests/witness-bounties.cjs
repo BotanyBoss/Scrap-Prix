@@ -44,6 +44,7 @@ for(let seed=1;seed<=8000;seed++){
 assert(before&&after,'Find real completed Blizzard race');
 const original=JSON.stringify(before),resolved=after.history.at(-1);
 assert.deepEqual(plain(after.bountyWitnessPending),['whiteout-witness']);
+assert.throws(()=>E.continueRun(after),'Unsettled witness bets must not enter next garage');
 assert.equal(after.bountyWitnessed.length,0);
 assert.equal(resolved.bountyResults.length,1,'Ordinary bounty settles immediately');
 assert.strictEqual(E.markBountyWitness(after,'w:hot'),after,'False weather must not count');
@@ -68,6 +69,7 @@ assert.equal(won.wrenches,after.wrenches+2);
 assert.equal(won.history.at(-1).bountyWrenches,(after.history.at(-1).bountyWrenches||0)+2);
 assert.equal(won.history.at(-1).prize,resolved.prize,'Presentation quality cannot change cash prize');
 assert.strictEqual(E.finalizeWitnessBounties(won),won);
+assert.equal(E.continueRun(won).phase,'garage','Settled race can continue');
 assert.equal(JSON.stringify(before),original,'No mutation of committed garage state');
 const later=E.race({...before,bounties:[{id:'whiteout-witness',remaining:2,progress:0}]});
 const delay=E.finalizeWitnessBounties(later);
@@ -92,4 +94,30 @@ assert.equal(E.finalizeWitnessBounties(eventSeen).history.at(-1).bountyResults[0
 assert.equal(E.finalizeWitnessBounties(eventAfter).history.at(-1).bountyResults[0].success,false);
 assert.throws(()=>E.validateSave({...seen,bountyWitnessed:['malicious:value']}));
 assert.throws(()=>E.validateSave({...seen,bountyWitnessPending:['not-a-contract']}));
-console.log('PASS: six categories, prior discovery, natural event/weather playback, skip failure, exact-once rewards and save');
+// Synthetic timing fixtures test stage exclusivity without brute-forcing a
+// one-in-many-thousands four-stage finale. They still resolve through the
+// same production receipt/settlement APIs.
+let stageBefore,stageAfter;
+for(let seed=1;seed<80;seed++){
+ const s=E.newRun(seed);
+ s.bounties=[{id:'lights-finale',remaining:1,progress:0},{id:'legendary-special-order',remaining:1,progress:0}];
+ const a=E.race(s),r=a.history.at(-1);
+ if(!r.failedSlot&&!r.noStart&&r.place<=3){stageBefore=s;stageAfter=a;break;}
+}
+assert(stageAfter,'Need completed top-three race for controlled stage fixture');
+stageAfter.history.at(-1).laps[0].effects.push({kind:'chain',id:'suspicious-lights',stage:4,damage:0});
+stageAfter.history.at(-1).laps[0].effects.push({kind:'anomaly',id:'kaiju-crossing',damage:0});
+assert.strictEqual(E.markBountyWitness(stageAfter,'e:chain:suspicious-lights:3'),stageAfter,
+ 'Unresolved earlier stage may not count as finale');
+const withFinale=E.markBountyWitness(stageAfter,'e:chain:suspicious-lights:4');
+assert.equal(withFinale.bountyWitnessed.length,1);
+const finaleOnly=E.finalizeWitnessBounties(withFinale);
+assert.equal(finaleOnly.history.at(-1).bountyResults.find(x=>x.id==='lights-finale').success,true);
+assert.equal(finaleOnly.history.at(-1).bountyResults.find(x=>x.id==='legendary-special-order').success,false,
+ 'Different rare encounter cannot win without its own viewing receipt');
+const withKaiju=E.markBountyWitness(withFinale,'e:anomaly:kaiju-crossing:0');
+const both=E.finalizeWitnessBounties(withKaiju);
+assert(both.history.at(-1).bountyResults.every(x=>x.success),'Both watched rare events qualify');
+assert.equal(both.bountyCoupons,2);
+assert.equal(both.wrenches,stageAfter.wrenches,'Voucher payout must not inflate wrenches');
+console.log('PASS: 6 long shots, discovery gates, real weather/event, skipped/seen settlement, stage finale, special order, saved receipts');

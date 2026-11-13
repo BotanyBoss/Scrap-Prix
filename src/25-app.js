@@ -416,7 +416,19 @@
     replay=null;raceBefore=null;raceChoices={};lastRaceDisplay='';updateRecords();persist();resultTab='finish';screen='result';render();notify(state.finished?'Run over. Your records are saved.':state.history.at(-1)?.noStart?`No start: fifth place, zero rewards, strike ${state.noStartStrikes}/3.`:state.history.at(-1)?.failedSlot?'Car retired. Return to the garage for repairs.':'Race complete. Check whether you can afford another upgrade or replacement.');}
   function updateRecords(){records.bestRaces=Math.max(records.bestRaces,survived(state));records.bestPoints=Math.max(records.bestPoints,state.points);}
   function closeAll(){if($('confirm-modal').open){pendingConfirm=null;$('confirm-modal').close();}if($('modal').open)$('modal').close();modalKind=null;}
-  function changeScreen(next){closeAll();if(next!=='race')replay=null;screen=next;render();}
+  function changeScreen(next){
+    // Leaving the race by its menu is also an exit from playback. Unwatched
+    // events cannot win bounties, and a pending deadline cannot leak into the
+    // next garage simply because the player didn't press Skip or Finish.
+    if(screen==='race'&&next!=='race'&&replay){
+      finalizeEncyclopaediaRace();
+      state=E.finalizeWitnessBounties(state);
+      if(state.history.length)Enc.recordResult(state.history.at(-1));
+      raceBefore=null;raceChoices={};lastRaceDisplay='';
+      updateRecords();persist();
+    }
+    closeAll();if(next!=='race')replay=null;screen=next;render();
+  }
   function mutate(next,text){const previous=state;state=next;actionDialogue(previous,next);recordEquipmentTransition(previous,next);hasRun=true;persist();render(false);notify(text);}
   function freshSeed(){if(window.crypto?.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0];}return Math.floor(Math.random()*4294967296);}
   function newRun(seed){state=E.newRun(seed);setGarageDialogue('start');state.archiveRunId=Enc.startRun();recordEquipmentTransition(null,state);resultTab='finish';hasRun=true;blocked=false;replay=null;persist();changeScreen('garage');notify('New run started. Restored events and modular animations are active.');}

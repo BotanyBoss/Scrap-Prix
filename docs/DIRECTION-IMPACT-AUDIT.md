@@ -32,7 +32,7 @@ Rendering 2D does not automatically create high-quality animation. A good proced
 | src/20-scene.js | REUSE FX, RETIRE AS MANDATORY CORE | Current world-unit road projection and rear-view track motion cannot dictate all cinematic shots; archive until replacement works |
 | src/11-event-effects.js and 13–19 | PORT SELECTIVELY | Many animations depend on specific 480x270 camera coordinates, perspective and pixel scale; timing/content ideas survive |
 | src/25-app.js + src/game.css | REFACTOR RACE UI ONLY | Preserve garage/shop/results; change race canvas/HUD, full-screen takeover, choice prompt, pause/skip and audio access |
-| src/26-bounties.js | KEEP + FINISH | 41 implemented contracts; wraps race, repair, purchase, save. Real integration risk with choice replays and event witness settlement |
+| src/26-bounties.js | KEEP + FINISH BALANCE | 41 original contracts plus 6 witnessed-only review additions (47 total). Deferred viewing receipts, risk/expiry settlement and save round-trips implemented; full human-style economy still pending |
 | src/27-encyclopaedia.js | KEEP + EXTEND | Permanent player-earned discoveries. Epic rarity currently absent; witnessed vs missed needed for hidden long-shot bounties |
 | src/28-dialogue-ui.js | KEEP PROTOTYPE | Anonymous captions only; casting and actual dialogue remain a separate workstream per owner |
 | src/29-three-garage.js | KEEP IDEA, REDO PLACEHOLDER MODEL | Real opt-in Three.js scene, four groups and lazy CDN import, but approximate component shapes and fixed four-wheel layout |
@@ -53,7 +53,7 @@ Rendering 2D does not automatically create high-quality animation. A good proced
 | P0 | Real vehicle 3D sockets, wheel layouts, pose/view compatibility | Present garage model is schematic; Longbody is actually six-wheel | 3 chassis, 3 views, alternative equipment and damage accepted |
 | P0 | Performance/asset-generation validation | No production 3D-to-2D capture rig yet | Benchmarked memory/latency/FPS on representative devices |
 | P0 | Full bounty/Bodge balance and feature-branch integration | Synthetic tests, no full natural-run proof | Realistic seeded playtest and state/reward correctness |
-| P1 | Finish rare-weather/event and Legendary Special Order bounty library | 41 existing but long-shot categories remain undone | Hidden/witness-safe goals, deadlines, settlement and tests |
+| P1 | Balance and approve long-shot bounty catalogue | Six new contracts implemented in isolated branch | Sample real players, offer frequencies, deadline fairness and rewards before production |
 | P1 | Epic/outcome rarity in data and Encyclopaedia | Current simple event weights/legendary tags and order lacks Epic | Correct display and probabilities reviewed independently |
 | P1 | Sound system | No central audio/music mixer observed | Trigger/duck/mute, sound categories, accessible captions |
 | P1 | Onboarding, feedback and accessibility | Some tips, motion CSS, speed/skip exist | New-player guidance, reduced flash/shake, captions/touch/keyboard |
@@ -85,7 +85,7 @@ Rendering 2D does not automatically create high-quality animation. A good proced
 - 48 wildcards, 37 anomalies, 26 special passes, seven fake passes with content-audit tests in an unmerged branch.
 - Reusable staged anomaly continuation rolls, choice resolution and presentation timing families.
 - Preliminary modular 3D garage with distinct chassis/engine/tyres/gadget groups, plus standalone experimental viewers.
-- 41 contract definitions, persistent Encyclopaedia and in-race bounty viewer in unmerged, tested PRs.
+- 47 contract definitions on the integration branch (41 from stacked PRs + 6 gated long shots), with permanent seen-stage metadata and deferred post-playback settlement.
 - Fast/skip/pause and reduced-motion support exists in part, not yet adapted to a cartoon shot player.
 
 ## Production success gates
