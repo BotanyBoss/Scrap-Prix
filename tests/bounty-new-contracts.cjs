@@ -13,10 +13,10 @@ vm.runInContext(patched,ctx);
 const E=ctx.ScrapEngine,clone=v=>JSON.parse(JSON.stringify(v));
 const ids=['risk-reward','bodge-podium','phoenix','tyre-cliff','engine-cliff','everything-fine','biscuit','double-disaster','no-repairs-five'];
 const defs=Array.from(E.bountyDefinitions);
-assert.equal(defs.length,41,'24 ordinary + 17 classified');
+assert.equal(defs.length,47,'30 ordinary + 17 classified');
 for(const id of ids){const def=defs.find(d=>d.id===id);assert(def,id+' absent');assert(def.category&&def.rarity);assert(def.reward&&def.failure);assert(def.races>=1&&def.races<=8);}
 assert.equal(new Set(defs.map(d=>d.id)).size,defs.length);
-assert.equal(new Set(defs.filter(d=>!d.gagId).map(d=>d.goal)).size,24,'Duplicate ordinary goal');
+assert.equal(new Set(defs.filter(d=>!d.gagId).map(d=>d.goal)).size,30,'Duplicate ordinary goal');
 const base={place:1,noStart:false,failedSlot:null,durabilityBefore:{engine:30,tyres:30,chassis:30,gadget:30},durabilityAfter:{engine:7,tyres:9,chassis:17,gadget:20},laps:[]};
 const goal=(id,r=base,before={garageAction:null})=>E.__testGoal(id,r,null,before);
 assert(goal('bodge-podium',base,{garageAction:{kind:'bodge',slot:'chassis'}}));

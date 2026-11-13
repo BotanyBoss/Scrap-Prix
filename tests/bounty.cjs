@@ -6,16 +6,16 @@ const ctx=vm.createContext({console});ctx.window=ctx;ctx.globalThis=ctx;
 for(const i of [0,1,2,3,25])vm.runInContext(scripts[i],ctx);
 const E=ctx.ScrapEngine,clone=s=>JSON.parse(JSON.stringify(s));
 const types=Array.from(E.bountyDefinitions);
-assert.equal(types.length,41,'Twenty-four ordinary challenges and seventeen classified gag contracts');
+assert.equal(types.length,47,'Thirty ordinary challenges and seventeen classified gag contracts');
 const ids=types.map(x=>x.id);
-assert.equal(new Set(ids).size,41,'Contract IDs remain unique');
-assert.equal(types.filter(t=>!t.gagId).length,24);
+assert.equal(new Set(ids).size,47,'Contract IDs remain unique');
+assert.equal(types.filter(t=>!t.gagId).length,30);
 assert.equal(types.filter(t=>t.gagId).length,ctx.ScrapData.GAG_RECIPES.length);
 assert.deepEqual(types.filter(t=>t.gagId).map(t=>t.gagId).sort(),
   Array.from(ctx.ScrapData.GAG_RECIPES,g=>g.id).sort(),'Every gag can be a bounty');
 for(const t of types){assert(t.races>=1&&t.races<=8&&t.weight>0);assert(t.reward&&t.failure&&t.goal);}
-assert.equal(new Set(types.filter(t=>!t.gagId).map(t=>t.title.toLowerCase())).size,24,'Ordinary bounty titles must be unique');
-assert.equal(new Set(types.filter(t=>!t.gagId).map(t=>t.goal.toLowerCase())).size,24,'No duplicate ordinary bounty objectives');
+assert.equal(new Set(types.filter(t=>!t.gagId).map(t=>t.title.toLowerCase())).size,30,'Ordinary bounty titles must be unique');
+assert.equal(new Set(types.filter(t=>!t.gagId).map(t=>t.goal.toLowerCase())).size,30,'No duplicate ordinary bounty objectives');
 // Every new contract length must survive an immediate save, especially the eight-race classified offers.
 for(const def of types){
  const fixture=clone(E.newRun(9000));fixture.bounties=[{id:def.id,remaining:def.races,progress:0}];

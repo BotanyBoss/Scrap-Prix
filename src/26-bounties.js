@@ -50,6 +50,22 @@
     {id:'double-disaster',title:'Double Disaster',goal:'In two consecutive finished races, encounter a potentially damaging event and take no more than 5 total event damage in each race.',races:5,reward:'+2 wrenches',failure:'An extra bad event in the next started race',weight:1.5,rarity:'Rare',category:'Event & Hazard Challenges'},
     {id:'no-repairs-five',title:'No Time for Repairs',goal:'Finish five consecutive races without using any normal repairs. Replacements and Emergency Bodge are allowed.',races:5,reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',weight:1.1,rarity:'Rare',category:'Streaks & Endurance'}
   ];
+  // Witnessed-only challenges require a prior Encyclopaedia discovery before
+  // they can enter the offer pool. The live race must be WATCHED to succeed.
+  const longshots=[
+    {id:'whiteout-witness',title:'Whiteout Broadcasting',goal:'Watch Blizzard conditions during a completed race and finish 1st–4th.',races:6,weight:.50,rarity:'Rare',category:'Weather Long-Shots',hidden:true,
+      reward:'+2 wrenches',failure:'Tyres lose 10 condition',prior:{kind:'weather',id:'blizzard'},witness:{kind:'weather',id:'blizzard',maxPlace:4}},
+    {id:'snowfall-witness',title:'Winter Coverage',goal:'Watch Snowfall during a completed race and finish in the top three.',races:4,weight:.55,rarity:'Rare',category:'Weather Long-Shots',hidden:true,
+      reward:'+2 wrenches',failure:'No normal repairs for one garage',prior:{kind:'weather',id:'snowfall'},witness:{kind:'weather',id:'snowfall',maxPlace:3}},
+    {id:'first-contact-witness',title:'First Contact, Second Time',goal:'Witness another First Contact event and finish the race.',races:6,weight:.40,rarity:'Rare',category:'Event Long-Shots',hidden:true,
+      reward:'+2 wrenches',failure:'Engine loses 10 condition',prior:{kind:'event',id:'first-contact'},witness:{kind:'event',id:'first-contact',maxPlace:4}},
+    {id:'kaiju-witness',title:'Front Row to Disaster',goal:'Witness Kaiju Crossing and survive to the chequered flag.',races:8,weight:.25,rarity:'Legendary',category:'Event Long-Shots',hidden:true,
+      reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',prior:{kind:'event',id:'kaiju-crossing'},witness:{kind:'event',id:'kaiju-crossing',maxPlace:4}},
+    {id:'lights-finale',title:'The Lights Came Back',goal:'Witness the fourth stage of Suspicious Lights and finish the race.',races:8,weight:.20,rarity:'Legendary',category:'Event Long-Shots',hidden:true,
+      reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',prior:{kind:'event',id:'suspicious-lights',stage:4},witness:{kind:'event',id:'suspicious-lights',stage:4,maxPlace:4}},
+    {id:'legendary-special-order',title:'Legendary Special Order',goal:'Witness any Legendary anomaly while finishing on the podium.',races:8,weight:.12,rarity:'Legendary',category:'Special Orders',hidden:true,
+      reward:'One free replacement from a future shop',failure:'No normal repairs for two garages',prior:{kind:'legendary'},witness:{kind:'legendary',maxPlace:3}}
+  ];
   // Legacy 'tank' stays stable for existing saved contracts. Other gag contracts are
   // separately identified so a cancelled/completed one cannot silently change target.
   const legacyTank={id:'tank',title:'Classified Vehicle Request',goal:'Complete a race driving the Tank gag vehicle.',races:5,
@@ -60,10 +76,11 @@
     failure:'No normal repairs for two garages',weight:.30,hidden:true,gagId:g.id
   }));
   const categoryById={third:'Placement & Precision',second:'Placement & Precision',fourth:'Placement & Precision',fifth:'Placement & Precision',match:'Placement & Precision',drop:'Placement & Precision',comeback:'Placement & Precision',reckless:'Driving Challenges',balanced:'Driving Challenges',careful:'Driving Challenges',clean:'Survival & Durability',survivor:'Streaks & Endurance',worn:'Survival & Durability',route:'Event & Hazard Challenges',fresh:'Workshop Challenges'};
-  const types=Object.freeze([...regularTypes,...newTypes,legacyTank,...gagTypes].map(t=>Object.freeze({...t,category:t.category||categoryById[t.id]||'Gag Vehicle & Mystery',rarity:t.rarity||(t.gagId?'Classified':t.weight>=3?'Common':t.weight>=2?'Uncommon':'Rare')})));
+  const types=Object.freeze([...regularTypes,...newTypes,...longshots,legacyTank,...gagTypes].map(t=>Object.freeze({...t,category:t.category||categoryById[t.id]||'Gag Vehicle & Mystery',rarity:t.rarity||(t.gagId?'Classified':t.weight>=3?'Common':t.weight>=2?'Uncommon':'Rare')})));
   if(new Set(types.map(t=>t.id)).size!==types.length||new Set(types.map(t=>t.title).filter(t=>t!=='Classified Vehicle Request')).size!==types.filter(t=>t.title!=='Classified Vehicle Request').length)throw Error('Duplicate bounty ID or title');
   const lookup=id=>types.find(t=>t.id===id);
   const nonneg=(n,max=100)=>Number.isInteger(n)&&n>=0&&n<=max;
+  const validWitnessToken=v=>typeof v==='string'&&/^(w:[a-z0-9-]+|e:(optional|signature|anomaly|chain):[a-z0-9-]+:[0-8]|p:[a-z0-9-]+|f:[a-z0-9-]+)$/.test(v);
   const hash=(seed,round,salt=0)=>{
     let x=(Math.imul((round+1)>>>0,0x9e3779b1)^(seed>>>0)^salt)>>>0;
     x=Math.imul(x^(x>>>16),0x7feb352d);x=Math.imul(x^(x>>>15),0x846ca68b);return(x^(x>>>16))>>>0;
@@ -74,15 +91,24 @@
     extraEvent:s.bountyPenalties?.extraEvent||0
   });
   const active=s=>Array.isArray(s.bounties)?s.bounties:[];
+  const priorKnown=def=>{
+    if(!def.prior)return true;
+    const archive=window.ScrapEncyclopaedia;
+    if(!archive)return false;
+    if(def.prior.kind==='weather')return archive.hasSeenWeather?.(def.prior.id)===true;
+    if(def.prior.kind==='event')return archive.hasSeenEvent?.('anomaly',def.prior.id,def.prior.stage||null)===true;
+    if(def.prior.kind==='legendary')return archive.hasSeenLegendary?.()===true;
+    return false;
+  };
   // A gag name deciphers from the permanent main-menu Encyclopaedia, not this run.
   // Older standalone tests that do not load the Encyclopaedia retain their legacy fallback.
-  const known=(s,definition)=>!definition.hidden||(window.ScrapEncyclopaedia?window.ScrapEncyclopaedia.isGagKnown(definition.gagId):(s.discoveredGags||[]).includes(definition.gagId));
+  const known=(s,d)=>!d.hidden||(d.prior?priorKnown(d):d.gagId?(window.ScrapEncyclopaedia?window.ScrapEncyclopaedia.isGagKnown(d.gagId):(s.discoveredGags||[]).includes(d.gagId)):false);
   function bountyOffer(s){
     if(s.phase!=='garage'||s.finished)return null;
     // Once accepted, the same displayed offer stays on the board until the next race.
     if(s.bountyAcceptedAt===s.raceIndex&&s.bountyOfferedId)return lookup(s.bountyOfferedId);
     const inUse=new Set(active(s).map(x=>x.id));
-    const available=types.filter(t=>!inUse.has(t.id)&&(!['comeback','match','drop'].includes(t.id)||s.history?.length)&&(!['bodge-podium','phoenix'].includes(t.id)||(s.bodge?.uses||0)<3));
+    const available=types.filter(t=>!inUse.has(t.id)&&priorKnown(t)&&(!['comeback','match','drop'].includes(t.id)||s.history?.length)&&(!['bodge-podium','phoenix'].includes(t.id)||(s.bodge?.uses||0)<3));
     if(!available.length)return null;
     const total=available.reduce((n,t)=>n+t.weight,0);
     let roll=(hash(s.seed,s.raceIndex,0xB0A71E)/4294967296)*total;
@@ -123,6 +149,10 @@
     else if(['phoenix','everything-fine','no-repairs-five'].includes(id)){p.repairLock=Math.max(p.repairLock,2);effect={kind:'repairLock',garages:2};}
     else if(id==='biscuit'){p.repairLock=Math.max(p.repairLock,1);effect={kind:'repairLock',garages:1};}
     else if(id==='double-disaster'){p.extraEvent=Math.max(p.extraEvent,1);effect={kind:'extraEvent',races:1};}
+    else if(id==='whiteout-witness')effect=damagePenalty(s,10,'tyres');
+    else if(id==='first-contact-witness')effect=damagePenalty(s,10,'engine');
+    else if(id==='snowfall-witness'){p.repairLock=Math.max(p.repairLock,1);effect={kind:'repairLock',garages:1};}
+    else if(['kaiju-witness','lights-finale','legendary-special-order'].includes(id)){p.repairLock=Math.max(p.repairLock,2);effect={kind:'repairLock',garages:2};}
     else if(id==='reckless')effect=damagePenalty(s,12,'engine');
     else if(id==='fourth')effect=damagePenalty(s,8,'engine');
     else if(id==='drop')effect=damagePenalty(s,12,'tyres');
@@ -149,9 +179,9 @@
     if(['reckless','survivor','comeback','fourth','match','balanced','careful','clean'].includes(id)){
       s.wrenches+=1;return{kind:'wrench',amount:1};
     }
-    if(id==='route'||['risk-reward','bodge-podium','biscuit','double-disaster'].includes(id)){s.wrenches+=2;return{kind:'wrench',amount:2};}
+    if(id==='route'||['risk-reward','bodge-podium','biscuit','double-disaster','whiteout-witness','snowfall-witness','first-contact-witness'].includes(id)){s.wrenches+=2;return{kind:'wrench',amount:2};}
     if(['tyre-cliff','engine-cliff'].includes(id)){s.wrenches+=1;return{kind:'wrench',amount:1};}
-    if(lookup(id)?.gagId||['phoenix','everything-fine','no-repairs-five'].includes(id)){
+    if(lookup(id)?.gagId||['phoenix','everything-fine','no-repairs-five','kaiju-witness','lights-finale','legendary-special-order'].includes(id)){
       // Three is a hard voucher limit shared by rare vehicle and exceptional contracts.
       if((s.bountyCoupons||0)>=3){s.wrenches+=1;return{kind:'voucherOverflowWrench',amount:1,capacity:3};}
       s.bountyCoupons=(s.bountyCoupons||0)+1;return{kind:'replacementVoucher',amount:1};
@@ -215,6 +245,7 @@
   };
   E.race=function(s,choices={}){
     const next=original.race(s,choices);
+    delete next.bountyWitnessed;delete next.bountyWitnessPending;
     if(!s.bounties&&!s.bountyPenalties)return next;
     const prior=penalties(s);
     const result=next.history.at(-1),previous=s.history?.at(-1)||null;
@@ -223,10 +254,11 @@
     next.bountyPenalties={shopOne:Math.max(0,prior.shopOne-1),
       repairLock:Math.max(0,prior.repairLock-1),
       extraEvent:Math.max(0,prior.extraEvent-(sabotageApplied?1:0))};
-    const settlements=[],pending=[];
+    const settlements=[],pending=[],witnessPending=[];
     for(const entry of active(s)){
       const def=lookup(entry.id);
       let progress=entry.progress||0;
+      if(def.witness){pending.push({...entry});witnessPending.push(entry.id);continue;}
       if(def.id==='survivor')progress=!result.noStart&&!result.failedSlot&&result.damage<=24?progress+1:0;
       if(def.id==='double-disaster')progress=lowDamagingEventRace(result)?progress+1:0;
       if(def.id==='no-repairs-five')progress=!result.noStart&&!result.failedSlot?progress+1:0;
@@ -237,6 +269,7 @@
       else pending.push({...entry,progress,remaining});
     }
     next.bounties=pending;
+    if(witnessPending.length){next.bountyWitnessPending=witnessPending;next.bountyWitnessed=[];}
     if(settlements.length){
       result.bountyResults=settlements;
       next.bountyLastResults=settlements;
@@ -247,6 +280,71 @@
     }
     return next;
   };
+
+  // Presentation receipts must match an actual engine-resolved effect, not a
+  // scheduled future event, a different run or an old Encyclopaedia discovery.
+  const effectToken=e=>'e:'+e.kind+':'+e.id+':'+(e.stage||0);
+  function realWitness(result,token){
+    if(!result||!validWitnessToken(token))return false;
+    if(token.startsWith('w:')){
+      const id=token.slice(2);
+      if(!window.ScrapData.WEATHER.some(w=>w.id===id))return false;
+      return result.weatherId===id||(result.laps||[]).some(l=>
+        l.weatherId===id||(l.effects||[]).some(e=>E.eventDefinition(e)?.weatherId===id));
+    }
+    if(token.startsWith('e:'))return (result.laps||[]).some(l=>
+      (l.effects||[]).some(e=>e.kind!=='wear'&&effectToken(e)===token));
+    if(token.startsWith('p:'))return (result.passEvents||[]).some(e=>'p:'+e.id===token);
+    if(token.startsWith('f:'))return (result.fakePassEvents||[]).some(e=>'f:'+e.id===token);
+    return false;
+  }
+  E.markBountyWitness=function(s,token){
+    if(!Array.isArray(s?.bountyWitnessPending)||!s.bountyWitnessPending.length||
+      s.phase!=='result'||!realWitness(s.history?.at(-1),token)||
+      (s.bountyWitnessed||[]).includes(token))return s;
+    const next=clone(s);next.bountyWitnessed=[...(next.bountyWitnessed||[]),token];return next;
+  };
+  function witnessCompleted(def,result,seen){
+    const w=def.witness;
+    if(!w||result.noStart||result.failedSlot||result.place>w.maxPlace)return false;
+    if(w.kind==='weather')return seen.has('w:'+w.id)&&realWitness(result,'w:'+w.id);
+    const effects=(result.laps||[]).flatMap(l=>l.effects||[]);
+    if(w.kind==='event')return effects.some(e=>
+      e.id===w.id&&(!w.stage||e.stage===w.stage)&&
+      seen.has(effectToken(e))&&realWitness(result,effectToken(e)));
+    if(w.kind==='legendary')return effects.some(e=>
+      E.eventDefinition(e)?.tags?.includes('legendary')&&
+      seen.has(effectToken(e))&&realWitness(result,effectToken(e)));
+    return false;
+  }
+  E.finalizeWitnessBounties=function(s){
+    if(!s||s.phase!=='result'||!s.bountyWitnessPending?.length)return s;
+    const next=clone(s),result=next.history.at(-1),seen=new Set(next.bountyWitnessed||[]);
+    const ids=new Set(next.bountyWitnessPending),pending=[],settlements=[];
+    for(const entry of active(next)){
+      if(!ids.has(entry.id)){pending.push(entry);continue;}
+      const def=lookup(entry.id),remaining=entry.remaining-1;
+      if(witnessCompleted(def,result,seen)){
+        const reward=applyReward(next,entry.id);
+        settlements.push({id:entry.id,title:def.title,success:true,reward});
+      }else if(remaining<=0){
+        const consequence=applyFailure(next,entry.id);
+        settlements.push({id:entry.id,title:def.title,success:false,consequence});
+      }else pending.push({...entry,remaining});
+    }
+    next.bounties=pending;
+    delete next.bountyWitnessPending;delete next.bountyWitnessed;
+    if(settlements.length){
+      result.bountyResults=[...(result.bountyResults||[]),...settlements];
+      next.bountyLastResults=[...(next.bountyLastResults||[]),...settlements];
+      result.bountyWrenches=result.bountyResults.reduce((n,x)=>
+        n+(x.success&&['wrench','voucherOverflowWrench'].includes(x.reward?.kind)?x.reward.amount:0),0);
+      result.bountyGarageDurabilityAfter={...next.durability};
+      result.bountyGarageWrenches=next.wrenches;
+    }
+    return next;
+  };
+
   E.repairQuote=function(s,slot){
     const q=original.repairQuote(s,slot);
     return penalties(s).repairLock>0?{...q,locked:true,reason:'Normal repairs suspended by bounty failure'}:q;
@@ -277,6 +375,22 @@
   };
   E.validateSave=function(input){
     const output=original.validateSave(input);
+    if(input.bountyWitnessPending!==undefined){
+      if(input.phase!=='result'||!Array.isArray(input.bountyWitnessPending)||
+        input.bountyWitnessPending.length<1||input.bountyWitnessPending.length>3||
+        new Set(input.bountyWitnessPending).size!==input.bountyWitnessPending.length||
+        input.bountyWitnessPending.some(id=>!lookup(id)?.witness||!input.bounties?.some(b=>b.id===id)))
+        throw Error('Invalid pending witnessed bounty.');
+      output.bountyWitnessPending=[...input.bountyWitnessPending];
+    }
+    if(input.bountyWitnessed!==undefined){
+      if(input.phase!=='result'||!Array.isArray(input.bountyWitnessed)||
+        input.bountyWitnessed.length>90||!input.bountyWitnessPending?.length||
+        new Set(input.bountyWitnessed).size!==input.bountyWitnessed.length||
+        input.bountyWitnessed.some(x=>!validWitnessToken(x)))
+        throw Error('Invalid watched event receipts.');
+      output.bountyWitnessed=[...input.bountyWitnessed];
+    }
     // Optional stable archive identity. Not part of seeded race decisions; preserves
     // compatibility with all existing v21 saves that have no identifier.
     if(input.archiveRunId!==undefined){
