@@ -17,7 +17,9 @@ const PLANS = [
   {name: 'careful-selective', driving: 'careful', board: 'selective', bodge: true},
   {name: 'careful-every-offer', driving: 'careful', board: 'all', bodge: true},
   {name: 'swapper-selective', driving: 'swapper', board: 'selective', bodge: true},
-  {name: 'swapper-every-offer', driving: 'swapper', board: 'all', bodge: true}
+  {name: 'swapper-every-offer', driving: 'swapper', board: 'all', bodge: true},
+  // Starts with ordinary gear/cash but a mature permanent discovery archive.
+  {name: 'veteran-archive-every-offer', driving: 'careful', board: 'all', bodge: true, veteran: true}
 ];
 const SLOTS = ['engine', 'tyres', 'chassis', 'gadget'];
 const CRITICAL = ['engine', 'tyres', 'chassis'];
@@ -37,8 +39,11 @@ context.ScrapEncyclopaedia = {
   hasSeenLegendary: () => archive.legendary,
   isGagKnown: id => archive.gags.has(id)
 };
-function newArchive() {
-  return {weather: new Set(), events: new Set(), stages: new Map(), legendary: false, gags: new Set()};
+function newArchive(veteran = false) {
+  return {weather: new Set(veteran ? D.WEATHER.map(w=>w.id) : []),
+    events: new Set(veteran ? D.ANOMALIES.map(e=>e.id) : []),
+    stages: new Map(veteran ? D.ANOMALIES.map(e=>[e.id,8]) : []),
+    legendary: veteran, gags: new Set()};
 }
 function stats(s) {
   return E.environmentProfile(s, E.raceCard(s.seed, s.raceIndex, s)).pace;
@@ -156,10 +161,12 @@ function accept(s,plan,m){
   if(offer){
     const cat=offer.category||'Unknown';
     m.offers[cat]=(m.offers[cat]||0)+1;
+    m.offeredIds[offer.id]=(m.offeredIds[offer.id]||0)+1;
     if(offer.witness)m.longShotOffers++;
     if(plan.board!=='none'&&(s.bounties||[]).length<3 &&
       (plan.board==='all'||takeSelective(offer,s))){
       s=E.acceptBounty(s,offer.id);m.accepted++;
+      m.acceptedIds[offer.id]=(m.acceptedIds[offer.id]||0)+1;
       if(offer.witness)m.longShotAccepted++;
     }
   }
@@ -201,13 +208,15 @@ function watchResult(result,s,watch) {
       }
     }
   }
-  for(const pass of result.passEvents||[])s=E.markBountyWitness(s,'p:'+pass.id);
-  for(const fake of result.fakePassEvents||[])s=E.markBountyWitness(s,'f:'+fake.id);
+  if(watch==='all'){
+    for(const pass of result.passEvents||[])s=E.markBountyWitness(s,'p:'+pass.id);
+    for(const fake of result.fakePassEvents||[])s=E.markBountyWitness(s,'f:'+fake.id);
+  }
   if(result.gagId)archive.gags.add(result.gagId);
   return s;
 }
 function sample(seed,plan){
-  archive=newArchive();
+  archive=newArchive(!!plan.veteran);
   let s=E.newRun(seed);
   const m={races:0,completed:0,dnfs:0,dns:0,top3:0,wins:0,
     purchases:0,purchaseCost:0,vouchersSpent:0,tunes:0,tuningCost:0,
@@ -215,7 +224,7 @@ function sample(seed,plan){
     accepted:0,success:0,fail:0,longShotOffers:0,longShotAccepted:0,longShotWins:0,
     expiringFailure:0,shopLocks:0,repairLocks:0,extraEvents:0,
     watched:0,skipped:0,grossPrize:0,netPrize:0,credits:0,wrenches:0,debt:0,offers:{},
-    awards:{},fails:{},finished:null,reached10:false,reached25:false,reached50:false};
+    offeredIds:{},acceptedIds:{},awards:{},fails:{},finished:null,reached10:false,reached25:false,reached50:false};
   for(let i=0;i<MAX_RACES&&!s.finished;i++){
     if(s.phase!=='garage')throw Error('Race loop not in garage');
     if(s.bountyPenalties?.shopOne)m.shopLocks++;
@@ -282,9 +291,12 @@ function summarize(rows){
   z.avgEndCredits=Math.round(z.credits/n);
   z.avgEndWrenches=Math.round(z.wrenches/n*10)/10;
   z.avgEndDebt=Math.round(z.debt/n);
-  z.offerCategories={};z.winsByContract={};z.failsByContract={};
+  z.offerCategories={};z.offeredByContract={};z.acceptedByContract={};
+  z.winsByContract={};z.failsByContract={};
   for(const r of rows){
     for(const [k,v]of Object.entries(r.offers))z.offerCategories[k]=(z.offerCategories[k]||0)+v;
+    for(const [k,v]of Object.entries(r.offeredIds))z.offeredByContract[k]=(z.offeredByContract[k]||0)+v;
+    for(const [k,v]of Object.entries(r.acceptedIds))z.acceptedByContract[k]=(z.acceptedByContract[k]||0)+v;
     for(const [k,v]of Object.entries(r.awards))z.winsByContract[k]=(z.winsByContract[k]||0)+v;
     for(const [k,v]of Object.entries(r.fails))z.failsByContract[k]=(z.failsByContract[k]||0)+v;
   }
