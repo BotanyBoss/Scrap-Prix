@@ -58,3 +58,8 @@ All three must be checked in context, especially escaping single quotes in the s
 Current sprint: writing, labels, explanatory feedback and deterministic QA. Event camera direction can be captured as **notes**, but no new images, camera animations, balancing, branches, outcomes, rarity odds, gadgets or legendary encounters in this sprint.
 
 The nuclear-metamorphosis, plane pilot-cam, Epic tier and handshake concepts are documented/planned **separately** and do not become demo blockers.
+
+
+## Follow-up verification — 13 November 2026
+
+The weather-HUD observation in finding 3 was reproduced with a presentation fixture: `torrential-downpour` and `heatwave-event` inherited the race's `clear` HUD label while staged `storm-front` displayed `rain`. A one-line **view-model only** change now honors any event's `weatherId`, with same-lap persistence and reset at the next lap. The regression is covered by `tests/presentation-weather.cjs`. This is a review-branch correction, not a gameplay or deployed build change.

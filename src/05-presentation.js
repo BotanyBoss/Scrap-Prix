@@ -40,7 +40,7 @@
         let shownWeather=r.weatherId;
         for(const effect of lap.effects.filter(e=>e.kind!=='wear')) {
           const def=E.eventDefinition(effect);
-          if(effect.kind==='anomaly'||effect.kind==='chain')shownWeather=def.weatherId||shownWeather;
+          if(def?.weatherId)shownWeather=def.weatherId;
           const flourish=F.pick(before.seed,r.race,lap.lap,effect.kind,effect.id);
           const reward=effect.credits?` £${effect.credits} sponsorship if you finish.`:'';
           const score=effect.scoreDelta?` Race performance ${effect.scoreDelta>0?'+':''}${effect.scoreDelta}.`:'';
