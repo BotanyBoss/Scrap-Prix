@@ -10,7 +10,7 @@ for (const name of ['src/02-catalogue.js', 'src/03-engine.js', 'src/26-bounties.
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', name), 'utf8'), context, {filename: name});
 const E = context.ScrapEngine, D = context.ScrapData;
 const SEEDS = Array.from({length: 24}, (_, i) => (101 + i * 7919) >>> 0);
-const MAX_RACES = 65;
+const MAX_RACES = 120;
 const PLANS = [
   {name: 'careful-no-board-no-bodge', driving: 'careful', board: 'none', bodge: false},
   {name: 'careful-no-board', driving: 'careful', board: 'none', bodge: true},
@@ -260,6 +260,8 @@ function sample(seed,plan){
   m.credits=s.credits;m.wrenches=s.wrenches;m.debt=s.bodge?.debt||0;
   m.finished=s.finished||'cap';m.reached10=s.raceIndex>=10;
   m.reached25=s.raceIndex>=25;m.reached50=s.raceIndex>=50;
+  m.reached75=s.raceIndex>=75;m.reached100=s.raceIndex>=100;
+  m.reached120=s.raceIndex>=120;
   m.stageFinales=[...archive.stages.values()].filter(n=>n>=4).length;
   m.legendarySeen=archive.legendary?1:0;
   return m;
@@ -274,6 +276,7 @@ function summarize(rows){
   const z={seeds:n,meanRaces:Math.round(sum('races')/n*10)/10,
     medianRaces:rows.map(r=>r.races).sort((a,b)=>a-b)[Math.floor(n/2)],
     reached10:sum('reached10'),reached25:sum('reached25'),reached50:sum('reached50'),
+    reached75:sum('reached75'),reached100:sum('reached100'),reached120:sum('reached120'),
     strikeOut:rows.filter(r=>r.finished==='strikes').length};
   for(const k of keys)z[k]=sum(k);
   z.avgEndCredits=Math.round(z.credits/n);
