@@ -22,9 +22,9 @@ const changed=stepWeather([
   [event('storm-front','chain',{stage:2})],
   [event('heatwave-event')]
 ]);
-assert.deepEqual(changed.map(s=>s.sourceId),['torrential-downpour','pothole-chain','storm-front','heatwave-event']);
-assert.deepEqual(changed.map(s=>s.weatherId),['rain','rain','rain','hot'],'event weather must persist for the rest of its lap');
+assert.deepEqual(Array.from(changed,s=>s.sourceId),['torrential-downpour','pothole-chain','storm-front','heatwave-event']);
+assert.deepEqual(Array.from(changed,s=>s.weatherId),['rain','rain','rain','hot'],'event weather must persist for the rest of its lap');
 assert.equal(stepWeather([[event('pothole-chain')]])[0].weatherId,'clear','unaffected events must preserve base weather');
-assert.deepEqual(stepWeather([[event('torrential-downpour')],[event('pothole-chain')]]).map(s=>s.weatherId),['rain','clear'],'event weather should not leak into the next lap');
+assert.deepEqual(Array.from(stepWeather([[event('torrential-downpour')],[event('pothole-chain')]]),s=>s.weatherId),['rain','clear'],'event weather should not leak into the next lap');
 assert.equal(changed[0].copy.includes('water-delivery system'),true,'event narration must remain intact');
 console.log('PASS: event and chain weather HUD, same-lap carry, next-lap reset, untouched narration');
