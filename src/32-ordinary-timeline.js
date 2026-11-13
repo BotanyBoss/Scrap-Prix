@@ -14,19 +14,26 @@
         if(effect?.id!==step.sourceId||effect.kind!==step.sourceKind)throw Error('Replay occurrence mismatch: '+step.id);
         cursors.set(step.lap,index+1);
       }
+      const condition={...(lap?.conditionBefore||manifest.vehicle.conditionAtStart)};
+      for(const hit of lap?.effects||[]){
+        if(hit===effect)break;
+        if(!effect&&!step.presentationPass&&hit.kind!=='wear')break;
+        for(const [slot,n] of Object.entries(hit.damageBySlot))condition[slot]-=n;
+      }
       function add(family,camera,durationMs,details={}){
         shots.push({id:step.id,lap:step.lap,family,camera,startMs,endMs:startMs+durationMs,durationMs,
-          weatherId:step.weatherId,source:effect||step.presentationPass||null,...details});
+          condition:{...condition},weatherId:step.weatherId,source:effect||step.presentationPass||null,...details});
         startMs+=durationMs;
       }
       if(step.id==='finish'){
         add(manifest.finish.noStart?'dns':manifest.finish.failedSlot?'dnf':'finish','front',step.duration,{finish:manifest.finish});
-      }else if(step.id==='no-start')add('grid','side',step.duration);
+      }else if(step.id==='no-start')add('grid','side',step.duration,{stationary:true});
       else if(step.choice&&!Object.hasOwn(choices,step.choice.key)){
         add('decision','rear',step.duration,{choice:step.choice});
       }else if(effect){
         const cut=Math.round(step.duration*.67);
         add('event','rear',cut);
+        for(const [slot,n] of Object.entries(effect.damageBySlot))condition[slot]-=n;
         add('consequence','side',step.duration-cut);
       }else if(step.presentationPass)add('event','rear',step.duration);
       else if(step.id==='opening'){

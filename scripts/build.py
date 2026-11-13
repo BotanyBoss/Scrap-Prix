@@ -5,6 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 def read(path):return (ROOT/path).read_bytes().decode('utf-8')
 def build():
     text=read('src/game.template.html')
+    dev_token='/* DEV_ORDINARY_MODULES */'
+    text=text.replace('{{SCRIPT:src/25-app.js}}',dev_token+'{{SCRIPT:src/25-app.js}}')
     text=re.sub(r'\{\{(?:SCRIPT|STYLE):([^}]+)\}\}',lambda m:read(m[1]),text)
     manifest=json.loads(read('assets/manifest.json'))
     def embed(m):
@@ -16,8 +18,15 @@ def build():
     text=text.replace('{{GAME_NAME_UPPER}}',game.upper()).replace('{{GAME_NAME_FILE}}',re.sub(r'\s+','-',game)).replace('{{GAME_NAME}}',game)
     if re.search(r'\{\{(?:SCRIPT|STYLE|ASSET|GAME_NAME[A-Z_]*)[:}]',text):raise ValueError('Unresolved build token')
     anchor=text[text.index('<a href="FOSSIL-TEST-DRIVE.html"'):]
-    play=text.replace(anchor,'').replace('window.SCRAP_PRIX_DEV_MODE=true;','window.SCRAP_PRIX_DEV_MODE=false;')
+    play=text.replace(dev_token,'').replace(anchor,'').replace('window.SCRAP_PRIX_DEV_MODE=true;','window.SCRAP_PRIX_DEV_MODE=false;')
     panel=read('previews/environment-panel.html').replace('\r\n','\n').replace("const c=$('canvas')", "$('env').value='street';const c=$('canvas')")
+    modules=['src/30-race-manifest.js','src/31-race-director.js','src/32-ordinary-timeline.js',
+             'previews/vehicle-pipeline/assembly.js','previews/vehicle-pipeline/render.js',
+             'src/33-race-frames.js','src/34-ordinary-film.js']
+    # Scope pipeline constants locally and keep production free of experimental modules.
+    film='(function(){\n'+'\n'.join(read(path) for path in modules)+'\n})();\n'
+    text=text.replace('</head>', '<style>'+read('src/ordinary-dev.css')+'</style></head>')
+    text=text.replace(dev_token,film)
     outputs={'dev.html':text,'index.html':play,'STREET-PREVIEW.html':play+panel,'FOSSIL-TEST-DRIVE.html':play+read('previews/fossil-panel.html').replace('\r\n','\n')}
     dist=ROOT/'dist';dist.mkdir(exist_ok=True)
     for name,content in outputs.items():(dist/name).write_bytes(content.encode('utf-8'))

@@ -1,0 +1,6 @@
+/* Keep the garage action row accessible below the scrollable equipment list. */
+#game[data-screen="garage"] .screen-body {overflow:auto;min-height:0}
+#game[data-screen="garage"] .big-actions {position:relative;z-index:3}
+body:has(.race-wrap[data-shot]) > a[href="FOSSIL-TEST-DRIVE.html"],
+.race-wrap[data-shot] #race-dialogue {display:none}
+.race-wrap[data-shot] #race-canvas {image-rendering:pixelated}

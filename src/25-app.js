@@ -7,8 +7,10 @@
   const D=window.ScrapData,E=window.ScrapEngine,P=window.ScrapPresentation,Enc=window.ScrapEncyclopaedia,Dialogue=window.ScrapDialogueUI;
   const DEV_MODE=window.SCRAP_PRIX_DEV_MODE===true&&!!window.ScrapVisualLab;
   const normalizeSettings=(value,reduced=false)=>{const settings=P.settings(value,reduced);if(Number(value?.speed)===3)settings.speed=3;return settings;};
+  let theatrical=false;
+  const film=DEV_MODE&&window.ScrapOrdinaryFilm;
   const ENV_LAB=DEV_MODE&&!!window.ScrapEnvironmentLab;
-  const rendererPreferences=()=>({... (DEV_MODE?window.ScrapVisualLab.preferences():{style:'chunky',camera:'rear'}),permanentFossil:true});
+  const rendererPreferences=()=>({... (DEV_MODE?window.ScrapVisualLab.preferences():{style:'chunky',camera:'rear'}),permanentFossil:true,nativeRace:theatrical&&screen==='race'});
   const $=id=>document.getElementById(id);
   // Presentation mapping. Existing forced route events retain their exact
   // engine IDs, odds, damage and outcome; only their road scenery changes.
@@ -297,6 +299,7 @@
   function updateRace(){
     if(!replay||screen!=='race')return;
     const f=P.frame(replay,replay.elapsed),fin=f.step.id==='finish',passing=window.ScrapEventTiming.overtakeState(P.overtakeState,replay,replay.elapsed);
+    const shot=replay.film?window.ScrapRaceDirector.sample(replay.film,replay.elapsed).shot:null;
     const unresolvedChoice=!!(f.step.choice&&!Object.hasOwn(raceChoices,f.step.choice.key));
     const director=window.ScrapEventTiming;
     if(passing.presentation&&director?.profile(passing.presentation.visual)){
@@ -353,7 +356,12 @@
         :special?passing.special.local*passDuration:fake?passing.fake.local*1000
         :director?.profile(eventVisual)?director.mapTime(eventVisual,elapsedStep)
         :(prefs.motion?elapsedStep:0);
-      renderer.drawRace({time:replay.elapsed,track:replay.result.trackId,surface:replay.result.surfaceId,weather:f.step.weatherId||replay.result.weatherId,event:eventVisual,eventVariant:f.step.rareVisual?'rare':'normal',eventPhaseTime:cinematicActive?elapsedStep:eventTime,finish:fin,wreck:fin&&!!replay.result.failedSlot,motion:prefs.motion,approach:replay.result.approach,loadout:replay.result.loadoutBefore,overtakes:passing,rivalLoadouts:replay.result.rivalBuilds?.map(b=>b.loadout)||[],shortcutMode,portalMode,portalOutcome});
+      // Only the real scripted pass may animate a rival in the film.
+      const actor=special?passing.special:fake?passing.fake:null;
+      const filmPassing=actor?{...passing,crossings:passing.crossings.map((v,i)=>i===actor.index?v:2)}:null;
+      const cameraShot=shot&&actor?{...shot,camera:'rear',family:'event'}:shot;
+      if(cameraShot)film.applyHUD(cameraShot,$('race-wrap'),fin);
+      renderer.drawRace({shot:cameraShot,time:replay.elapsed,track:replay.result.trackId,surface:replay.result.surfaceId,weather:f.step.weatherId||replay.result.weatherId,event:eventVisual,eventVariant:f.step.rareVisual?'rare':'normal',eventPhaseTime:cinematicActive?elapsedStep:eventTime,finish:fin,wreck:fin&&!!replay.result.failedSlot,motion:prefs.motion,approach:replay.result.approach,loadout:replay.result.loadoutBefore,overtakes:shot?filmPassing:passing,rivalLoadouts:replay.result.rivalBuilds?.map(b=>b.loadout)||[],shortcutMode,portalMode,portalOutcome});
     }
   }
   function tick(time){
@@ -380,7 +388,14 @@
         step.duration=6500;
     }
     view.total=view.steps.reduce((n,step)=>n+step.duration,0);
-    return window.ScrapEventTiming?.prepareReplay(view,E)||view;
+    return prepareFilm(window.ScrapEventTiming?.prepareReplay(view,E)||view);
+  }
+  function prepareFilm(view){
+    if(theatrical&&film){
+      const manifest=window.ScrapRaceManifest.fromResolvedRace(raceBefore,state);
+      view.film=window.ScrapOrdinaryTimeline.plan(manifest,view,raceChoices);
+    }else delete view.film;
+    return view;
   }
   function recordEquipmentTransition(before,next){
     if(!next?.loadout)return;
@@ -460,7 +475,7 @@
   function paintChoiceEvent(frame){
     const canvas=$('event-choice-visual');if(!canvas||canvas.hidden||!frame?.step?.choice||!window.ScrapScene)return;
     const preview=window.ScrapScene.create(canvas,{style:'illustrated',camera:'rear',comboBodywork:true});if(!preview)return;
-    preview.drawRace({time:0,track:replay.result.trackId,surface:replay.result.surfaceId,weather:frame.step.weatherId||replay.result.weatherId,event:(/^((wreckage|overgrown|flooded|dune|frozen-lake)-shortcut)$/.test(frame.step.sourceId||'')?frame.step.sourceId:frame.step.event),eventVariant:frame.step.rareVisual?'rare':'normal',eventPhaseTime:650,finish:false,wreck:false,motion:false,approach:replay.result.approach,loadout:replay.result.loadoutBefore,rivalLoadouts:replay.result.rivalBuilds?.map(b=>b.loadout)||[],shortcutMode:'preview',portalMode:'preview'});
+    preview.drawRace({shot:replay.film?window.ScrapRaceDirector.sample(replay.film,replay.elapsed).shot:null,time:0,track:replay.result.trackId,surface:replay.result.surfaceId,weather:frame.step.weatherId||replay.result.weatherId,event:(/^((wreckage|overgrown|flooded|dune|frozen-lake)-shortcut)$/.test(frame.step.sourceId||'')?frame.step.sourceId:frame.step.event),eventVariant:frame.step.rareVisual?'rare':'normal',eventPhaseTime:650,finish:false,wreck:false,motion:false,approach:replay.result.approach,loadout:replay.result.loadoutBefore,rivalLoadouts:replay.result.rivalBuilds?.map(b=>b.loadout)||[],shortcutMode:'preview',portalMode:'preview'});
   }
   function raceBountyMarkup(){
     const source=raceBefore||state,contracts=Array.isArray(source.bounties)?source.bounties:[];
@@ -521,7 +536,7 @@
     }else if(modalKind==='race-bounties'){
       $('modal-content').innerHTML=modalHeading('RACE BOUNTIES')+`<div class="modal-main race-bounty-modal-body">${raceBountyMarkup()}</div>`;
     }else if(modalKind==='settings'){
-      $('modal-content').innerHTML=modalHeading('SETTINGS')+`<div class="modal-main settings-polish"><section class="settings-section"><h3>RACE PRESENTATION</h3><div class="settings-row"><label for="setting-speed">Replay speed<small>Changes presentation time, never results.</small></label><select id="setting-speed">${[1,2,3,4].map(n=>`<option value="${n}" ${prefs.speed===n?'selected':''}>${n}× speed</option>`).join('')}</select></div><div class="settings-row"><label for="setting-motion">Moving scenery<small>Turn off to use a static road and weather. Event text still advances.</small></label><input id="setting-motion" type="checkbox" ${prefs.motion?'checked':''}></div><div class="settings-row"><label for="setting-autoplay">Automatic replay<small>Off: use Next to step through events. Skip is always available.</small></label><input id="setting-autoplay" type="checkbox" ${prefs.autoplay?'checked':''}></div></section><section class="settings-section"><h3>DISPLAY & HELP</h3><div class="settings-actions"><button data-action="fullscreen">${document.fullscreenElement?'LEAVE':'ENTER'} FULLSCREEN</button><button data-action="help">HOW TO PLAY</button></div></section><section class="settings-section"><h3>SAVE YOUR RUN</h3><p class="warning-note">Save schema v0.4 and remains compatible with v0.4.0 exports. Older pre-v0.4 exports remain intentionally rejected. Export before moving this HTML or changing browsers.</p><div class="settings-actions"><button data-action="export" ${hasRun?'':'disabled'}>EXPORT SAVE</button><button data-action="import">IMPORT SAVE</button></div><div class="settings-row"><label for="seed-input">Run seed<small>Recreates race and shop offers. A new run still needs confirmation.</small></label><input id="seed-input" type="number" min="0" max="4294967295" step="1" value="${state.seed}"></div><div class="settings-actions"><button data-action="seed">START THIS SEED</button><button data-action="new">NEW RANDOM RUN</button><button data-action="menu">MAIN MENU</button></div></section><p class="caption settings-caption">TAB / ENTER: MENUS · SPACE: PAUSE · F: FULLSCREEN<br>Transformation Cutaways v0.7.21f. Save schema v0.4 compatible. Straight Rear is normal race view; side camera is for cutaways only.</p></div><div class="modal-footer"><span>${esc(storageNotice)}</span><span>Settings affect presentation only.</span></div>`;
+      $('modal-content').innerHTML=modalHeading('SETTINGS')+`<div class="modal-main settings-polish"><section class="settings-section"><h3>RACE PRESENTATION</h3>${film?`<div class="settings-row"><label for="setting-film">Experimental theatrical race<small>DEV · ordinary race camera cuts and modular vehicle frames.</small></label><input id="setting-film" type="checkbox" ${theatrical?'checked':''}></div>`:''}<div class="settings-row"><label for="setting-speed">Replay speed<small>Changes presentation time, never results.</small></label><select id="setting-speed">${[1,2,3,4].map(n=>`<option value="${n}" ${prefs.speed===n?'selected':''}>${n}× speed</option>`).join('')}</select></div><div class="settings-row"><label for="setting-motion">Moving scenery<small>Turn off to use a static road and weather. Event text still advances.</small></label><input id="setting-motion" type="checkbox" ${prefs.motion?'checked':''}></div><div class="settings-row"><label for="setting-autoplay">Automatic replay<small>Off: use Next to step through events. Skip is always available.</small></label><input id="setting-autoplay" type="checkbox" ${prefs.autoplay?'checked':''}></div></section><section class="settings-section"><h3>DISPLAY & HELP</h3><div class="settings-actions"><button data-action="fullscreen">${document.fullscreenElement?'LEAVE':'ENTER'} FULLSCREEN</button><button data-action="help">HOW TO PLAY</button></div></section><section class="settings-section"><h3>SAVE YOUR RUN</h3><p class="warning-note">Save schema v0.4 and remains compatible with v0.4.0 exports. Older pre-v0.4 exports remain intentionally rejected. Export before moving this HTML or changing browsers.</p><div class="settings-actions"><button data-action="export" ${hasRun?'':'disabled'}>EXPORT SAVE</button><button data-action="import">IMPORT SAVE</button></div><div class="settings-row"><label for="seed-input">Run seed<small>Recreates race and shop offers. A new run still needs confirmation.</small></label><input id="seed-input" type="number" min="0" max="4294967295" step="1" value="${state.seed}"></div><div class="settings-actions"><button data-action="seed">START THIS SEED</button><button data-action="new">NEW RANDOM RUN</button><button data-action="menu">MAIN MENU</button></div></section><p class="caption settings-caption">TAB / ENTER: MENUS · SPACE: PAUSE · F: FULLSCREEN<br>Transformation Cutaways v0.7.21f. Save schema v0.4 compatible. Straight Rear is normal race view; side camera is for cutaways only.</p></div><div class="modal-footer"><span>${esc(storageNotice)}</span><span>Settings affect presentation only.</span></div>`;
     }else if(modalKind==='breakdown'){
       const r=state.history.at(-1);$('modal-content').innerHTML=modalHeading('WHY THIS RESULT?')+`<div class="modal-main help-copy"><table class="results-table"><tbody><tr><td>Environment-adjusted pace</td><td>${r.base.toFixed(1)}</td></tr><tr><td>Existing wear penalty</td><td>−${r.conditionPenalty.toFixed(1)}</td></tr><tr><td>Heat fade</td><td>−${r.heatPenalty.toFixed(1)}</td></tr><tr><td>Mass/acceleration penalty</td><td>−${r.weightPenalty.toFixed(1)}</td></tr><tr><td>Terrain momentum penalty</td><td>−${(r.terrainPenalty||0).toFixed(1)}</td></tr><tr><td>Hazard time loss</td><td>−${(r.hazardDamage*.18).toFixed(1)}</td></tr><tr><td>Seeded luck</td><td>${signed(r.fortune)}</td></tr><tr><td>Final score, including weather/event</td><td>${r.score.toFixed(1)}</td></tr></tbody></table><p>Position compares your score with four rivals fitted with seeded random equipment. Their full-condition power, grip, armour, cooling, heat and weight affect their scores. Early opponents can lose performance from harmful race incidents. That risk fades to zero by race 46; their damage does not persist between races. The animated cars are presentation, not physics.</p><p>Money and points reward position and low damage. A 3–7 lap race adds ordinary wear with race length. Incidents resolve separately, once each.</p></div>`;
     }else{
@@ -625,7 +640,7 @@
           },'TAKE THE BODGE');break;
         }
         case 'approach':mutate(E.setApproach(state,id),D.APPROACHES[id].note);document.querySelector(`[data-action="approach"][data-id="${id}"]`).focus();break;
-        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart){state=E.finalizeWitnessBounties(state);Enc.recordResult(state.history.at(-1));replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);raceWitnessed=new Set();if(next.history.at(-1).gagId)Enc.recordGag(next.history.at(-1).gagId);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
+        case 'race':{if(screen!=='garage')return;const broken=['engine','tyres'].filter(slot=>state.durability[slot]===0);if(broken.length&&!startConfirmed){const strike=Math.min(3,(state.noStartStrikes||0)+1);ask('THIS CAR WILL NOT START',`<p><b>${broken.map(slot=>P.pretty(slot).toUpperCase()).join(' + ')}</b> ${broken.length>1?'are':'is'} at 0%. Racing now is an automatic 5th with no rewards and costs a strike.</p><p>This would be strike <b>${strike} of 3</b>${strike>=3?' and <b>ends the run</b>':''}. Repair or replace the part first.</p>`,()=>{startConfirmed=true;document.querySelector('[data-action="race"]')?.click();},'RACE ANYWAY');break;}startConfirmed=false;const before=state,next=E.race(before,{});raceBefore=before;raceChoices={};state=next;hasRun=true;persist();if(next.history.at(-1)?.noStart&&!theatrical){state=E.finalizeWitnessBounties(state);Enc.recordResult(state.history.at(-1));replay=null;raceBefore=null;updateRecords();persist();resultTab='finish';screen='result';render();notify(next.finished?'Three no-starts: run over. Fifth place, zero rewards.':`No start: engine or tyres broken. Fifth place, zero rewards, strike ${next.noStartStrikes}/3.`);break;}replay=paceShortcutReplay(P.createReplay(before,next),raceChoices);raceWitnessed=new Set();if(next.history.at(-1).gagId)Enc.recordGag(next.history.at(-1).gagId);lastRaceDisplay='';screen='race';render();notify('Build committed. Route choices can change the result; Skip leaves unresolved choices on the safe route.');break;}
         case 'event-choice':{
           if(!replay||!raceBefore)return;const f=P.frame(replay,replay.elapsed),choice=f.step.choice;if(!choice||Object.hasOwn(raceChoices,choice.key)||!['safe','risk'].includes(id))return;
           const elapsedInScene=f.local*f.step.duration,sceneId=f.step.id;raceChoices[choice.key]=id;
@@ -657,6 +672,7 @@
   $('modal').addEventListener('close',()=>{const wasLab=DEV_MODE&&modalKind==='visual-lab';if(DEV_MODE)window.ScrapVisualLab.dispose();if(ENV_LAB)window.ScrapEnvironmentLab.dispose();if(DEV_MODE)window.ScrapEventMotionLab?.dispose();$('modal').classList.remove('visual-lab-dialog','environment-lab-dialog');modalKind=null;if(wasLab){if(screen==='garage')paintStatic('garage');else if(screen==='race')renderer=window.ScrapScene.create($('race-canvas'),rendererPreferences());}if(replay){replay.paused=resumePause;lastTick=null;updateRace();}if(returnFocus?.isConnected&&!returnFocus.disabled)returnFocus.focus();else $('screen').focus({preventScroll:true});returnFocus=null;});
   $('confirm-modal').addEventListener('cancel',()=>{pendingConfirm=null;});
   document.addEventListener('change',e=>{
+    if(e.target.id==='setting-film'&&film){theatrical=e.target.checked;lastRaceDisplay='';if(replay){prepareFilm(replay);render();}return;}
     if(e.target.id==='setting-speed')prefs.speed=Number(e.target.value);
     else if(e.target.id==='setting-motion')prefs.motion=e.target.checked;
     else if(e.target.id==='setting-autoplay')prefs.autoplay=e.target.checked;

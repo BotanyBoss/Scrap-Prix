@@ -30,10 +30,11 @@
     });
   }
   function create(canvas, options={}) {
-    canvas.width=P.WIDTH*3;canvas.height=P.HEIGHT*3;
+    const resolution=options.nativeRace?1:3;
+    canvas.width=P.WIDTH*resolution;canvas.height=P.HEIGHT*resolution;
     const ctx=canvas.getContext('2d',{alpha:false});
     if (!ctx) return null;
-    ctx.setTransform(3,0,0,3,0,0);
+    ctx.setTransform(resolution,0,0,resolution,0,0);
     ctx.imageSmoothingEnabled=false;
     function rect(x,y,w,h,c) {ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));}
     function poly(points,c) {ctx.fillStyle=c;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(Math.round(x),Math.round(y)):ctx.moveTo(Math.round(x),Math.round(y)));ctx.closePath();ctx.fill();}
@@ -1128,7 +1129,7 @@
         const stage=Number(event.split('-').at(-1));poly([[240,26],[160,87],[320,87]],C[0]);if(stage>=2){rect(214,50,12,8,C[3]);rect(255,50,12,8,C[3]);}if(stage>=3){rect(180,82,25,70,C[0]);rect(278,82,25,70,C[0]);}
       }
     }
-    function drawRace({time=0,track='harbour',surface=null,weather='clear',event=null,eventVariant='normal',eventPhaseTime=0,finish=false,wreck=false,motion=true,approach='balanced',loadout=null,overtakes=null,rivalLoadouts=[],models=null,environment=null,shortcutMode='preview',portalMode='preview',portalOutcome='success'}={}) {
+    function drawRace({shot=null,time=0,track='harbour',surface=null,weather='clear',event=null,eventVariant='normal',eventPhaseTime=0,finish=false,wreck=false,motion=true,approach='balanced',loadout=null,overtakes=null,rivalLoadouts=[],models=null,environment=null,shortcutMode='preview',portalMode='preview',portalOutcome='success'}={}) {
       canvas.dataset.vehicleRecipe=JSON.stringify(models||window.ScrapVehicleArt.fromLoadout(loadout||{}));
       canvas.dataset.vehicleForm=options.comboBodywork===true?(window.ScrapVehicleArt.resolveForm(models||window.ScrapVehicleArt.fromLoadout(loadout||{}))?.id||'modular'):'modular';
       canvas.dataset.vehicleStyle=options.style||'illustrated';canvas.dataset.vehicleCamera=options.camera||'rear';
@@ -1140,6 +1141,11 @@
       const hauntedRoad=window.ScrapEventPortals?.hauntedRoute(event,eventPhaseTime,{mode:portalMode,motion});
       const cameraLane=sideRoute?.cameraLane||hauntedRoad?.cameraLane||0;
       sky(track,weather,surface,environment,cameraLane);
+      if(shot&&shot.camera!=='rear'){
+        window.ScrapOrdinaryFilm.trackside(ctx,sceneStyle,shot,{loadout,time,motion});
+        weatherFX(weather,t,motion);
+        return;
+      }
       // Changing the camera's WORLD lane produces correct parallax: distant
       // road sections move less than near ones, while the player's car stays
       // centered in its own lane. Normal straight races still use cameraLane=0.
@@ -1324,7 +1330,8 @@
       // Before the flash/cutaway reveal, show the original modular precursor
       // rather than exposing the finished gag in the opening rear-view shot.
       const movieIntro=window.ScrapTransformCinematics?.recipe(event)&&eventPhaseTime<1350;
-      sprite(240+drift,258+bounce,164,113,loadout,motion&&!wreck,options.camera||'rear',models,t,0,movieIntro?false:null);
+      if(shot&&!movieIntro)window.ScrapOrdinaryFilm.vehicle(ctx,shot,loadout,240+drift,253+bounce,1,motion,t);
+      else sprite(240+drift,258+bounce,164,113,loadout,motion&&!wreck,options.camera||'rear',models,t,0,movieIntro?false:null);
       ctx.restore();ctx.restore();
       if(wreck){for(let i=0;i<6;i++)rect(205+i*12,204-i%3*12,11,15,C[i%2]);}
       // Special-pass props are placed by the same lane as the target rival.
