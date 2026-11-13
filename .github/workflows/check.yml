@@ -18,6 +18,8 @@ jobs:
       - run: python scripts/build.py
       - run: node tests/check.cjs
       - run: node tests/determinism.cjs
+      - run: node tests/presentation-weather.cjs
+      - run: node tests/race-manifest.cjs
       - run: node tests/bodge.cjs
       - run: node tests/recovery-stress.cjs
       - run: node tests/bounty.cjs
