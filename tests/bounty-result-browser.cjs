@@ -34,7 +34,14 @@ const pause=ms=>new Promise(ok=>setTimeout(ok,ms));
      return r.result.result.value;
    };
    await send('Runtime.enable');await send('Page.enable');
-   await send('Page.navigate',{url:page});await pause(1600);
+   await send('Page.navigate',{url:page});
+   // The early engine global exists before all extensions have loaded on slower browsers.
+   let loaded=false;
+   for(let i=0;i<100&&!loaded;i++){
+     loaded=await evalJs("location.protocol==='file:' && document.readyState==='complete' && document.getElementById('game')?.dataset.screen==='title'");
+     if(!loaded)await pause(100);
+   }
+   assert(loaded,'Built game did not finish booting');
    const expected=await evalJs([
      '(()=>{',
      ' const E=window.ScrapEngine,s=E.newRun(582);',
