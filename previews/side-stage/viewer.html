@@ -11,9 +11,26 @@ button{cursor:pointer}button[aria-pressed=true]{background:#dfb563}input[type=ra
 .transport{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}#pose{font:12px/1.7 monospace;white-space:pre-wrap;color:#b9cfcc}
 textarea{width:100%;height:100px}summary{cursor:pointer;margin:15px 0}#note{min-height:44px;margin:10px 0;color:#e5bb70}#status{min-height:20px;color:#e5bb70}
 @media(max-width:850px){.layout{grid-template-columns:1fr}main{padding:12px}aside{max-width:480px}}
+[hidden]{display:none!important}
+.mode-switch{display:flex;gap:8px;margin:4px 0 18px;flex-wrap:wrap}.mode-switch button[aria-pressed=true]{background:#dfb563}
+.review-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:24px}
+#race-stage{width:100%;max-width:960px;height:auto;aspect-ratio:16/9;image-rendering:pixelated}
+#race-seek{width:100%;margin:12px 0}.phase-jump{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.phase-jump button[aria-current=true]{background:#dfb563}
+.review-report{border:1px solid #426069;padding:16px;background:#16333c}
+.review-report h2{font-size:18px;margin:0 0 14px}.review-report dl{display:grid;grid-template-columns:100px 1fr;gap:8px;margin:8px 0}
+.review-report dt{color:#b5cac8}.review-report dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.review-live{font:12px/1.7 monospace;white-space:pre-wrap;color:#b9cfcc;min-height:45px}
+.review-hint{font-size:13px;color:#d3c8a3}#race-json{height:130px}
+@media(max-width:850px){.review-grid{grid-template-columns:1fr}.review-report{max-width:640px}}
 </style></head><body><main>
-<h1>Scrap Prix · Side animation stage</h1>
-<p>Layered temporary artwork. Road speed drives wheel rotation; the body and camera have separate motion.</p>
+<h1>Scrap Prix · Side Stage</h1>
+<p>Experiment with animation primitives or inspect the real Flying Spare Parts sequence from the seeded Scrap Prix race.</p>
+<div class="mode-switch" role="group" aria-label="Side Stage workspaces">
+  <button id="mode-motion" type="button" aria-pressed="true">Motion Lab</button>
+  <button id="mode-race" type="button" aria-pressed="false">Real Race Review · Seed 18</button>
+</div>
+<div id="motion-workspace">
 <div class="layout"><section>
 <canvas id="stage" width="480" height="270" aria-label="Side-view animation at 480 by 270"></canvas>
 <div class="transport"><button id="play">Pause</button><button id="restart">Restart</button><button id="step">Step 1/30 s</button>
@@ -30,4 +47,40 @@ textarea{width:100%;height:100px}summary{cursor:pointer;margin:15px 0}#note{min-
 <label>Preset <select id="preset"><option value="cruise">Cruise</option><option value="idle">Idle / hold</option><option value="accelerate-brake">Accelerate / brake</option><option value="bump">Bump study</option><option value="jump">Takeoff / landing study</option><option value="impact">Impact study</option></select></label>
 <div id="parameters"></div>
 <label><input id="reduced" type="checkbox">Reduced motion</label><label><input id="guides" type="checkbox" checked>Wheel hubs / ground references</label>
-</fieldset></aside></div></main><!-- modules --></body></html>
+</fieldset></aside></div></div>
+<section id="real-race-workspace" hidden aria-label="Real seed 18 race review">
+<p class="review-hint">REAL ENGINE OUTCOME · Three directed camera shots generated from the seed-18 race manifest.
+Artwork and sky are temporary; these are the same camera/vehicle stage rendering functions as the DEV theatrical race. No scoring or damage is simulated by this viewer.</p>
+<div class="review-grid"><section>
+<canvas id="race-stage" width="480" height="270" aria-label="Real Flying Spare Parts event cinematic"></canvas>
+<div id="race-phase-buttons" class="phase-jump" role="group" aria-label="Jump to event phase"></div>
+<label for="race-seek">Event timeline <output id="race-clock"></output></label>
+<input type="range" id="race-seek" min="0" max="4800" step="1" value="0">
+<div class="transport">
+<button id="race-play" type="button" aria-pressed="false">Play</button>
+<button id="race-restart" type="button">Restart</button>
+<button id="race-step" type="button">Step 1/30 s</button>
+<select id="race-speed" aria-label="Event playback speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+<label><input id="race-loop" type="checkbox" checked>Loop</label>
+<label><input id="race-reduced" type="checkbox">Reduced motion</label>
+</div>
+<div id="race-live" role="status" class="review-live"></div>
+<div class="transport"><button id="race-snapshot" type="button">Save frame PNG</button></div>
+<details><summary>Reproducible review snapshot</summary>
+<button id="race-export" type="button">Show review JSON</button>
+<textarea id="race-json" readonly spellcheck="false" aria-label="Review state and engine event facts"></textarea>
+</details>
+</section><aside class="review-report">
+<h2 id="race-title">Flying Spare Parts</h2>
+<dl>
+<dt>Source</dt><dd id="race-source">Engine seed 18</dd>
+<dt>Race / lap</dt><dd id="race-lap"></dd>
+<dt>Event key</dt><dd id="race-key"></dd>
+<dt>Damage</dt><dd id="race-damage"></dd>
+<dt>Slots</dt><dd id="race-slots"></dd>
+<dt>Loadout</dt><dd id="race-loadout"></dd>
+<dt>Finish</dt><dd id="race-finish"></dd>
+<dt>Shot</dt><dd id="race-shot"></dd>
+</dl>
+<p class="review-hint">This is a factual animation inspection, not a second game engine. Event choices and rewards remain owned by Scrap Prix. The original motion presets remain available under Motion Lab.</p>
+</aside></div></section></main><!-- modules --></body></html>
