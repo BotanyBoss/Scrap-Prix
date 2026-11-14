@@ -33,6 +33,19 @@ for(const [seed,laps,ids] of [[2,3,['heatwave']],[18,5,['debris','deep-sand']],
   }
   assert.equal(facts.plannedLaps,laps);
   for(const id of ids)assert(events.some(e=>e.id===id));
+  if(seed===18){
+    const source=events.find(e=>e.id==='debris');
+    const sequence=story.shots.filter(s=>s.source?.id==='debris');
+    assert.deepEqual(Array.from(sequence,s=>s.family),['approach','event','consequence']);
+    assert.deepEqual(Array.from(sequence,s=>s.camera),['front','side','side']);
+    assert.deepEqual(Array.from(sequence,s=>s.debris.phase),['anticipation','reaction','recovery']);
+    assert.equal(sequence[0].debris.startMs,sequence[0].startMs);
+    assert.equal(sequence[0].debris.durationMs,sequence.at(-1).endMs-sequence[0].startMs);
+    assert.equal(sequence[0].source,source);
+    assert.equal(sequence.at(-1).source.damage,source.damage);
+    assert.deepEqual(sequence.at(-1).source.damageBySlot,source.damageBySlot);
+    assert.equal(sequence[1].debris.startMs,sequence[2].debris.startMs);
+  }
 }
 for(const choice of ['safe','risk']){
   const {story}=verify(E.newRun(3),{late:choice});

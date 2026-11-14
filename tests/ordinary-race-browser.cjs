@@ -6,9 +6,9 @@ const proof=process.env.RACE_CAPTURE_DIR;
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,headless:true});
   try{
-    const cases=proof?['original',2,3,'3-safe',18,71]:[2,3,'3-safe',18,71];
+    const cases=proof?['original',2,3,'3-safe',18,'18-stock',71]:[2,3,'3-safe',18,'18-stock',71];
     for(const fixture of cases){
-      const original=fixture==='original',seed=original?2:fixture==='3-safe'?3:fixture;
+      const original=fixture==='original',seed=original?2:fixture==='3-safe'?3:fixture==='18-stock'?18:fixture;
       const page=await browser.newPage({viewport:seed===71?{width:540,height:820}:{width:960,height:660}});
       const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
@@ -55,7 +55,7 @@ const proof=process.env.RACE_CAPTURE_DIR;
       assert.equal(await page.locator('#race-canvas').evaluate(c=>c.toDataURL()),frozen);
       await button('pause').click();
       await button('speed',folder?'1':'4').press('Enter');
-      const laps=new Set(),shots=new Set();let sawStage=false;
+      const laps=new Set(),shots=new Set(),debrisActions=new Set();let sawStage=false,sawDebris=false;
       let chose=false;
       const deadline=Date.now()+100000;
       while(await page.locator('#race-wrap').count()){
@@ -67,6 +67,11 @@ const proof=process.env.RACE_CAPTURE_DIR;
           if(stage){
             const info=JSON.parse(stage);assert.deepEqual(info.loadout,expected.loadoutBefore);
             assert.equal(info.pose.lift,0);sawStage=true;
+            if(info.source?.id==='debris'){sawDebris=true;debrisActions.add(info.pose.action);
+              const actualDebris=expected.laps.flatMap(l=>l.effects).find(e=>e.id==='debris');
+              assert.equal(info.source.damage,actualDebris.damage);
+              assert.equal(info.source.key,actualDebris.key);
+            }
           }
         }
         await capture();
@@ -87,6 +92,10 @@ const proof=process.env.RACE_CAPTURE_DIR;
       await capture();
       const actual=await page.evaluate(()=>ScrapEngine.decodeSave(localStorage.getItem('scrap-prix-v0400-systems-run-v21')).history.at(-1));
       if(seed===2&&!original)assert(sawStage,'shared stage was not shown');
+      if(fixture==='18-stock'){
+        assert(sawDebris,'real debris stage was not shown');
+        assert(debrisActions.has('recovery'),'Debris did not visibly recover');
+      }
       if(folder&&seed===2&&!original){
         assert.deepEqual([...new Set(samples.map(s=>s.camera).filter(Boolean))].sort(),['front','rear','side']);
       }

@@ -31,13 +31,23 @@
       else if(step.choice&&!Object.hasOwn(choices,step.choice.key)){
         add('decision','rear',step.duration,{choice:step.choice});
       }else if(effect){
-        const approach=Math.min(1400,Math.round(step.duration*.22));
-        const cut=Math.round(step.duration*.69);
-        // Play the resolved route immediately after its interactive hold.
-        if(!step.choice)add('approach','front',approach);
-        add('event','rear',step.choice?cut:cut-approach);
-        for(const [slot,n] of Object.entries(effect.damageBySlot))condition[slot]-=n;
-        add('consequence','side',step.duration-cut);
+        if(effect.id==='debris'&&!step.choice&&['signature','wildcard'].includes(effect.kind)){
+          // Real flying-spares occurrence: one clock, factual damage, two camera handoffs.
+          const lead=Math.round(step.duration*.29),reaction=Math.round(step.duration*.44);
+          const sequence={startMs,durationMs:step.duration,key:effect.key,id:effect.id};
+          add('approach','front',lead,{debris:{...sequence,phase:'anticipation'}});
+          add('event','side',reaction,{debris:{...sequence,phase:'reaction'}});
+          for(const [slot,n] of Object.entries(effect.damageBySlot))condition[slot]-=n;
+          add('consequence','side',step.duration-lead-reaction,{debris:{...sequence,phase:'recovery'}});
+        }else{
+          const approach=Math.min(1400,Math.round(step.duration*.22));
+          const cut=Math.round(step.duration*.69);
+          // Play the resolved route immediately after its interactive hold.
+          if(!step.choice)add('approach','front',approach);
+          add('event','rear',step.choice?cut:cut-approach);
+          for(const [slot,n] of Object.entries(effect.damageBySlot))condition[slot]-=n;
+          add('consequence','side',step.duration-cut);
+        }
       }else if(step.presentationPass)add('event','rear',step.duration);
       else if(step.id==='opening'){
         const cut=Math.round(step.duration*.56);

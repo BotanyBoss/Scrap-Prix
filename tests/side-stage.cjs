@@ -28,6 +28,21 @@ for(const engine of pipeline.choices.engine)for(const gadget of pipeline.choices
   rigs++;
 }
 assert.equal(stage.createRig({...loadout,engine:'reactor'},pipeline),null);
+const debrisEffect={id:'debris',kind:'signature',key:'signature',damage:7,damageBySlot:{chassis:4,tyres:3}};
+const debris=stage.debrisPlan(debrisEffect,{duration:4800});
+assert.equal(debris.illustrative,false);
+assert.equal(debris.effect.damage,7);
+assert.equal(stage.sample(debris,4800*.35).action,'anticipation');
+assert.equal(stage.sample(debris,4800*.55).action,'impact');
+assert.equal(stage.sample(debris,4800*.82).action,'recovery');
+assert.equal(stage.sample(debris,4800*.99).shudder,0);
+assert.equal(stage.sample(debris,4800*.55,true).action,'reduced motion');
+assert.equal(stage.sample(debris,4800*.55,true).shudder,0);
+const missed=stage.debrisPlan({...debrisEffect,damage:0});
+assert.equal(stage.sample(missed,missed.duration*.55).action,'evasion');
+assert.equal(stage.sample(missed,missed.duration*.55).shudder,0);
+assert.throws(()=>stage.debrisPlan({...debrisEffect,id:'hail'}));
+assert.equal(JSON.stringify(stage.sample(debris,2000)),JSON.stringify(stage.sample(debris,2000)));
 assert.throws(()=>stage.preset('jump',{},false));
 assert.equal(stage.sample(stage.preset('idle'),4000).distance,0);
 for(const preset of ['idle','cruise','accelerate-brake','bump','jump','impact']){

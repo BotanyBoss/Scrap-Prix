@@ -1,19 +1,31 @@
 /* DEV-only composition. The scene supplies its actual track palette and sky. */
 (function(){
   const frame=createRaceFrames();
-  let stageRig=null,stagePlan=null,stageKey='';
+  let stageRig=null,stagePlan=null,stageKey='',stagePlanKey='';
   function ordinarySide(ctx,shot,options){
-    if(shot.camera!=='side'||!['grid','drive'].includes(shot.family))return false;
+    const debris=!!shot.debris&&shot.source?.id==='debris'&&shot.source.key===shot.debris.key&&
+      ['event','consequence'].includes(shot.family);
+    if(shot.camera!=='side'&& !debris)return false;
+    if(!debris&&!['grid','drive'].includes(shot.family))return false;
     const key=JSON.stringify(options.loadout);
     if(stageKey!==key){
       stageKey=key;stageRig=ScrapSideStage.createRig(options.loadout,Pipeline);
+      stagePlan=null;stagePlanKey='';
     }
     if(!stageRig)return false;
-    const name=shot.stationary?'idle':shot.family==='grid'?'accelerate':'cruise';
-    if(!stagePlan||stagePlan.name!==name||stagePlan.duration!==shot.durationMs)
-      stagePlan=ScrapSideStage.preset(name,{duration:shot.durationMs,speed:86,bounce:1.6,lead:16,follow:700},false);
-    const pose=ScrapSideStage.draw(ctx,stageRig,stagePlan,options.time-shot.startMs,{reduced:!options.motion});
-    ctx.canvas.dataset.sideStage=JSON.stringify({loadout:stageRig.loadout,wheels:stageRig.wheels.length,pose});
+    const name=debris?'debris':shot.stationary?'idle':shot.family==='grid'?'accelerate':'cruise';
+    const sequenceKey=debris?'debris:'+shot.debris.startMs+':'+shot.debris.durationMs+':'+
+      shot.source.key+':'+shot.source.damage:name+':'+shot.durationMs;
+    if(stagePlanKey!==sequenceKey){
+      stagePlan=debris?ScrapSideStage.debrisPlan(shot.source,
+        {duration:shot.debris.durationMs,speed:86,bounce:1.6,lead:16,follow:700}):
+        ScrapSideStage.preset(name,{duration:shot.durationMs,speed:86,bounce:1.6,lead:16,follow:700},false);
+      stagePlanKey=sequenceKey;
+    }
+    const elapsed=options.time-(debris?shot.debris.startMs:shot.startMs);
+    const pose=ScrapSideStage.draw(ctx,stageRig,stagePlan,elapsed,{reduced:!options.motion});
+    ctx.canvas.dataset.sideStage=JSON.stringify({loadout:stageRig.loadout,wheels:stageRig.wheels.length,
+      source:debris?{id:shot.source.id,key:shot.source.key,damage:shot.source.damage}:null,pose});
     return true;
   }
   function vehicle(ctx,shot,loadout,x,y,zoom,motion,time){
@@ -91,6 +103,21 @@
         strip((i+j)%2?s.ink:'#f7efd8',-1+i/8,-1+(i+1)/8,depth+j*.025,depth+(j+1)*.025);
     }
   }
+  function debrisApproach(ctx,style,progress,motion){
+    // Spare-part silhouettes rush into the FRONT view, before the side cut.
+    const p=motion?progress:.55;
+    for(let i=0;i<3;i++){
+      const depth=.20+.66*p-i*.13;
+      if(depth<=.12)continue;
+      const x=338+[-.7,.1,.8][i]*145*depth,y=87+174*depth,size=4+11*depth;
+      ctx.fillStyle=i===0?style.ink:style.near;
+      ctx.strokeStyle=style.mark;ctx.lineWidth=1.5;
+      if(i===0){ctx.beginPath();ctx.arc(x,y,size,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(x,y,size*.4,0,Math.PI*2);ctx.stroke();}
+      else{ctx.save();ctx.translate(x,y);ctx.rotate(i*.5+p);
+        ctx.fillRect(-size,-size*.4,size*2,size*.8);ctx.strokeRect(-size,-size*.4,size*2,size*.8);ctx.restore();}
+    }
+  }
   function trackside(ctx,style,shot,options){
     delete ctx.canvas.dataset.sideStage;
     if(ordinarySide(ctx,shot,options))return;
@@ -100,6 +127,8 @@
     const launch=shot.family==='grid',side=shot.camera==='side';
     if(side)sideTrack(ctx,style,launch?t*progress:t);
     else frontTrack(ctx,style,t,shot.family==='finish',progress);
+    if(!side&&shot.debris?.phase==='anticipation'&&shot.source?.id==='debris')
+      debrisApproach(ctx,style,progress,options.motion);
     if(shot.source?.id==='heatwave'){
       // Refract the actual distant track behind the car as the heat arrives.
       const intensity=shot.family==='approach'?progress:1;
