@@ -104,12 +104,14 @@
     }
   }
   function debrisApproach(ctx,style,progress,motion){
-    // Spare-part silhouettes rush into the FRONT view, before the side cut.
+    // Front-facing car, camera looking BACK toward it from farther up the road.
+    // Flying parts are BETWEEN the camera and the car, not on the road behind it.
     const p=motion?progress:.55;
     for(let i=0;i<3;i++){
       const depth=.20+.66*p-i*.13;
       if(depth<=.12)continue;
-      const x=338+[-.7,.1,.8][i]*145*depth,y=87+174*depth,size=4+11*depth;
+      const target=[154,225,294][i],start=[320,355,384][i];
+      const x=start+(target-start)*p,y=94+146*depth,size=5+16*depth;
       ctx.fillStyle=i===0?style.ink:style.near;
       ctx.strokeStyle=style.mark;ctx.lineWidth=1.5;
       if(i===0){ctx.beginPath();ctx.arc(x,y,size,0,Math.PI*2);ctx.fill();
@@ -127,8 +129,6 @@
     const launch=shot.family==='grid',side=shot.camera==='side';
     if(side)sideTrack(ctx,style,launch?t*progress:t);
     else frontTrack(ctx,style,t,shot.family==='finish',progress);
-    if(!side&&shot.debris?.phase==='anticipation'&&shot.source?.id==='debris')
-      debrisApproach(ctx,style,progress,options.motion);
     if(shot.source?.id==='heatwave'){
       // Refract the actual distant track behind the car as the heat arrives.
       const intensity=shot.family==='approach'?progress:1;
@@ -144,6 +144,10 @@
     const y=side?204:210;
     ctx.fillStyle='#19252b80';ctx.beginPath();ctx.ellipse(x,y,43*zoom,4*zoom,0,0,Math.PI*2);ctx.fill();
     vehicle(ctx,shot,options.loadout,x,y+Math.sin(t*.018)*.8,zoom,moving,t);
+    // Foreground hazard must cover the car in the approach shot. Painting it
+    // before the car incorrectly made the debris appear to come from behind.
+    if(!side&&shot.debris?.phase==='anticipation'&&shot.source?.id==='debris')
+      debrisApproach(ctx,style,progress,options.motion);
   }
   function applyHUD(shot,wrap,finish){
     const key=shot.startMs+'/'+shot.family;

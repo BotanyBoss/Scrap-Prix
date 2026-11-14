@@ -32,6 +32,19 @@ const debrisEffect={id:'debris',kind:'signature',key:'signature',damage:7,damage
 const debris=stage.debrisPlan(debrisEffect,{duration:4800});
 assert.equal(debris.illustrative,false);
 assert.equal(debris.effect.damage,7);
+const before=stage.debrisPose(debris,4800*.32),near=stage.debrisPose(debris,4800*.42),
+  passed=stage.debrisPose(debris,4800*.56);
+assert(before.visible&&near.visible&&passed.visible);
+assert(before.x<near.x&&near.x<passed.x,'Debris must move LEFT to RIGHT as a left-facing car advances');
+assert(before.x<140&&near.x>100,'Debris must be in front of the car before impact');
+assert(passed.x>238,'Debris must pass the car during the reaction shot');
+for(let i=0;i<3;i++){
+  const approach=stage.debrisPose(debris,4800*.4,i);
+  const exit=stage.debrisPose(debris,4800*.8,i);
+  assert(exit.x>approach.x,'Debris '+i+' should never reverse towards the front');
+  assert(!stage.debrisPose(debris,4800*.95,i).visible);
+}
+assert.deepEqual(stage.debrisPose(debris,4800*.42),stage.debrisPose(debris,4800*.42));
 assert.equal(stage.sample(debris,4800*.35).action,'anticipation');
 assert.equal(stage.sample(debris,4800*.55).action,'impact');
 assert.equal(stage.sample(debris,4800*.82).action,'recovery');

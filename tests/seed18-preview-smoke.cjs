@@ -48,6 +48,9 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const basics=await evalJS("(()=>{const c=document.getElementById('race-stage');return [c.dataset.phase,c.dataset.camera,c.dataset.source,Number(c.dataset.damage),document.getElementById('real-race-workspace').hidden]})()");
   assert.deepEqual(basics.slice(0,3),['anticipation','front','debris']);
   assert(Number.isFinite(basics[3]));assert.equal(basics[4],false);
+  const direction=await evalJS("(()=>{const r=ScrapSeed18DebrisReview.load(18),p=ScrapSideStage.debrisPlan(r.event,{duration:r.durationMs});return [ScrapSideStage.debrisPose(p,r.durationMs*.30).x,ScrapSideStage.debrisPose(p,r.durationMs*.55).x]})()");
+  assert(direction[0]<direction[1]&&direction[0]<150&&direction[1]>238,
+    'Debris must travel forward-to-rear (left-to-right) relative to the left-facing car');
   for(const [phase,camera] of [['reaction','side'],['recovery','side']]){
    const result=await evalJS("(()=>{document.querySelector('[data-review-phase="+JSON.stringify(phase)+"]').click();const c=document.getElementById('race-stage');return [c.dataset.phase,c.dataset.camera,c.toDataURL().length]})()");
    assert.equal(result[0],phase);assert.equal(result[1],camera);

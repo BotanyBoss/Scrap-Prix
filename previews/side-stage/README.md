@@ -108,3 +108,14 @@ Verification: `node tests/seed18-review.cjs`, `node tests/side-stage.cjs`,
 `node tests/ordinary-timeline.cjs` and `node tests/side-stage-browser.cjs`
 (Playwright/Chromium for the last test). Run visual assessment at normal speed
 before considering the sequence approved.
+
+## Phase 3D directional correction
+
+The approved review exposed a direction error: the side-view vehicle faces LEFT,
+but debris was animated right-to-left, making it catch up from behind. Resolved
+Flying Spare Parts now approaches from the screen-left (ahead), travels right
+past the car and clears as the car recovers. In the front-camera warning,
+the loose parts are drawn in the foreground, between camera and car.
+Movement remains source-backed, and no damage, choices, engine facts or event
+duration change. The same corrected shared renderer is used in the DEV race and
+the Art Forge review. The car and temporary debris art remain unchanged.
