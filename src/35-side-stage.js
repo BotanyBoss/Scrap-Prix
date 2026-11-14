@@ -62,6 +62,18 @@
       intensity:hit?Math.min(4,1+effect.damage*.13):2});
     return p;
   }
+  // The car faces screen-left. Forward road motion brings obstacles from LEFT to RIGHT.
+  // Keep the path independent of draw/frame timing so visual tests can verify direction.
+  function debrisPose(plan,elapsed,index=0){
+    if(plan?.name!=='debris'||!Number.isInteger(index)||index<0||index>=3)
+      throw Error('Expected one of three debris props on a resolved debris plan');
+    const q=clamp((Number.isFinite(elapsed)?elapsed:0)/plan.duration,0,1);
+    const travel=clamp((q-.24-index*.052)/.46,0,1);
+    return {visible:travel>0&&travel<1,progress:travel,
+      x:-85+650*travel+index*12,
+      y:162+20*index-24*Math.sin(travel*Math.PI)+travel*24,
+      angle:travel*5+index};
+  }
   function sample(plan,elapsed,reduced=false){
     const c=plan.config,t=clamp(Number.isFinite(elapsed)?elapsed:0,0,plan.duration);
     // Integrate each velocity ramp analytically, so wheel angle and road offset
@@ -144,13 +156,10 @@
     ctx.fillStyle='#31464b35';ctx.beginPath();ctx.ellipse(p.x,213,(rig.rear-rig.front)/2+19,4,0,0,Math.PI*2);ctx.fill();
     if(plan.name==='debris'&&!reduced){
       // Temporary silhouettes: loose parts, not a rival wreck or invented damage.
-      const q=p.time/plan.duration;
       for(let i=0;i<3;i++){
-        const travel=clamp((q-.20-i*.07)/.45,0,1);
-        if(travel<=0||travel>=1)continue;
-        const x=500-travel*565+i*32;
-        const y=162+20*i-24*Math.sin(travel*Math.PI)+travel*24;
-        ctx.save();ctx.translate(x,y);ctx.rotate(travel*5+i);
+        const piece=debrisPose(plan,p.time,i);
+        if(!piece.visible)continue;
+        ctx.save();ctx.translate(piece.x,piece.y);ctx.rotate(piece.angle);
         ctx.fillStyle=i===0?'#263e47':'#c08c55';ctx.strokeStyle=ink;ctx.lineWidth=2;
         if(i===0){ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();ctx.stroke();
           ctx.fillStyle=cream;ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();}
@@ -192,5 +201,5 @@
     ctx.restore();
     return p;
   }
-  root.ScrapSideStage=Object.freeze({defaults,config,createRig,preset,debrisPlan,sample,wheelPose,draw});
+  root.ScrapSideStage=Object.freeze({defaults,config,createRig,preset,debrisPlan,debrisPose,sample,wheelPose,draw});
 })(globalThis);

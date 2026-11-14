@@ -11,6 +11,41 @@ fs.mkdirSync(proof,{recursive:true});
     const frame=process.env.FORGE_URL?page.frameLocator('iframe[title="Scrap Prix Side Stage"]'):page;
     const stage=frame.locator('#stage');
     await stage.waitFor();
+    // Phase 3D: mode switch and source-backed, deterministic event preview.
+    await frame.locator('#mode-race').click();
+    assert.equal(await frame.locator('#real-race-workspace').isVisible(),true);
+    assert.equal(await frame.locator('#motion-workspace').isVisible(),false);
+    const raceStage=frame.locator('#race-stage');
+    const actual=await raceStage.evaluate(()=>{
+      const r=ScrapSeed18DebrisReview.load(18);
+      return {seed:r.seed,source:r.source.id,damage:r.event.damage,
+        phases:r.shots.map(s=>s.debris.phase),cameras:r.shots.map(s=>s.camera)};
+    });
+    assert.equal(actual.seed,18);assert.equal(actual.source,'debris');
+    assert.deepEqual(actual.phases,['anticipation','reaction','recovery']);
+    assert.deepEqual(actual.cameras,['front','side','side']);
+    assert.equal(Number(await raceStage.getAttribute('data-damage')),actual.damage);
+    for(const [phase,camera] of [['anticipation','front'],['reaction','side'],['recovery','side']]){
+      await frame.locator('[data-review-phase="'+phase+'"]').click();
+      assert.equal(await raceStage.getAttribute('data-phase'),phase);
+      assert.equal(await raceStage.getAttribute('data-camera'),camera);
+      const shot=await raceStage.evaluate(c=>c.toDataURL());
+      await frame.locator('#race-seek').evaluate(e=>e.dispatchEvent(new Event('input')));
+      assert.equal(await raceStage.evaluate(c=>c.toDataURL()),shot);
+      await raceStage.screenshot({path:path.join(proof,'seed18-'+phase+'.png')});
+    }
+    await frame.locator('#race-reduced').check();
+    await frame.locator('[data-review-phase="reaction"]').click();
+    assert.equal(await raceStage.getAttribute('data-action'),'reduced motion');
+    await frame.locator('#race-reduced').uncheck();
+    await frame.locator('#race-step').click();
+    assert(Number(await frame.locator('#race-seek').inputValue())>0);
+    await frame.locator('#race-export').click();
+    assert.equal(JSON.parse(await frame.locator('#race-json').inputValue()).seed,18);
+    await frame.locator('#race-restart').click();
+    assert.equal(Number(await frame.locator('#race-seek').inputValue()),0);
+    await frame.locator('#mode-motion').click();
+    assert.equal(await frame.locator('#motion-workspace').isVisible(),true);
     await frame.locator('#play').click();
     async function seek(t){await frame.locator('#seek').evaluate((e,t)=>{e.value=t;e.dispatchEvent(new Event('input'));},t);}
     for(const chassis of ['stock-chassis','needle-frame','longbody']){
