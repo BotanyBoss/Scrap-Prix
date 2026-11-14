@@ -1,6 +1,21 @@
 /* DEV-only composition. The scene supplies its actual track palette and sky. */
 (function(){
   const frame=createRaceFrames();
+  let stageRig=null,stagePlan=null,stageKey='';
+  function ordinarySide(ctx,shot,options){
+    if(shot.camera!=='side'||!['grid','drive'].includes(shot.family))return false;
+    const key=JSON.stringify(options.loadout);
+    if(stageKey!==key){
+      stageKey=key;stageRig=ScrapSideStage.createRig(options.loadout,Pipeline);
+    }
+    if(!stageRig)return false;
+    const name=shot.stationary?'idle':shot.family==='grid'?'accelerate':'cruise';
+    if(!stagePlan||stagePlan.name!==name||stagePlan.duration!==shot.durationMs)
+      stagePlan=ScrapSideStage.preset(name,{duration:shot.durationMs,speed:86,bounce:1.6,lead:16,follow:700},false);
+    const pose=ScrapSideStage.draw(ctx,stageRig,stagePlan,options.time-shot.startMs,{reduced:!options.motion});
+    ctx.canvas.dataset.sideStage=JSON.stringify({loadout:stageRig.loadout,wheels:stageRig.wheels.length,pose});
+    return true;
+  }
   function vehicle(ctx,shot,loadout,x,y,zoom,motion,time){
     const damage=shot.family==='consequence'?shot.source.damageBySlot:{};
     const wear=Object.keys(damage).sort((a,b)=>damage[b]-damage[a])[0];
@@ -77,6 +92,8 @@
     }
   }
   function trackside(ctx,style,shot,options){
+    delete ctx.canvas.dataset.sideStage;
+    if(ordinarySide(ctx,shot,options))return;
     const moving=options.motion&&!shot.stationary&&!['dnf','dns'].includes(shot.family);
     const t=moving?options.time:0;
     const progress=moving?Math.max(0,Math.min(1,(t-shot.startMs)/shot.durationMs)):.5;

@@ -22,7 +22,7 @@ def build():
     panel=read('previews/environment-panel.html').replace('\r\n','\n').replace("const c=$('canvas')", "$('env').value='street';const c=$('canvas')")
     modules=['src/30-race-manifest.js','src/31-race-director.js','src/32-ordinary-timeline.js',
              'previews/vehicle-pipeline/assembly.js','previews/vehicle-pipeline/render.js',
-             'src/33-race-frames.js','src/34-ordinary-film.js']
+             'src/33-race-frames.js','src/35-side-stage.js','src/34-ordinary-film.js']
     # Scope pipeline constants locally and keep production free of experimental modules.
     film='(function(){\n'+'\n'.join(read(path) for path in modules)+'\n})();\n'
     text=text.replace('</head>', '<style>'+read('src/ordinary-dev.css')+'</style></head>')

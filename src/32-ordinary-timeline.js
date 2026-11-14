@@ -43,7 +43,7 @@
         const cut=Math.round(step.duration*.56);
         add('grid','side',cut);
         add('drive','front',step.duration-cut);
-      }else add('drive',step.lap%2?'front':'rear',step.duration);
+      }else add('drive',step.lap%2?'front':'side',step.duration);
     }
     return {version:1,setting:manifest.setting,vehicle:manifest.vehicle,shots,totalMs:startMs};
   }
