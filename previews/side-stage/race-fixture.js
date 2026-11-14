@@ -15,7 +15,8 @@
      matching.some(s=>s.source.key!==matching[0].source.key))
     throw Error('Actual seed 18 no longer matches the approved Phase 3D fixture.');
   const source=matching[0].source;
-  const event=manifest.laps.flatMap(l=>l.effects).find(e=>e.key===source.key&&e.id==='debris');
+  const event=manifest.laps.find(l=>l.lap===matching[0].lap)?.effects.find(
+   e=>e.key===source.key&&e.id==='debris'&&e.kind===source.kind);
   if(!event||event.damage!==source.damage||event.kind!==source.kind)
     throw Error('Shot source no longer matches the actual engine occurrence.');
   const clipStartMs=matching[0].startMs,clipEndMs=matching[2].endMs;

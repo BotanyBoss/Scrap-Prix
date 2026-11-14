@@ -77,3 +77,34 @@ Run `node tests/ordinary-timeline.cjs` and `node tests/side-stage.cjs`
 for factual timing/pose checks. For real browser continuity, run
 `node tests/ordinary-race-browser.cjs` with Playwright and Chromium configured.
 Production `dist/index.html` remains independent of all DEV theatre modules.
+
+## Art Forge | Real Race Review (seed 18)
+
+Use **Real Race Review · Seed 18**, next to the original Motion Lab mode
+inside the *same* Side Stage route. It regenerates a new `ScrapEngine.newRun(18)`,
+resolves `ScrapEngine.race`, compiles the production Race Manifest and
+Phase 3D ordinary shots, and isolates the real Flying Spare Parts occurrence.
+The replay timing and source-derived damage are the authoritative facts;
+the road/sky/part silhouettes are temporary inspection artwork.
+
+The viewer offers three phase jumps (warning, reaction, recovery), a frame scrubber,
+1×/2×/4×, pause, loop, reduced motion, still-frame PNG download and
+reproducible JSON capture. It intentionally makes **no edits to gameplay**.
+This source-built preview is not equivalent to a full game UI/visual playtest.
+
+To rebuild **without touching Art Forge's approved grouped navigation**:
+
+```sh
+py -3 previews/side-stage/build.py
+py -3 previews/side-stage/build.py --refresh "<existing-Art-Forge-project-root>"
+```
+
+The second command requires that `src/main.tsx`, `src/model.ts` and
+`public/race-director/side-stage.html` already contain the Side Stage integration.
+It changes **only** the existing public Side Stage HTML and leaves the navigation
+and project source untouched. An unrecognised installation fails without changes.
+
+Verification: `node tests/seed18-review.cjs`, `node tests/side-stage.cjs`,
+`node tests/ordinary-timeline.cjs` and `node tests/side-stage-browser.cjs`
+(Playwright/Chromium for the last test). Run visual assessment at normal speed
+before considering the sequence approved.

@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: 22
       - run: python scripts/build.py
+      - run: python previews/side-stage/build.py
+      - run: node tests/seed18-review.cjs
       - run: node tests/check.cjs
       - run: node tests/determinism.cjs
       - run: node tests/presentation-weather.cjs
