@@ -19,7 +19,7 @@
   function createRig(loadout,pipeline){
     if(!Object.entries(pipeline.choices).every(([slot,ids])=>ids.includes(loadout[slot])))return null;
     const source=pipeline.assemble(loadout);
-    const unit=22,centre=(Math.min(...source.axles)+Math.max(...source.axles))/2;
+    const unit=32,centre=(Math.min(...source.axles)+Math.max(...source.axles))/2;
     const radius=source.wheels[0][1]*unit;
     const socket=([x,y,z])=>({x:-(z-centre)*unit,y:-y*unit});
     const wheels=source.wheels.map(([x,y,z])=>({...socket([x,y,z]),far:x<0,radius}));
@@ -125,7 +125,7 @@
     wheels.filter(w=>w.far).forEach(wheel);
     // Suspension links move between fixed hubs and the bouncing chassis.
     for(const w of wheels.filter(w=>!w.far)){
-      line(w.x,w.y,p.x+w.x-p.x,p.ground-rig.radius-8+p.bodyY-p.lift,cream,3);
+      line(w.x,w.y,w.x,p.ground-rig.radius-8+p.bodyY-p.lift,cream,3);
     }
     ctx.save();ctx.translate(p.x,p.ground-rig.radius-7+p.bodyY-p.lift);ctx.rotate(p.roll);ctx.scale(1,p.squash);
     const f=rig.front-13,r=rig.rear+14,needle=rig.loadout.chassis==='needle-frame',long=rig.loadout.chassis==='longbody';

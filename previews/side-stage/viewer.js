@@ -37,7 +37,7 @@ function paint(){
 }
 function frame(now){
   if(last!==null&&playing&&!document.hidden){
-    time+=Math.min(100,now-last)*Number($('speed').value);
+    time+=Math.min(100,now-last)*Number($('playback-speed').value);
     if(time>=plan.duration){if($('loop').checked)time%=plan.duration;else{time=plan.duration;playing=false;}}
   }
   last=now;paint();requestAnimationFrame(frame);

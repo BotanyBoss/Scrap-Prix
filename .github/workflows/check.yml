@@ -21,6 +21,7 @@ jobs:
       - run: node tests/presentation-weather.cjs
       - run: node tests/race-manifest.cjs
       - run: node tests/ordinary-timeline.cjs
+      - run: node tests/side-stage.cjs
       - run: node tests/race-director-first-flight.cjs
       - run: node tests/bodge.cjs
       - run: node tests/recovery-stress.cjs

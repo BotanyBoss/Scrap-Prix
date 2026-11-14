@@ -6,9 +6,9 @@ const proof=process.env.RACE_CAPTURE_DIR;
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,headless:true});
   try{
-    const cases=proof?['original',2,3,18,71]:[2,3,18,71];
+    const cases=proof?['original',2,3,'3-safe',18,71]:[2,3,'3-safe',18,71];
     for(const fixture of cases){
-      const original=fixture==='original',seed=original?2:fixture;
+      const original=fixture==='original',seed=original?2:fixture==='3-safe'?3:fixture;
       const page=await browser.newPage({viewport:seed===71?{width:540,height:820}:{width:960,height:660}});
       const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
@@ -26,11 +26,12 @@ const proof=process.env.RACE_CAPTURE_DIR;
         await page.locator('[data-action="buy"]:enabled').first().click();
         await button('confirm-ok').click();await button('close-modal').click();
       }
-      const expected=await page.evaluate(seed=>{
+      const risk=seed===3&&fixture!=='3-safe';
+      const expected=await page.evaluate(risk=>{
         const E=ScrapEngine,s=E.decodeSave(localStorage.getItem('scrap-prix-v0400-systems-run-v21'));
-        return E.race(s,seed===3?{late:'risk'}:{}).history.at(-1);
-      },seed);
-      const folder=proof&&seed<=3?path.join(proof,String(fixture)):null;
+        return E.race(s,risk?{late:'risk'}:{}).history.at(-1);
+      },risk);
+      const folder=proof&&seed<=3&&fixture!=='3-safe'?path.join(proof,String(fixture)):null;
       if(folder)fs.mkdirSync(folder,{recursive:true});
       let count=0;const timestamps=[],samples=[];
       async function capture(){
@@ -54,13 +55,20 @@ const proof=process.env.RACE_CAPTURE_DIR;
       assert.equal(await page.locator('#race-canvas').evaluate(c=>c.toDataURL()),frozen);
       await button('pause').click();
       await button('speed',folder?'1':'4').press('Enter');
-      const laps=new Set(),shots=new Set();
+      const laps=new Set(),shots=new Set();let sawStage=false;
       let chose=false;
       const deadline=Date.now()+100000;
       while(await page.locator('#race-wrap').count()){
         assert(Date.now()<deadline,'Race did not finish: '+errors.join(' / '));
         const beat=await page.evaluate(()=>[document.querySelector('#stage-counter')?.textContent,document.querySelector('#race-wrap')?.dataset.shot]);
         if(beat[0])laps.add(beat[0]); if(beat[1])shots.add(beat[1]);
+        if(!original&&await page.locator('#race-wrap').getAttribute('data-camera')==='side'){
+          const stage=await page.locator('#race-canvas').getAttribute('data-side-stage');
+          if(stage){
+            const info=JSON.parse(stage);assert.deepEqual(info.loadout,expected.loadoutBefore);
+            assert.equal(info.pose.lift,0);sawStage=true;
+          }
+        }
         await capture();
         if(await button('event-choice','risk').isVisible()){
           shots.add('decision');await capture();
@@ -68,7 +76,7 @@ const proof=process.env.RACE_CAPTURE_DIR;
           await page.waitForTimeout(320);await capture();
           assert.equal(await page.locator('#race-progress').getAttribute('value'),p);
           const lapBefore=await page.locator('#stage-counter').textContent();
-          await button('event-choice',seed===3?'risk':'safe').click();
+          await button('event-choice',risk?'risk':'safe').click();
           assert.equal(await page.locator('#stage-counter').textContent(),lapBefore);
           assert.equal(await page.locator('#race-wrap').getAttribute('data-shot'),'event');
           chose=true;
@@ -78,6 +86,7 @@ const proof=process.env.RACE_CAPTURE_DIR;
       await button('continue').waitFor();
       await capture();
       const actual=await page.evaluate(()=>ScrapEngine.decodeSave(localStorage.getItem('scrap-prix-v0400-systems-run-v21')).history.at(-1));
+      if(seed===2&&!original)assert(sawStage,'shared stage was not shown');
       if(folder&&seed===2&&!original){
         assert.deepEqual([...new Set(samples.map(s=>s.camera).filter(Boolean))].sort(),['front','rear','side']);
       }
