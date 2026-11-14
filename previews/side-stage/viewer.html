@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scrap Prix · Side animation stage</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#122b34;color:#e7eddf;font:14px system-ui}main{max-width:1130px;margin:auto;padding:22px}
+h1{font-size:24px;margin:0 0 6px}p{color:#b5cac8;margin:0 0 20px;line-height:1.5}
+.layout{display:grid;grid-template-columns:minmax(480px,1fr) 290px;gap:24px}canvas{display:block;width:480px;height:270px;max-width:100%;object-fit:contain;background:#dfebe6;border:1px solid #72948e}
+fieldset{border:1px solid #426069;padding:12px;margin:0 0 15px}legend{color:#e2b563;padding:0 6px}
+label{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0}
+select,button,input,textarea{font:inherit;accent-color:#dfb563}select,button,textarea{background:#e4e9dd;color:#213c43;border:1px solid #7c9897;padding:7px;border-radius:3px}
+button{cursor:pointer}button[aria-pressed=true]{background:#dfb563}input[type=range]{width:135px}#seek{width:100%}
+.transport{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}#pose{font:12px/1.7 monospace;white-space:pre-wrap;color:#b9cfcc}
+textarea{width:100%;height:100px}summary{cursor:pointer;margin:15px 0}#note{min-height:44px;margin:10px 0;color:#e5bb70}#status{min-height:20px;color:#e5bb70}
+@media(max-width:850px){.layout{grid-template-columns:1fr}main{padding:12px}aside{max-width:480px}}
+</style></head><body><main>
+<h1>Scrap Prix · Side animation stage</h1>
+<p>Layered temporary artwork. Road speed drives wheel rotation; the body and camera have separate motion.</p>
+<div class="layout"><section>
+<canvas id="stage" width="480" height="270" aria-label="Side-view animation at 480 by 270"></canvas>
+<div class="transport"><button id="play">Pause</button><button id="restart">Restart</button><button id="step">Step 1/30 s</button>
+<select id="speed" aria-label="Playback speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+<label><input id="loop" type="checkbox" checked>Loop</label></div>
+<label for="seek">Timeline <output id="clock"></output></label><input type="range" id="seek" min="0" max="8000" step="1" value="0">
+<div id="note"></div><div id="pose"></div>
+<details><summary>Save or restore a preset</summary>
+<div class="transport"><button id="export">Show config</button><button id="save">Download JSON</button><button id="restore">Apply JSON</button></div>
+<textarea id="config" aria-label="Repeatable motion configuration" spellcheck="false"></textarea><div id="status" role="status"></div></details>
+</section><aside>
+<fieldset><legend>Actual equipment IDs</legend><div id="loadout"></div></fieldset>
+<fieldset><legend>Motion</legend>
+<label>Preset <select id="preset"><option value="cruise">Cruise</option><option value="idle">Idle / hold</option><option value="accelerate-brake">Accelerate / brake</option><option value="bump">Bump study</option><option value="jump">Takeoff / landing study</option><option value="impact">Impact study</option></select></label>
+<div id="parameters"></div>
+<label><input id="reduced" type="checkbox">Reduced motion</label><label><input id="guides" type="checkbox" checked>Wheel hubs / ground references</label>
+</fieldset></aside></div></main><!-- modules --></body></html>
