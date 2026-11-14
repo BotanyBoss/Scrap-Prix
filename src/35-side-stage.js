@@ -45,6 +45,23 @@
     }
     return {version:1,name,config:c,duration:d,cues,illustrative};
   }
+  // This is a resolved occurrence adapter, not an illustrative bump/impact preset.
+  // A zero-damage debris event gets an evasive reaction, never a collision.
+  function debrisPlan(effect,input={}){
+    if(!effect||effect.id!=='debris'||!['signature','wildcard'].includes(effect.kind)||
+      typeof effect.key!=='string'||!Number.isFinite(effect.damage)||effect.damage<0)
+      throw Error('Debris choreography requires a real resolved debris effect');
+    const p=preset('cruise',input,false),d=p.duration,hit=effect.damage>0;
+    p.name='debris';
+    p.effect={id:effect.id,kind:effect.kind,key:effect.key,damage:effect.damage,
+      damageBySlot:{...(effect.damageBySlot||{})}};
+    p.cues.push({subject:'body',action:'brace',start:d*.30,duration:d*.13,intensity:1});
+    p.cues.push({subject:'body',action:hit?'impact':'swerve',
+      start:d*.46,duration:d*.23,intensity:hit?Math.min(7,2+effect.damage*.3):1});
+    p.cues.push({subject:'body',action:'recover',start:d*.71,duration:d*.24,
+      intensity:hit?Math.min(4,1+effect.damage*.13):2});
+    return p;
+  }
   function sample(plan,elapsed,reduced=false){
     const c=plan.config,t=clamp(Number.isFinite(elapsed)?elapsed:0,0,plan.duration);
     // Integrate each velocity ramp analytically, so wheel angle and road offset
@@ -69,6 +86,9 @@
       if(cue.subject==='camera')camera=cue.intensity*smooth(q);
       if(cue.subject!=='body'||t<cue.start||t>=cue.start+cue.duration)continue;
       action=cue.action;
+      if(cue.action==='brace'){const pulse=Math.sin(q*Math.PI);bodyY+=3*pulse;squash=1-.1*pulse;roll-=pulse*.03;action='anticipation';}
+      if(cue.action==='swerve'){const pulse=Math.sin(q*Math.PI);bodyY-=2*pulse;roll+=.09*pulse;action='evasion';}
+      if(cue.action==='recover'){bodyY+=Math.sin(q*Math.PI*3)*(1-q)*cue.intensity;roll+=Math.sin(q*Math.PI*2)*(1-q)*.05;action='recovery';}
       if(cue.action==='bounce'){bodyY-=Math.sin(q*Math.PI*2)*cue.intensity*(1-q);roll+=Math.sin(q*Math.PI*2)*.035;}
       if(cue.action==='impact'){
         shudder=Math.sin(q*Math.PI*12)*cue.intensity*(1-q)*(1-q);
@@ -122,6 +142,23 @@
     line(0,211,480,211,'#d8d3b8',1);
     for(let x=-80+p.road%80;x<480;x+=80){ctx.fillStyle=cream;ctx.fillRect(x,227,28,2);}
     ctx.fillStyle='#31464b35';ctx.beginPath();ctx.ellipse(p.x,213,(rig.rear-rig.front)/2+19,4,0,0,Math.PI*2);ctx.fill();
+    if(plan.name==='debris'&&!reduced){
+      // Temporary silhouettes: loose parts, not a rival wreck or invented damage.
+      const q=p.time/plan.duration;
+      for(let i=0;i<3;i++){
+        const travel=clamp((q-.20-i*.07)/.45,0,1);
+        if(travel<=0||travel>=1)continue;
+        const x=500-travel*565+i*32;
+        const y=162+20*i-24*Math.sin(travel*Math.PI)+travel*24;
+        ctx.save();ctx.translate(x,y);ctx.rotate(travel*5+i);
+        ctx.fillStyle=i===0?'#263e47':'#c08c55';ctx.strokeStyle=ink;ctx.lineWidth=2;
+        if(i===0){ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();ctx.stroke();
+          ctx.fillStyle=cream;ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();}
+        else{ctx.fillRect(-9,-4,18,8);ctx.strokeRect(-9,-4,18,8);
+          line(-5,-8,-5,8,cream,2);line(5,-8,5,8,cream,2);}
+        ctx.restore();
+      }
+    }
     wheels.filter(w=>w.far).forEach(wheel);
     // Suspension links move between fixed hubs and the bouncing chassis.
     for(const w of wheels.filter(w=>!w.far)){
@@ -155,5 +192,5 @@
     ctx.restore();
     return p;
   }
-  root.ScrapSideStage=Object.freeze({defaults,config,createRig,preset,sample,wheelPose,draw});
+  root.ScrapSideStage=Object.freeze({defaults,config,createRig,preset,debrisPlan,sample,wheelPose,draw});
 })(globalThis);

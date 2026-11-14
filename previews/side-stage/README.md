@@ -57,3 +57,23 @@ shapes and unanimated equipment details. The study exposes presets rather than
 an arbitrary keyframe editor. Jump and impact have no live-race mappings in this
 slice. The completed game still includes the earlier camera and consequence
 shots, whose timing is outside this stage review.
+
+## Phase 3D | Real Flying Spare Parts in seed 18
+
+The DEV theatrical race now recognizes only genuinely resolved `debris` signature/wildcard
+occurrences. One existing replay step is divided into a front-camera anticipation
+hold, a side-stage reaction and a side-stage recovery. It does not change step
+length or engine outcomes, and uses the same absolute event clock across both
+side-stage shots. The car may jolt only when actual effect damage is positive;
+a mitigated zero-damage occurrence uses an evasive reaction instead.
+
+To review: build with `py -3 scripts/build.py`, open `dist/dev.html`,
+enable **Options > Experimental theatrical race**, and start seed **18**
+with the original starter car (do not buy equipment in the garage). Flying
+Spare Parts arrives in the five-lap run. Pause, Next, 1–4x and Skip still use
+the existing replay controls. The stage currently uses temporary shapes.
+
+Run `node tests/ordinary-timeline.cjs` and `node tests/side-stage.cjs`
+for factual timing/pose checks. For real browser continuity, run
+`node tests/ordinary-race-browser.cjs` with Playwright and Chromium configured.
+Production `dist/index.html` remains independent of all DEV theatre modules.
